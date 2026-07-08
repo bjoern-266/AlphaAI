@@ -1,23 +1,74 @@
 # =============================================================================
 # Muster-Regeln (Patterns)
 # =============================================================================
-# Definiert die zu erkennenden Kursmuster und deren Parameter. Im Fundament
-# (Sprint 1) sind noch keine aktiven Muster konfiguriert.
+# Parameter aller Chartmuster. Diese Datei ist die einzige Quelle der
+# Muster-Parameter – im Code stehen keine hartcodierten Schwellenwerte.
 #
-# Diese Datei legt das VERBINDLICHE FORMAT fest. Muster werden datengetrieben
-# gepflegt, nicht im Code hartcodiert.
+# Jeder Abschnitt [patterns.<name>] beschreibt genau ein Muster. Das Feld
+# "enabled" steuert, ob das Muster erkannt wird. Alle übrigen Felder sind die
+# Parameter des jeweiligen Musters.
+#
+# Hinweis: Die Muster-Erkennung liefert ausschließlich beschreibende
+# PatternResults. Sie trifft keine Handelsentscheidungen und erzeugt keine
+# Scores oder Signale.
 # =============================================================================
 
 [meta]
-version = 1
-description = "Definitionen erkennbarer Kursmuster (Patterns)."
+version = 2
+description = "Parametersatz für Chartmuster (Sprint 5)."
 
-# Format je Muster (Beispiel, hier noch nicht aktiv):
-#
-# [patterns.inside_bar]
-# enabled     = true
-# min_bars    = 2
-# description = "Innerer Balken innerhalb der Vorgängerkerze."
+[validation]
+# Harte Untergrenze an Kerzen. Darunter gilt das Ergebnis als ungültig.
+min_candles = 20
 
-[patterns]
-# Noch keine aktiven Muster – wird in einem späteren Sprint befüllt.
+# --- Vollständig implementierte Muster -------------------------------------
+
+[patterns.fvg]
+enabled = true
+# Minimale Gap-Größe in Prozent des Referenzpreises.
+min_gap_pct = 0.05
+
+[patterns.bos]
+enabled = true
+# Anzahl Kerzen links/rechts zur Bestätigung eines Swings.
+swing_lookback = 2
+
+[patterns.choch]
+enabled = true
+swing_lookback = 2
+
+[patterns.equal_highs]
+enabled = true
+swing_lookback = 2
+# Toleranz in Prozent, innerhalb derer zwei Hochs als "gleich" gelten.
+tolerance_pct = 0.1
+
+[patterns.equal_lows]
+enabled = true
+swing_lookback = 2
+tolerance_pct = 0.1
+
+[patterns.liquidity_sweep]
+enabled = true
+swing_lookback = 2
+# Mindest-Durchdringung des Levels in Prozent, damit ein Sweep zählt.
+penetration_pct = 0.05
+
+[patterns.market_structure]
+enabled = true
+swing_lookback = 2
+
+[patterns.trend_structure]
+enabled = true
+swing_lookback = 2
+
+# --- Vorbereitet (noch keine Erkennung) ------------------------------------
+
+[patterns.order_block]
+enabled = false
+
+[patterns.breaker_block]
+enabled = false
+
+[patterns.mitigation_block]
+enabled = false

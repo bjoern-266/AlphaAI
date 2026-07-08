@@ -71,10 +71,21 @@ Parameter ausschließlich aus `knowledge/indicator_rules.toml`. Einstieg:
 `IndicatorEngine.from_config()`. Multi-Timeframe ist vorbereitet, nicht
 implementiert.
 
+## Pattern Engine (ab Sprint 5 verfügbar)
+
+Erkennt Chartmuster, trifft aber keine Entscheidungen und erzeugt keine
+Scores/Signale. Kette: `IndicatorResult → PatternEngine → PatternReport`. Jedes
+Muster liegt in `patterns/<name>.py`, ist unabhängig und wird nur über die
+`PatternRegistry` (`engines/pattern_registry.py`) ergänzt. Ergebnistypen
+(`PatternResult`) liegen in `patterns/base.py` (vermeidet Import-Zyklen).
+Parameter ausschließlich aus `knowledge/pattern_rules.toml`. Einstieg:
+`PatternEngine.from_config()`. 8 Muster implementiert (FVG, BOS, CHoCH, Equal
+Highs/Lows, Liquidity Sweep, Market/Trend Structure), 3 vorbereitet (Order/
+Breaker/Mitigation Block).
+
 ## Aktueller Stand
 
-Sprint 1 (Fundament), Sprint 2 (Data Layer), Sprint 3 (Scanner Core) und
-Sprint 4 (Indicator Engine) sind abgeschlossen. Es gibt weiterhin keine Muster,
-keine Scores, keine Risk-/Recommendation-Engine und keine Handelslogik.
-Nächster Schritt: Sprint 5 (Muster & Strategien). Immer zuerst
-`PROJECT_STATUS.md` und `HANDOVER.md` lesen.
+Sprint 1–5 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Engine, Pattern Engine). Es gibt weiterhin keine Strategy-/Score-/Risk-/
+Recommendation-Engine und keine Handelslogik. Nächster Schritt: Sprint 6
+(Strategien). Immer zuerst `PROJECT_STATUS.md` und `HANDOVER.md` lesen.

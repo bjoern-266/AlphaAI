@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-08
-- **Aktueller Sprint:** Sprint 4 – Indicator Engine
+- **Aktueller Sprint:** Sprint 5 – Pattern Engine
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -14,8 +14,7 @@ _Wird nach jedem Sprint automatisch aktualisiert._
 
 ### Data Layer (Sprint 2)
 
-- Provider, Repository, MarketDataEngine, Cache, Validator, Universen,
-  MarketRequest/MarketResult.
+- Provider, Repository, MarketDataEngine, Cache, Validator, Universen.
 
 ### Scanner Core (Sprint 3)
 
@@ -24,45 +23,51 @@ _Wird nach jedem Sprint automatisch aktualisiert._
 
 ### Indicator Engine (Sprint 4)
 
-- **11 unabhängige Indikatoren** in `indicators/` (je eigene Datei): EMA, RSI,
-  ATR, VWAP, MACD, RelativeVolume, ADX, Bollinger, Stochastic, OBV,
-  VolumeProfile.
-- **Registry** (`IndicatorRegistry`) als einzige Erweiterungsstelle.
-- **Engine** (`IndicatorEngine`): Orchestrierung, Validierung, optionaler Cache;
-  Input `MarketResult`/OHLCV → Output `IndicatorResult`.
-- **IndicatorResult**: volle Zeitreihen + typisierte Zugriffe (EMA20/50/200,
-  RSI14, ATR14, VWAP, MACD/Signal/Histogramm, RelativeVolume, ADX,
-  BollingerBands, Stochastic, OBV, VolumeProfile) sowie `calculation_time`,
-  `valid`, `warnings`, `metadata`.
-- **Cache** (`IndicatorCache`, FIFO) mit Treffer-/Fehltreffer-Zählung.
-- **Parameter** ausschließlich aus `knowledge/indicator_rules.toml`.
-- **Multi-Timeframe**: Architektur vorbereitet (Timeframe-Label), nicht
-  implementiert.
-- **Tests:** 148 gesamt (53 neue: je Indikator, Registry, Cache, Engine,
-  Validierung, Performance).
+- 11 unabhängige Indikatoren, Registry, Engine, Result, Cache.
+
+### Pattern Engine (Sprint 5)
+
+- **8 vollständig implementierte Muster** in `patterns/` (je eigene Datei):
+  FVG, BOS, CHoCH, Equal Highs, Equal Lows, Liquidity Sweep, Market Structure,
+  Trend Structure.
+- **3 vorbereitete Muster** (ohne Erkennung): Order Block, Breaker Block,
+  Mitigation Block.
+- **FVG** erkennt bullish/bearish, fresh/partially_mitigated/mitigated,
+  Gap-Größe, Gap-%, Kerzenindex, Timestamp und Preisbereich.
+- **BOS/CHoCH** über gemeinsamen Struktur-Break-Helper (BOS = Fortsetzung,
+  CHoCH = Trendwechsel).
+- **Trend Structure** liefert Higher High/Low, Lower High/Low und Trend.
+- **Registry** (`PatternRegistry`) als einzige Erweiterungsstelle.
+- **Engine** (`PatternEngine`): Input `MarketResult`/OHLCV → Output
+  `PatternReport` mit `PatternResult` je Muster (Name, Typ, Richtung,
+  Strength 0-100, Confidence 0-1, Timestamp, Price Level, Metadata).
+- **Cache** (`PatternCache`, FIFO).
+- **Validierung**: genug Kerzen, ungültige Muster, überlappende Muster,
+  ungültige Zeitreihen.
+- **Parameter** ausschließlich aus `knowledge/pattern_rules.toml`.
+- **Tests:** 197 gesamt (49 neue).
 
 ## Was ist bewusst NICHT vorhanden
 
-- Keine Muster (FVG, BOS, CHoCH, Order Blocks).
-- Keine Score-Engine, keine Risk-Engine, keine Recommendation-Engine.
-- Keine Kauf-/Verkaufssignale, keine Bewertung.
+- Keine Strategy-Engine, keine Score-Engine, keine Risk-Engine, keine
+  Recommendation-Engine.
+- Keine Handelsentscheidungen, keine Buy/Sell-Signale.
 - Keine Dashboard-Logik.
 
-Diese Teile folgen ab Sprint 5 (siehe `ROADMAP.md`).
+Diese Teile folgen ab Sprint 6 (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 4)
+## Qualitätsnachweis (Sprint 5)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 148 Tests bestanden |
-| Ruff | keine Beanstandungen |
-| Black | konform |
-| Import-Zyklen | 0 (44 Module analysiert) |
-| Indikator-Unabhängigkeit | 0 Verstöße |
-| SOLID-Heuristik | 0 Verstöße |
-| Testabdeckung (engines + indicators) | 92 % |
+| pytest | 197 Tests bestanden |
+| Ruff / Black | konform |
+| Import-Zyklen | 0 (61 Module analysiert) |
+| Muster-Unabhängigkeit | 0 Verstöße |
+| SOLID-Heuristik (Muster) | 0 Verstöße |
+| Testabdeckung (Pattern-Module) | 95 % |
 
 ## Nächster Schritt
 
-Warten auf Freigabe für **Sprint 5 – Muster & Strategien** (Patterns/Strategien
-auf Basis der Indikatorergebnisse).
+Warten auf Freigabe für **Sprint 6** (z. B. Strategie-Engine auf Basis von
+Indikator- und Muster-Ergebnissen).

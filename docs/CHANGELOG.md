@@ -4,6 +4,42 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.5.0] – 2026-07-08 – Sprint 5: Pattern Engine
+
+### Hinzugefügt
+
+- **Pattern Engine** (erkennt Muster, keine Entscheidungen/Scores/Signale):
+  - `engines/pattern_engine.py` – `PatternEngine` (Orchestrierung, Validierung,
+    optionaler Cache) + `load_pattern_rules`.
+  - `engines/pattern_registry.py` – `PatternRegistry` (einzige
+    Erweiterungsstelle) + `build_default_registry`.
+  - `engines/pattern_result.py` – `PatternReport` (Aggregat); re-exportiert
+    `PatternResult`/`PatternType`/`PatternDirection` aus `patterns.base`.
+  - `engines/pattern_cache.py` – `PatternCache` (FIFO).
+- **11 unabhängige Muster** in `patterns/` (je eigene Datei):
+  - Implementiert: `fvg` (bullish/bearish, fresh/partially/mitigated, Gap-Größe
+    & -%), `bos`, `choch`, `equal_highs`, `equal_lows`, `liquidity_sweep`,
+    `market_structure`, `trend_structure` (HH/HL/LH/LL + Trend).
+  - Vorbereitet (ohne Erkennung): `order_block`, `breaker_block`,
+    `mitigation_block`.
+  - Gemeinsame Schnittstelle, Ergebnistypen und Hilfen (Swing-/Struktur-Break-
+    Erkennung) in `patterns/base.py`; kein Muster hängt von einem anderen ab.
+- **Konfiguration:** `knowledge/pattern_rules.toml` mit Parametern aller Muster.
+- **Validierung:** genug Kerzen, ungültige Muster, überlappende Muster,
+  ungültige Zeitreihen, NaN.
+- **Tests:** von 148 auf 197 erhöht (je Muster, Registry, Cache, Engine).
+  Testabdeckung der Pattern-Module 95 %.
+
+### Qualitätsprüfung
+
+Import-Zyklen: 0. Muster-Unabhängigkeit: 0 Verstöße. SOLID-Heuristik:
+0 Verstöße. Details in `HANDOVER.md`.
+
+### Hinweis
+
+Bewusst nicht enthalten: Strategy-, Score-, Risk- und Recommendation-Engine
+sowie Dashboard-Logik.
+
 ## [0.4.0] – 2026-07-08 – Sprint 4: Indicator Engine
 
 ### Hinzugefügt

@@ -147,6 +147,47 @@ das Projekt so aufgebaut ist, wie es ist.
   Änderungen, offen für Erweiterungen.
 - **Konsequenzen:** Ein Indikator ohne Registrierung wird nicht berechnet.
 
+### ADR-013 – Muster-Ergebnistypen in patterns/base.py
+
+- **Datum:** 2026-07-08
+- **Kontext:** Die Registry (in `engines`) importiert alle Muster; Muster
+  müssen ihren Ergebnistyp kennen. Läge `PatternResult` in `engines`, entstünde
+  ein Import-Zyklus `patterns → engines → patterns`.
+- **Entscheidung:** `PatternResult`, `PatternType` und `PatternDirection` liegen
+  in `patterns/base.py`; `engines/pattern_result.py` re-exportiert sie und
+  definiert zusätzlich das Aggregat `PatternReport`.
+- **Begründung:** Zyklenfreiheit bei gleichzeitig klarer Zuordnung (analog zu
+  `IndicatorOutput` in `indicators/base.py`).
+- **Konsequenzen:** Ein automatischer Check bestätigt: keine Zyklen, `patterns`
+  importiert nicht aus `engines`.
+
+### ADR-014 – Gemeinsame Struktur-/Swing-Helfer statt Muster-Abhängigkeiten
+
+- **Datum:** 2026-07-08
+- **Kontext:** BOS, CHoCH, Market Structure und Trend Structure benötigen
+  dieselbe Swing-/Struktur-Break-Logik; Equal Highs/Lows und Liquidity Sweep
+  benötigen Swings.
+- **Entscheidung:** Diese Hilfsmittel liegen in `patterns/base.py`; kein Muster
+  importiert ein anderes Muster.
+- **Begründung:** Erfüllt die Regel „kein Muster hängt von einem anderen ab"
+  ohne Code-Duplikate; die Klassifikation BOS vs. CHoCH ist an einer Stelle
+  definiert und getestet.
+- **Konsequenzen:** BOS/CHoCH filtern lediglich die Ereignisse des gemeinsamen
+  Helpers nach Typ.
+
+### ADR-015 – Beschreibende Strength/Confidence, keine Signale
+
+- **Datum:** 2026-07-08
+- **Kontext:** `PatternResult` trägt `strength` (0-100) und `confidence` (0-1).
+  Diese könnten als Handelssignal missverstanden werden.
+- **Entscheidung:** Beide sind rein **beschreibende** Kennzahlen der Erkennung
+  (z. B. Gap-Größe, Mitigations-Zustand), keine Kauf-/Verkaufsbewertung. Die
+  Skalierungskonstanten sind dokumentierte Algorithmus-Bestandteile; tunbare
+  Schwellen (Lookback, Toleranz, Mindest-Gap) stehen in TOML.
+- **Begründung:** Klare Trennung zwischen Beschreibung (Pattern Engine) und
+  Bewertung (spätere Strategy-/Score-Engine).
+- **Konsequenzen:** Die Pattern Engine bleibt frei von Handelslogik.
+
 ### ADR-005 – Logging zentral, idempotent, Konsole + Datei
 
 - **Datum:** 2026-07-08

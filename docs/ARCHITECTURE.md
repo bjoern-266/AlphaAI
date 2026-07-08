@@ -224,9 +224,57 @@ hartcodierten Indikatorparameter im Code.
 (in den Metadaten). Die tatsächliche Mehr-Zeitebenen-Berechnung ist damit
 **vorbereitet, aber noch nicht implementiert**.
 
+## Pattern Engine (umgesetzt in Sprint 5)
+
+Die Pattern Engine erkennt Chartmuster aus OHLCV-Daten. Sie trifft **keine**
+Handelsentscheidungen, erzeugt **keine** Scores und **keine** Signale.
+
+```
+IndicatorResult → PatternEngine → PatternReport (PatternResult je Muster) → Scanner
+                       │
+             Registry · Cache · patterns/
+```
+
+Hinweis: Die Muster arbeiten auf den rohen OHLCV-Daten. Ein optionales
+`IndicatorResult` kann übergeben werden (Architektur `IndicatorResult →
+PatternEngine`) und wird für spätere, kombinierte Muster in den Metadaten
+vermerkt.
+
+**Kernregel** (wie bei den Indikatoren): Jedes Muster liegt in einer eigenen
+Datei und ist **vollständig unabhängig** von den anderen. Gemeinsame
+Hilfsmittel (Swing-Erkennung, Struktur-Break-Erkennung) und die Ergebnistypen
+stehen in `patterns/base.py` – kein Muster hängt von einem anderen ab. Neue
+Muster werden ausschließlich über die `PatternRegistry` ergänzt.
+
+**Implementierte Muster (8):** FVG (bullish/bearish, fresh/partially/mitigated,
+Gap-Größe & -%), BOS, CHoCH, Equal Highs, Equal Lows, Liquidity Sweep, Market
+Structure, Trend Structure (HH/HL/LH/LL + Trend).
+
+**Vorbereitet, ohne Erkennung (3):** Order Block, Breaker Block, Mitigation
+Block (`implemented = False`; werden bei aktivierter Config als „vorbereitet"
+gemeldet).
+
+**Bausteine:**
+
+| Baustein          | Datei                          | Aufgabe                                        |
+|-------------------|--------------------------------|------------------------------------------------|
+| `BasePattern`     | `patterns/base.py`             | Schnittstelle, Typen, Hilfen (kein Muster)     |
+| 11 Muster         | `patterns/<name>.py`           | je ein Detektor                                |
+| `PatternResult`   | `patterns/base.py`             | ein erkanntes Muster (Name, Typ, Richtung, Strength 0-100, Confidence 0-1, Timestamp, Price Level, Metadata) |
+| `PatternReport`   | `engines/pattern_result.py`    | Aggregat + Lauf-Metadaten                      |
+| `PatternRegistry` | `engines/pattern_registry.py`  | Registrierung/Auflösung                        |
+| `PatternCache`    | `engines/pattern_cache.py`     | Cache erkannter Muster (FIFO)                  |
+| `PatternEngine`   | `engines/pattern_engine.py`    | Orchestrierung, Validierung, Cache             |
+
+**Validierung:** genug Kerzen, ungültige Muster (Parameterfehler), überlappende
+Muster (Zählung überlappender FVG-Zonen), ungültige Zeitreihen (Index nicht
+eindeutig/sortiert) sowie NaN in Schlusskursen.
+
+**Parameter:** ausschließlich aus `knowledge/pattern_rules.toml`.
+
 ## Aktueller Stand
 
-Sprint 1 lieferte das Fundament, Sprint 2 die Data Layer, Sprint 3 den Scanner
-Core, Sprint 4 die Indicator Engine. Es gibt bewusst weiterhin **keine Muster
-(FVG/BOS/CHoCH/Order Blocks), keine Score-Engine, keine Risk-Engine, keine
-Recommendation-Engine und keine Dashboard-Logik**.
+Sprint 1–5 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Engine, Pattern Engine). Es gibt bewusst weiterhin **keine Strategy-Engine,
+keine Score-Engine, keine Risk-Engine, keine Recommendation-Engine und keine
+Dashboard-Logik**.

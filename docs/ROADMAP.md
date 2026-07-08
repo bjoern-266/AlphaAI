@@ -37,11 +37,21 @@ Dokumentation, Basistests. Kein Scanner, keine Daten, keine Handelslogik.
 - 53 neue Tests (148 gesamt), Testabdeckung neuer Module 92 %.
 - Keine Muster, keine Scores, keine Signale.
 
-## Sprint 5 – Muster & Strategien (geplant)
+## Sprint 5 – Pattern Engine ✅ (abgeschlossen)
 
-- Kursmuster in `patterns/` (Regeln aus `pattern_rules.toml`).
-- Setup-Bewertung in `strategies/` (Regeln aus `strategy_rules.toml`).
-- Anbindung der Indikatorergebnisse an den Scanner (`ScanResult.indicators`).
+- 11 unabhängige Muster in `patterns/` (8 implementiert, 3 vorbereitet).
+- `PatternRegistry` (einzige Erweiterungsstelle), `PatternEngine`,
+  `PatternResult`/`PatternReport`, `PatternCache`.
+- Parameter aus `knowledge/pattern_rules.toml`.
+- 49 neue Tests (197 gesamt), Testabdeckung Pattern-Module 95 %.
+- Keine Scores, keine Signale, keine Handelsentscheidungen.
+
+## Sprint 6 – Strategien (geplant)
+
+- Setup-Bewertung in `strategies/` (Regeln aus `strategy_rules.toml`) auf Basis
+  von Indikator- und Muster-Ergebnissen.
+- Anbindung von Indikator-/Muster-Ergebnissen an den Scanner
+  (`ScanResult.indicators`/`.patterns`).
 
 ## Sprint 6 – Dashboard (geplant)
 
