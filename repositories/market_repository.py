@@ -61,11 +61,13 @@ class MarketRepository:
             cached = self._cache.get(cache_key)
             if cached is not None:
                 _logger.debug("Cache-Treffer für %s", cache_key)
+                cached.metadata["cache_hit"] = True
                 return cached
 
         _logger.debug("Lade Daten über Provider '%s' für %s", self._provider.name, cache_key)
         result = self._provider.fetch(request)
         self._validate_result(result, request)
+        result.metadata["cache_hit"] = False
 
         if request.use_cache and result.status in (MarketStatus.OK, MarketStatus.PARTIAL):
             category = CacheCategory.INTRADAY if request.is_intraday else CacheCategory.HISTORICAL

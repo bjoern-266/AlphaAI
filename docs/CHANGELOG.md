@@ -4,6 +4,37 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.3.0] – 2026-07-08 – Sprint 3: Scanner Core
+
+### Hinzugefügt
+
+- **Scanner Core** (reine Orchestrierung, keine Analyse):
+  - `scanner/scan_request.py` – `ScanRequest` (Markt, Universum, Symbole,
+    Provider, Timeframe, Interval, UseCache, RequestedFeatures, MaxWorkers) und
+    `build_scan_request` (Standards aus Konfiguration).
+  - `scanner/scan_result.py` – `ScanResult` je Symbol mit vorbereiteten, leeren
+    Analysefeldern (Indicators, Patterns, Score, Risk, Recommendation) sowie
+    `ScanReport`-Container.
+  - `scanner/scan_statistics.py` – `ScanStatistics` (Start/Ende, Laufzeit,
+    Symbolzahl, Provider, Cache-Treffer/-Fehltreffer, Fehler).
+  - `scanner/scan_pipeline.py` – `ScanPipeline` (Universum laden →
+    MarketDataEngine aufrufen → Daten sammeln → ScanResult erzeugen).
+  - `scanner/scanner_engine.py` – `ScannerEngine` (kennt nur die Pipeline;
+    Scan-Logging).
+  - `scanner/scanner_manager.py` – `ScannerManager` (Mehrfach-Scans, sequenziell;
+    Parallelisierung über `max_workers` vorbereitet).
+- **Konfiguration:** neuer `[scanner]`-Bereich (`max_workers`,
+  `requested_features`); `core/config.py` um `ScannerConfig` erweitert.
+- **Data Layer:** `MarketResult.metadata["cache_hit"]` gesetzt vom Repository
+  (Basis der Cache-Statistik).
+- **Tests:** von 68 auf 95 erhöht (Request, Result, Statistik, Pipeline, Engine,
+  Manager).
+
+### Hinweis
+
+Bewusst weiterhin nicht enthalten: Indikatoren (EMA/RSI/ATR/VWAP/MACD), Muster
+(FVG/BOS/CHoCH), Scores, Buy/Sell-Signale und Dashboard-Ansicht.
+
 ## [0.2.0] – 2026-07-08 – Sprint 2: Data Layer
 
 ### Hinzugefügt

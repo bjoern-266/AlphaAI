@@ -60,3 +60,14 @@ historical_ttl_seconds = 86400
 intraday_ttl_seconds = 300
 # Lebensdauer zwischengespeicherter Tickerlisten in Sekunden (Standard: 7 Tage).
 tickerlist_ttl_seconds = 604800
+
+# -----------------------------------------------------------------------------
+# Scanner Core (Sprint 3)
+# -----------------------------------------------------------------------------
+[scanner]
+# Vorbereitete maximale Worker-Anzahl. Aktuell erfolgt KEINE Parallelisierung;
+# der Wert wird nur in die Scan-Anfrage übernommen.
+max_workers = 4
+# Standardliste der später anzuwendenden Analysebausteine. Im Scanner Core
+# werden diese nur mitgeführt (nicht ausgeführt).
+requested_features = ["indicators", "patterns", "score", "risk", "recommendation"]

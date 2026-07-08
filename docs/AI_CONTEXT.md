@@ -52,9 +52,18 @@ kanonischem Schema (`open, high, low, close, adj_close, volume`). Objekte via
 Datenquellen: `BaseProvider` implementieren und in der `provider_factory`
 registrieren. Symbollisten ausschließlich in `config/universe.toml`.
 
+## Scanner Core (ab Sprint 3 verfügbar)
+
+Reine Orchestrierung, keine Analyse. Kette: `ScannerManager → ScannerEngine →
+ScanPipeline → MarketDataEngine`. `ScannerEngine` kennt nur die Pipeline. Ein
+Scan liefert ein `ScanReport` mit `ScanResult` je Symbol; dessen Analysefelder
+(`indicators`, `patterns`, `score`, `risk`, `recommendation`) sind vorbereitet
+und leer. Anfragen über `build_scan_request(settings, ...)`. Der spätere
+Analysecode befüllt die vorbereiteten Felder, ohne den Scanner umzubauen.
+
 ## Aktueller Stand
 
-Sprint 1 (Fundament) und Sprint 2 (Data Layer) sind abgeschlossen. Es gibt
-weiterhin keinen Scanner, keine Indikatoren, keine Scores und keine
-Handelslogik. Nächster Schritt: Sprint 3 (Analyse-Engines). Immer zuerst
-`PROJECT_STATUS.md` und `HANDOVER.md` lesen.
+Sprint 1 (Fundament), Sprint 2 (Data Layer) und Sprint 3 (Scanner Core) sind
+abgeschlossen. Es gibt weiterhin keine Indikatoren, keine Muster, keine Scores
+und keine Handelslogik. Nächster Schritt: Sprint 4 (Analyse-Engines). Immer
+zuerst `PROJECT_STATUS.md` und `HANDOVER.md` lesen.

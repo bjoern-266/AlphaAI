@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-08
-- **Abgeschlossener Sprint:** Sprint 2 – Data Layer
+- **Abgeschlossener Sprint:** Sprint 3 – Scanner Core
 - **Projektwurzel:** `AlphaAI/` (innerhalb des Repositorys `reiseplaner`)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 
@@ -17,28 +17,34 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 68 Tests).
+5. Tests ausführen: `pytest` (aktuell 95 Tests).
 
-## Data Layer – Kurzüberblick für die Weiterarbeit
-
-Die Schichten (jede kennt nur die darunterliegende):
+## Schichten (jede kennt nur die darunterliegende)
 
 ```
-MarketDataEngine  →  MarketRepository  →  Provider  →  externe Quelle
-                              │
-                        Cache + Validator
+ScannerManager → ScannerEngine → ScanPipeline → MarketDataEngine
+                                       │                 │
+                                 ScanStatistics    Repository → Provider
+                                                        │
+                                                  Cache + Validator
 ```
 
-- Einstieg für nachgelagerte Schichten ist **immer** die `MarketDataEngine`
-  (`data/market_data_engine.py`). Der spätere Scanner nutzt ausschließlich sie.
-- Ergebnis ist ein `MarketResult` mit kanonischem OHLCV-Schema
-  (Spalten `open, high, low, close, adj_close, volume`).
-- Objekte werden über `repository_factory.build_repository(settings)` erzeugt
-  (Composition Root). Provider, Cache-Uhr und Universums-Auflösung sind für
-  Tests injizierbar.
-- Neue Datenquelle hinzufügen: `BaseProvider` implementieren und in
-  `providers/provider_factory.py` registrieren.
-- Symbollisten werden nie im Code gepflegt, sondern in `config/universe.toml`.
+## Scanner Core – Kurzüberblick für die Weiterarbeit
+
+- Einstieg ist die `ScannerEngine.scan(request)` bzw. für mehrere Läufe der
+  `ScannerManager.scan_all(...)`.
+- Der Scanner Core macht **nur Orchestrierung** – keine Analyse. Die
+  Ergebnisfelder `indicators`, `patterns`, `score`, `risk`, `recommendation` im
+  `ScanResult` sind vorbereitet und werden ab Sprint 4 befüllt.
+- Verdrahtung (Composition Root) für einen lauffähigen Scanner:
+  1. `repository = build_repository(settings)` (Data Layer).
+  2. `engine = MarketDataEngine(repository, settings)`.
+  3. `pipeline = ScanPipeline(engine)`.
+  4. `scanner = ScannerEngine(pipeline)`.
+  5. optional `manager = ScannerManager(scanner, settings)`.
+- Anfragen bevorzugt über `build_scan_request(settings, ...)` erzeugen – füllt
+  `requested_features`/`max_workers` aus der Konfiguration.
+- `max_workers` ist vorbereitet, aber ungenutzt (noch keine Parallelisierung).
 
 ## Wichtige Konventionen (unbedingt einhalten)
 
@@ -54,6 +60,6 @@ MarketDataEngine  →  MarketRepository  →  Provider  →  externe Quelle
 
 ## Nächster geplanter Schritt
 
-**Sprint 3 – Analyse-Engines:** technische Indikatoren in `engines/` auf Basis
-der Data Layer, parametrisiert über `knowledge/indicator_rules.toml`. Details
-in `ROADMAP.md`.
+**Sprint 4 – Analyse-Engines / Indikatoren:** Berechnung technischer Indikatoren
+in `engines/` (parametrisiert über `knowledge/indicator_rules.toml`) und
+Befüllung von `ScanResult.indicators`. Details in `ROADMAP.md`.

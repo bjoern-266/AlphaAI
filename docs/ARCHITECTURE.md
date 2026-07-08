@@ -123,8 +123,60 @@ je eine eigene, in `[data.cache]` konfigurierte TTL.
 Zeitstempel (Fehler) sowie fehlende Kerzen (Warnung, da Wochenenden/Feiertage
 noch nicht kalendergenau berücksichtigt werden) und ungültige Symbolformate.
 
+## Scanner Core (umgesetzt in Sprint 3)
+
+Der Scanner Core ist reine **Orchestrierung** – er beschafft Marktdaten über
+die Data Layer und verpackt sie in Ergebnisobjekte. Er enthält **keine**
+Analyse (keine Indikatoren, Muster, Scores oder Handelsentscheidungen).
+
+```
+ScannerManager → ScannerEngine → ScanPipeline → MarketDataEngine → (Data Layer)
+                                       │
+                                 ScanStatistics
+```
+
+**Ablauf eines Scans (`ScanPipeline.run`):**
+
+1. Universum laden (falls angegeben) und mit expliziten Symbolen zusammenführen
+   (dedupliziert, Reihenfolge erhalten).
+2. Für jedes Symbol die `MarketDataEngine` aufrufen.
+3. Aus jedem `MarketResult` ein `ScanResult` je Symbol erzeugen (Status,
+   Rohdaten, Metadaten, Fehler).
+4. Statistik führen (Start/Ende/Laufzeit, Symbolzahl, Provider, Cache-Treffer/
+   -Fehltreffer, Fehler).
+
+**Schichtregeln:**
+
+- `ScannerEngine` kennt **ausschließlich** die `ScanPipeline` – keine Provider,
+  keine Repositories, keine Indikatoren. Sie ist zugleich der Ort für das
+  Scan-Logging (Start, Ende, Universum, Symbolzahl, Laufzeit, Warnungen, Fehler).
+- `ScanPipeline` kennt die `MarketDataEngine` und die Universums-Auflösung –
+  aber keine Provider/Repositories (die liegen in der Data Layer).
+- `ScannerManager` bereitet Läufe über mehrere Märkte/Universen/Zeiträume vor.
+  Aktuell **sequenziell**; `max_workers` ist vorbereitet, aber ungenutzt.
+
+**Bausteine:**
+
+| Baustein          | Datei                         | Aufgabe                                          |
+|-------------------|-------------------------------|--------------------------------------------------|
+| `ScanRequest`     | `scanner/scan_request.py`     | Unveränderliche Anfrage (Markt, Universum, …)    |
+| `ScanResult`      | `scanner/scan_result.py`      | Ergebnis je Symbol; Analysefelder vorbereitet    |
+| `ScanReport`      | `scanner/scan_result.py`      | Bündelt Einzelergebnisse + Statistik             |
+| `ScanStatistics`  | `scanner/scan_statistics.py`  | Kennzahlen des Laufs                             |
+| `ScanPipeline`    | `scanner/scan_pipeline.py`    | Orchestrierung (keine Analyse)                   |
+| `ScannerEngine`   | `scanner/scanner_engine.py`   | Einstiegspunkt, Logging; kennt nur die Pipeline  |
+| `ScannerManager`  | `scanner/scanner_manager.py`  | Mehrfach-Scans (sequenziell, Parallelisierung vorbereitet) |
+
+**Vorbereitete Analysefelder:** `ScanResult` trägt bereits `indicators`,
+`patterns`, `score`, `risk`, `recommendation` – im Scanner Core bewusst leer,
+Befüllung in späteren Sprints.
+
+**Cache-Statistik:** Das Repository markiert jedes `MarketResult` mit
+`metadata["cache_hit"]`; die Pipeline zählt daraus Treffer/Fehltreffer.
+
 ## Aktueller Stand
 
-Sprint 1 lieferte das Fundament, Sprint 2 die vollständige Data Layer. Es gibt
-bewusst weiterhin **keinen Scanner, keine Indikatoren (EMA/RSI/FVG), keine
-Scores und keine Handelslogik**.
+Sprint 1 lieferte das Fundament, Sprint 2 die Data Layer, Sprint 3 den Scanner
+Core (Orchestrierung). Es gibt bewusst weiterhin **keine Indikatoren
+(EMA/RSI/ATR/VWAP/MACD), keine Muster (FVG/BOS/CHoCH), keine Scores, keine
+Buy/Sell-Signale und keine Dashboard-Ansicht**.

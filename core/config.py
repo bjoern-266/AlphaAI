@@ -106,6 +106,23 @@ class DataConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class ScannerConfig:
+    """Einstellungen des Scanners.
+
+    Attributes:
+        max_workers: Vorbereitete maximale Anzahl paralleler Worker. Aktuell
+            findet keine Parallelisierung statt; der Wert wird lediglich in die
+            Anfrage übernommen.
+        requested_features: Standardliste der später anzuwendenden
+            Analysebausteine (z. B. ``"indicators"``, ``"patterns"``). Im
+            Scanner Core werden diese nur mitgeführt, nicht ausgeführt.
+    """
+
+    max_workers: int
+    requested_features: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class Settings:
     """Vollständige, validierte Projektkonfiguration.
 
@@ -118,6 +135,7 @@ class Settings:
         risk: Risikoparameter.
         trading_hours: Handelszeiten.
         data: Einstellungen der Data Layer.
+        scanner: Einstellungen des Scanners.
         markets: Liste der zu beobachtenden Märkte/Symbole.
     """
 
@@ -125,6 +143,7 @@ class Settings:
     risk: RiskConfig
     trading_hours: TradingHoursConfig
     data: DataConfig
+    scanner: ScannerConfig
     markets: list[str] = field(default_factory=list)
 
 
@@ -168,6 +187,8 @@ def _validate(settings: Settings) -> None:
     for ttl_name in ("historical_ttl_seconds", "intraday_ttl_seconds", "tickerlist_ttl_seconds"):
         if getattr(settings.data.cache, ttl_name) < 0:
             raise ConfigError(f"data.cache.{ttl_name} darf nicht negativ sein.")
+    if settings.scanner.max_workers < 1:
+        raise ConfigError("scanner.max_workers muss mindestens 1 sein.")
 
 
 def load_settings(path: Path | None = None) -> Settings:
@@ -198,6 +219,7 @@ def load_settings(path: Path | None = None) -> Settings:
     hours_raw = _require_section(data, "trading_hours")
     data_raw = _require_section(data, "data")
     cache_raw = _require_section(data_raw, "cache")
+    scanner_raw = _require_section(data, "scanner")
     markets_raw = _require_section(data, "markets")
 
     settings = Settings(
@@ -230,6 +252,12 @@ def load_settings(path: Path | None = None) -> Settings:
                 tickerlist_ttl_seconds=int(
                     _require(cache_raw, "tickerlist_ttl_seconds", "data.cache")
                 ),
+            ),
+        ),
+        scanner=ScannerConfig(
+            max_workers=int(_require(scanner_raw, "max_workers", "scanner")),
+            requested_features=tuple(
+                str(feature) for feature in _require(scanner_raw, "requested_features", "scanner")
             ),
         ),
         markets=list(_require(markets_raw, "symbols", "markets")),

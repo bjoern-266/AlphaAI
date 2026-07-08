@@ -38,6 +38,10 @@ historical_ttl_seconds = 86400
 intraday_ttl_seconds = 300
 tickerlist_ttl_seconds = 604800
 
+[scanner]
+max_workers = 4
+requested_features = ["indicators", "patterns"]
+
 [markets]
 symbols = ["AAPL", "MSFT"]
 """
@@ -64,6 +68,8 @@ def test_load_valid_settings(tmp_path: Path) -> None:
     assert settings.data.default_interval == "1d"
     assert settings.data.cache.enabled is True
     assert settings.data.cache.historical_ttl_seconds == 86400
+    assert settings.scanner.max_workers == 4
+    assert settings.scanner.requested_features == ("indicators", "patterns")
 
 
 def test_settings_are_immutable(tmp_path: Path) -> None:
@@ -104,6 +110,12 @@ def test_missing_data_section_raises(tmp_path: Path) -> None:
 def test_negative_cache_ttl_raises(tmp_path: Path) -> None:
     content = VALID_TOML.replace("historical_ttl_seconds = 86400", "historical_ttl_seconds = -1")
     with pytest.raises(ConfigError, match="historical_ttl_seconds"):
+        load_settings(_write(tmp_path, content))
+
+
+def test_invalid_max_workers_raises(tmp_path: Path) -> None:
+    content = VALID_TOML.replace("max_workers = 4", "max_workers = 0")
+    with pytest.raises(ConfigError, match="max_workers"):
         load_settings(_write(tmp_path, content))
 
 

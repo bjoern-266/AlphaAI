@@ -20,31 +20,39 @@ Dokumentation, Basistests. Kein Scanner, keine Daten, keine Handelslogik.
   vorbereitet) aus `config/universe.toml`.
 - 68 Tests. Kein Scanner, keine Indikatoren, keine Handelslogik.
 
-## Sprint 3 – Analyse-Engines (geplant)
+## Sprint 3 – Scanner Core ✅ (abgeschlossen)
+
+- `ScanRequest`/`ScanResult`/`ScanReport` und `ScanStatistics`.
+- `ScanPipeline` (reine Orchestrierung), `ScannerEngine` (kennt nur die
+  Pipeline), `ScannerManager` (Mehrfach-Scans, sequenziell).
+- Cache-Statistik über `metadata["cache_hit"]`; neuer `[scanner]`-Config-Bereich.
+- 27 neue Tests (95 gesamt). Keine Indikatoren, Muster, Scores oder Signale.
+
+## Sprint 4 – Analyse-Engines / Indikatoren (geplant)
 
 - Technische Indikatoren über `engines/` (Parameter aus
-  `knowledge/indicator_rules.toml`).
-- Verwendung von pandas / pandas-ta auf Basis der Data Layer.
+  `knowledge/indicator_rules.toml`), Befüllung des `ScanResult.indicators`.
+- Verwendung von pandas / pandas-ta auf Basis der vom Scanner gelieferten
+  Rohdaten.
 
-## Sprint 4 – Muster & Strategien (geplant)
+## Sprint 5 – Muster & Strategien (geplant)
 
 - Kursmuster in `patterns/` (Regeln aus `pattern_rules.toml`).
 - Setup-Bewertung in `strategies/` (Regeln aus `strategy_rules.toml`).
-- Scanner in `scanner/` zur Orchestrierung.
 
-## Sprint 5 – Dashboard (geplant)
+## Sprint 6 – Dashboard (geplant)
 
 - Streamlit-Oberfläche in `dashboard/`.
 - Charts mit Plotly.
 - Anzeige der Empfehlungen mit Begründung.
 
-## Sprint 6 – Persistenz & Lernfähigkeit (geplant)
+## Sprint 7 – Persistenz & Lernfähigkeit (geplant)
 
 - Speicherung von Analysen/Empfehlungen in SQLite (`database/`).
 - Nachkontrolle der Empfehlungen und Auswertung.
 - Rückspielung der Erkenntnisse in `knowledge/journal.md`.
 
-## Sprint 7 – API (geplant)
+## Sprint 8 – API (geplant)
 
 - FastAPI-Schnittstelle, um Analysen programmatisch abzurufen.
 
