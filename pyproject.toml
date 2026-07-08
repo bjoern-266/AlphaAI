@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alpha-ai"
+version = "0.1.0"
+description = "Alpha AI – modulare Daytrading-Analyseplattform (Analyse & Empfehlungen, kein Auto-Trading)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+authors = [{ name = "Alpha AI" }]
+
+# Laufzeit-Abhängigkeiten des Fundaments.
+# Analyse-, Daten- und UI-Bibliotheken werden erst in späteren Sprints
+# aktiviert, sind hier aber bereits versioniert festgehalten, damit die
+# Umgebung reproduzierbar bleibt.
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "streamlit>=1.33",
+    "plotly>=5.20",
+    "yfinance>=0.2.37",
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "pandas-ta>=0.3.14b0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "black>=24.3",
+    "ruff>=0.3",
+]
+
+[tool.setuptools]
+# Das Projekt ist als Sammlung von Paketen aufgebaut; explizite Angabe
+# verhindert, dass Laufzeit-Ordner (logs, output) als Pakete erkannt werden.
+packages = [
+    "core",
+    "data",
+    "providers",
+    "scanner",
+    "engines",
+    "patterns",
+    "strategies",
+    "dashboard",
+    "database",
+    "models",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/F  = pyflakes + pycodestyle, I = isort, UP = pyupgrade,
+# B    = bugbear, D = pydocstyle (Docstring-Pflicht), ANN = Type-Hint-Pflicht.
+select = ["E", "F", "I", "UP", "B", "D", "ANN"]
+ignore = [
+    "D203",    # 1 Leerzeile vor Klassendocstring (Konflikt mit D211)
+    "D213",    # Mehrzeiliger Docstring-Beginn (Konflikt mit D212)
+    "ANN401",  # 'Any' beim Parsen dynamischer TOML-Daten ist unvermeidbar
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests brauchen keine vollständigen Docstrings/Annotationen.
+"tests/*" = ["D", "ANN"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra -q"
+pythonpath = ["."]

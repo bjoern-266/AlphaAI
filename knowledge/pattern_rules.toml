@@ -1,0 +1,23 @@
+# =============================================================================
+# Muster-Regeln (Patterns)
+# =============================================================================
+# Definiert die zu erkennenden Kursmuster und deren Parameter. Im Fundament
+# (Sprint 1) sind noch keine aktiven Muster konfiguriert.
+#
+# Diese Datei legt das VERBINDLICHE FORMAT fest. Muster werden datengetrieben
+# gepflegt, nicht im Code hartcodiert.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Definitionen erkennbarer Kursmuster (Patterns)."
+
+# Format je Muster (Beispiel, hier noch nicht aktiv):
+#
+# [patterns.inside_bar]
+# enabled     = true
+# min_bars    = 2
+# description = "Innerer Balken innerhalb der Vorgängerkerze."
+
+[patterns]
+# Noch keine aktiven Muster – wird in einem späteren Sprint befüllt.

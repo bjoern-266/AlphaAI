@@ -1,0 +1,41 @@
+# =============================================================================
+# Alpha AI – Projektkonfiguration
+# =============================================================================
+# Diese Datei ist die einzige Quelle für einstellbare Parameter. Im Code
+# gibt es keine hartcodierten Werte. Alle Felder werden beim Laden von
+# core/config.py auf Vollständigkeit und Plausibilität geprüft.
+#
+# Hinweis: Alpha AI handelt NICHT automatisch. Die Risiko- und
+# Handelszeit-Angaben dienen ausschließlich der Analyse und der Erzeugung
+# nachvollziehbarer Empfehlungen.
+# =============================================================================
+
+[account]
+# Depotgröße in der unten angegebenen Währung.
+capital = 10000.0
+currency = "EUR"
+# Name des Brokers (dient der Dokumentation, keine API-Anbindung im Fundament).
+broker = "Beispiel Broker"
+# Erlaubt der Broker den Kauf von Bruchstücken (z. B. 0,5 Aktien)?
+fractional_shares = true
+
+[risk]
+# Anteil des Depots, der pro Trade riskiert wird (0.01 = 1 %).
+risk_per_trade_pct = 0.01
+# Maximale Anzahl gleichzeitig offener Positionen.
+max_open_positions = 5
+# Maximaler Tagesverlust als Depotanteil (0.03 = 3 %), ab dem keine neuen
+# Empfehlungen mehr erzeugt werden sollen.
+max_daily_loss_pct = 0.03
+
+[trading_hours]
+# Zeitzone der Handelszeiten (IANA-Name).
+timezone = "Europe/Berlin"
+# Sitzungsbeginn und -ende im Format "HH:MM".
+session_start = "09:00"
+session_end = "17:30"
+
+[markets]
+# Zu beobachtende Märkte/Symbole (yfinance-Notation).
+# Diese Liste dient als Ausgangspunkt und wird in späteren Sprints genutzt.
+symbols = ["AAPL", "MSFT", "SPY"]

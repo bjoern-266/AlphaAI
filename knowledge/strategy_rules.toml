@@ -1,0 +1,25 @@
+# =============================================================================
+# Strategie-Regeln
+# =============================================================================
+# Kombiniert Indikatoren und Muster zu bewerteten Setups. Im Fundament
+# (Sprint 1) sind noch keine aktiven Strategien konfiguriert.
+#
+# Diese Datei legt das VERBINDLICHE FORMAT fest. Schwellenwerte und
+# Gewichtungen leben hier, nicht im Code.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Bewertungsregeln für Handels-Setups (Analyse, kein Auto-Trading)."
+
+# Format je Strategie (Beispiel, hier noch nicht aktiv):
+#
+# [strategies.trend_pullback]
+# enabled           = true
+# min_confidence    = 0.6
+# required_patterns = ["inside_bar"]
+# required_trend    = "up"
+# description       = "Rücksetzer im übergeordneten Aufwärtstrend."
+
+[strategies]
+# Noch keine aktiven Strategien – wird in einem späteren Sprint befüllt.

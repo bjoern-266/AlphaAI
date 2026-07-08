@@ -1,0 +1,27 @@
+# =============================================================================
+# Indikator-Regeln
+# =============================================================================
+# Definiert die Parameter technischer Indikatoren. Im aktuellen Fundament
+# (Sprint 1) sind noch keine aktiven Indikatoren konfiguriert – die Engines
+# werden erst in einem späteren Sprint umgesetzt.
+#
+# Diese Datei legt das VERBINDLICHE FORMAT fest, damit spätere Erweiterungen
+# ohne Codeänderung möglich sind: Parameter leben hier, nicht im Code.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Parametersatz für technische Indikatoren (Engines)."
+
+# Format je Indikator (Beispiel, hier noch nicht aktiv):
+#
+# [indicators.rsi]
+# enabled = true
+# period  = 14
+#
+# [indicators.ema_fast]
+# enabled = true
+# period  = 20
+
+[indicators]
+# Noch keine aktiven Indikatoren – wird in einem späteren Sprint befüllt.
