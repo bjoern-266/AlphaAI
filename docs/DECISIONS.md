@@ -112,6 +112,41 @@ das Projekt so aufgebaut ist, wie es ist.
 - **Konsequenzen:** Die Vervollständigung großer Universen erfolgt in einem
   späteren Sprint über eine Konstituenten-Quelle.
 
+### ADR-010 – Indikatoren direkt mit pandas/numpy statt pandas-ta
+
+- **Datum:** 2026-07-08
+- **Kontext:** Der Tech-Stack nennt `pandas-ta`. In der Zielumgebung liegen
+  jedoch pandas 3.x und numpy 2.x vor; `pandas-ta` ist damit nicht kompatibel
+  (nutzt entfernte numpy-Symbole).
+- **Entscheidung:** Alle Indikatoren werden direkt mit pandas/numpy berechnet.
+- **Begründung:** Robustheit, keine defekte Abhängigkeit, volle Kontrolle über
+  die Formeln und die Unabhängigkeit der Indikatoren.
+- **Konsequenzen:** `pandas-ta` bleibt optional; die Indikator-Mathematik ist im
+  Projekt sichtbar und getestet.
+
+### ADR-011 – Indikator-Unabhängigkeit über gemeinsame Basis
+
+- **Datum:** 2026-07-08
+- **Kontext:** Kein Indikator darf von einem anderen abhängen; dennoch nutzen
+  ATR und ADX dieselbe True-Range-Berechnung.
+- **Entscheidung:** Gemeinsame Hilfsmittel (True Range, sichere Division,
+  Parameterprüfung) liegen in `indicators/base.py`; Indikatoren importieren nur
+  von dort, nie voneinander.
+- **Begründung:** Vermeidet Duplikate ohne die Unabhängigkeitsregel zu
+  verletzen; ein automatischer Check erzwingt die Regel.
+- **Konsequenzen:** `base.py` ist bewusst kein Indikator, sondern Infrastruktur.
+
+### ADR-012 – Registry als einzige Erweiterungsstelle
+
+- **Datum:** 2026-07-08
+- **Kontext:** Neue Indikatoren sollen ohne Eingriff in die Engine ergänzbar
+  sein.
+- **Entscheidung:** Die Engine kennt nur die `IndicatorRegistry`. Neue
+  Indikatoren werden dort registriert; Parameter kommen aus TOML.
+- **Begründung:** Open/Closed-Prinzip – die Engine bleibt geschlossen für
+  Änderungen, offen für Erweiterungen.
+- **Konsequenzen:** Ein Indikator ohne Registrierung wird nicht berechnet.
+
 ### ADR-005 – Logging zentral, idempotent, Konsole + Datei
 
 - **Datum:** 2026-07-08

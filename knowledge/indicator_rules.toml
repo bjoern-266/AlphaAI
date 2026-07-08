@@ -1,27 +1,70 @@
 # =============================================================================
 # Indikator-Regeln
 # =============================================================================
-# Definiert die Parameter technischer Indikatoren. Im aktuellen Fundament
-# (Sprint 1) sind noch keine aktiven Indikatoren konfiguriert – die Engines
-# werden erst in einem späteren Sprint umgesetzt.
+# Parameter aller technischen Indikatoren. Diese Datei ist die einzige Quelle
+# der Indikator-Parameter – im Code stehen keine hartcodierten Werte.
 #
-# Diese Datei legt das VERBINDLICHE FORMAT fest, damit spätere Erweiterungen
-# ohne Codeänderung möglich sind: Parameter leben hier, nicht im Code.
+# Jeder Abschnitt [indicators.<name>] beschreibt genau einen Indikator. Das
+# Feld "enabled" steuert, ob der Indikator berechnet wird. Alle übrigen Felder
+# sind die Parameter, die der jeweilige Indikator benötigt.
+#
+# Hinweis: Die Indikatoren berechnen ausschließlich Kennzahlen. Sie treffen
+# keine Handelsentscheidungen und erzeugen keine Scores oder Signale.
 # =============================================================================
 
 [meta]
-version = 1
-description = "Parametersatz für technische Indikatoren (Engines)."
+version = 2
+description = "Parametersatz für technische Indikatoren (Sprint 4)."
 
-# Format je Indikator (Beispiel, hier noch nicht aktiv):
-#
-# [indicators.rsi]
-# enabled = true
-# period  = 14
-#
-# [indicators.ema_fast]
-# enabled = true
-# period  = 20
+[validation]
+# Harte Untergrenze an Kerzen. Darunter gilt das Ergebnis als ungültig
+# (valid = false). Einzelne Indikatoren mit höherem Bedarf werden zusätzlich
+# übersprungen und als Warnung vermerkt.
+min_candles = 20
 
-[indicators]
-# Noch keine aktiven Indikatoren – wird in einem späteren Sprint befüllt.
+[indicators.ema]
+enabled = true
+periods = [20, 50, 200]
+
+[indicators.rsi]
+enabled = true
+period = 14
+
+[indicators.atr]
+enabled = true
+period = 14
+
+[indicators.vwap]
+enabled = true
+
+[indicators.macd]
+enabled = true
+fast = 12
+slow = 26
+signal = 9
+
+[indicators.relative_volume]
+enabled = true
+period = 20
+
+[indicators.adx]
+enabled = true
+period = 14
+
+[indicators.bollinger]
+enabled = true
+period = 20
+std_dev = 2.0
+
+[indicators.stochastic]
+enabled = true
+k_period = 14
+d_period = 3
+smooth_k = 3
+
+[indicators.obv]
+enabled = true
+
+[indicators.volume_profile]
+enabled = true
+bins = 20

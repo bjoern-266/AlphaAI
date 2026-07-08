@@ -43,6 +43,7 @@ packages = [
     "repositories",
     "scanner",
     "engines",
+    "indicators",
     "patterns",
     "strategies",
     "dashboard",

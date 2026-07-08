@@ -174,9 +174,59 @@ Befüllung in späteren Sprints.
 **Cache-Statistik:** Das Repository markiert jedes `MarketResult` mit
 `metadata["cache_hit"]`; die Pipeline zählt daraus Treffer/Fehltreffer.
 
+## Indicator Engine (umgesetzt in Sprint 4)
+
+Die Indicator Engine berechnet technische Indikatoren aus OHLCV-Daten. Sie
+trifft **keine** Handelsentscheidungen, erzeugt **keine** Scores und **keine**
+Signale.
+
+```
+MarketData → IndicatorEngine → IndicatorResult → Scanner (später)
+                  │
+      Registry · Cache · Indikatoren (indicators/)
+```
+
+**Kernregel:** Jeder Indikator liegt in einer eigenen Datei und ist
+**vollständig unabhängig** von den anderen. Ein Indikator liest nur rohe
+OHLCV-Daten, nie die Ausgabe eines anderen Indikators. Gemeinsame Hilfsmittel
+(z. B. True Range) stehen in `indicators/base.py` – das ist kein Indikator.
+
+**Erweiterbarkeit:** Neue Indikatoren werden ausschließlich über die
+`IndicatorRegistry` ergänzt (`register` bzw. `build_default_registry`). Die
+Engine kennt nur die Registry, nicht die einzelnen Indikatorklassen (Open/Closed
+Principle).
+
+**Bausteine:**
+
+| Baustein            | Datei                            | Aufgabe                                        |
+|---------------------|----------------------------------|------------------------------------------------|
+| `BaseIndicator`     | `indicators/base.py`             | Schnittstelle + Hilfsfunktionen (kein Indikator) |
+| 11 Indikatoren      | `indicators/<name>.py`           | EMA, RSI, ATR, VWAP, MACD, RelativeVolume, ADX, Bollinger, Stochastic, OBV, VolumeProfile |
+| `IndicatorRegistry` | `engines/indicator_registry.py`  | Registrierung/Auflösung der Indikatoren        |
+| `IndicatorResult`   | `engines/indicator_result.py`    | Aggregat mit typisierten Zugriffen (ema20 …)   |
+| `IndicatorCache`    | `engines/indicator_cache.py`     | Cache berechneter Ergebnisse (FIFO)            |
+| `IndicatorEngine`   | `engines/indicator_engine.py`    | Orchestrierung, Validierung, Cache             |
+
+**Ergebnis (`IndicatorResult`):** enthält je Indikator die volle Zeitreihe
+sowie bequeme Zugriffe (EMA20/50/200, RSI14, ATR14, VWAP, MACD/Signal/
+Histogramm, RelativeVolume, ADX, BollingerBands, Stochastic, OBV,
+VolumeProfile) plus `calculation_time`, `valid`, `warnings` und `metadata`.
+
+**Validierung:** genug Kerzen (global + je Indikator), NaN in Schlusskursen,
+Division durch Null (in den Indikatoren über `safe_divide` abgesichert),
+fehlende Volumendaten (volumenabhängige Indikatoren werden dann übersprungen)
+und zu wenig Historie.
+
+**Parameter:** ausschließlich aus `knowledge/indicator_rules.toml` – keine
+hartcodierten Indikatorparameter im Code.
+
+**Multi-Timeframe:** Die Engine nimmt bereits ein `timeframe`-Label entgegen
+(in den Metadaten). Die tatsächliche Mehr-Zeitebenen-Berechnung ist damit
+**vorbereitet, aber noch nicht implementiert**.
+
 ## Aktueller Stand
 
 Sprint 1 lieferte das Fundament, Sprint 2 die Data Layer, Sprint 3 den Scanner
-Core (Orchestrierung). Es gibt bewusst weiterhin **keine Indikatoren
-(EMA/RSI/ATR/VWAP/MACD), keine Muster (FVG/BOS/CHoCH), keine Scores, keine
-Buy/Sell-Signale und keine Dashboard-Ansicht**.
+Core, Sprint 4 die Indicator Engine. Es gibt bewusst weiterhin **keine Muster
+(FVG/BOS/CHoCH/Order Blocks), keine Score-Engine, keine Risk-Engine, keine
+Recommendation-Engine und keine Dashboard-Logik**.

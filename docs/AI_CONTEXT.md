@@ -61,9 +61,20 @@ Scan liefert ein `ScanReport` mit `ScanResult` je Symbol; dessen Analysefelder
 und leer. Anfragen über `build_scan_request(settings, ...)`. Der spätere
 Analysecode befüllt die vorbereiteten Felder, ohne den Scanner umzubauen.
 
+## Indicator Engine (ab Sprint 4 verfügbar)
+
+Berechnet technische Indikatoren, trifft aber keine Entscheidungen und erzeugt
+keine Scores/Signale. Kette: `MarketData → IndicatorEngine → IndicatorResult`.
+Jeder Indikator liegt in `indicators/<name>.py`, ist unabhängig und wird nur
+über die `IndicatorRegistry` (`engines/indicator_registry.py`) ergänzt.
+Parameter ausschließlich aus `knowledge/indicator_rules.toml`. Einstieg:
+`IndicatorEngine.from_config()`. Multi-Timeframe ist vorbereitet, nicht
+implementiert.
+
 ## Aktueller Stand
 
-Sprint 1 (Fundament), Sprint 2 (Data Layer) und Sprint 3 (Scanner Core) sind
-abgeschlossen. Es gibt weiterhin keine Indikatoren, keine Muster, keine Scores
-und keine Handelslogik. Nächster Schritt: Sprint 4 (Analyse-Engines). Immer
-zuerst `PROJECT_STATUS.md` und `HANDOVER.md` lesen.
+Sprint 1 (Fundament), Sprint 2 (Data Layer), Sprint 3 (Scanner Core) und
+Sprint 4 (Indicator Engine) sind abgeschlossen. Es gibt weiterhin keine Muster,
+keine Scores, keine Risk-/Recommendation-Engine und keine Handelslogik.
+Nächster Schritt: Sprint 5 (Muster & Strategien). Immer zuerst
+`PROJECT_STATUS.md` und `HANDOVER.md` lesen.

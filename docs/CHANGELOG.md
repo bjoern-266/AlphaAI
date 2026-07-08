@@ -4,6 +4,43 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.4.0] – 2026-07-08 – Sprint 4: Indicator Engine
+
+### Hinzugefügt
+
+- **Indicator Engine** (berechnet Kennzahlen, keine Entscheidungen/Scores/Signale):
+  - `engines/indicator_engine.py` – `IndicatorEngine` (Orchestrierung,
+    Validierung, optionaler Cache) + `load_indicator_rules`.
+  - `engines/indicator_registry.py` – `IndicatorRegistry` (einzige
+    Erweiterungsstelle) + `build_default_registry`.
+  - `engines/indicator_result.py` – `IndicatorResult` mit typisierten Zugriffen
+    (EMA20/50/200, RSI14, ATR14, VWAP, MACD/Signal/Histogramm, RelativeVolume,
+    ADX, BollingerBands, Stochastic, OBV, VolumeProfile) plus
+    `calculation_time`, `valid`, `warnings`, `metadata`.
+  - `engines/indicator_cache.py` – `IndicatorCache` (FIFO, Treffer-/Fehltreffer).
+- **11 unabhängige Indikatoren** in `indicators/` (je eigene Datei): `ema`,
+  `rsi`, `atr`, `vwap`, `macd`, `relative_volume`, `adx`, `bollinger`,
+  `stochastic`, `obv`, `volume_profile`; gemeinsame Schnittstelle/Hilfen in
+  `indicators/base.py`.
+- **Konfiguration:** `knowledge/indicator_rules.toml` mit Parametern aller
+  Indikatoren (keine Hardcodes im Code).
+- **Validierung:** genug Kerzen, NaN, Division durch Null (via `safe_divide`),
+  fehlende Volumendaten, zu wenig Historie.
+- **Multi-Timeframe:** Architektur vorbereitet (Timeframe-Label), nicht
+  implementiert.
+- **Tests:** von 95 auf 148 erhöht (je Indikator, Registry, Cache, Engine,
+  Validierung, Performance). Testabdeckung neuer Module 92 %.
+
+### Qualitätsprüfung
+
+Import-Zyklen: 0. Indikator-Unabhängigkeit: 0 Verstöße. SOLID-Heuristik:
+0 Verstöße. Details in `HANDOVER.md`.
+
+### Hinweis
+
+Bewusst nicht enthalten: FVG, BOS, CHoCH, Order Blocks, Score-/Risk-/
+Recommendation-Engine und Dashboard-Logik.
+
 ## [0.3.0] – 2026-07-08 – Sprint 3: Scanner Core
 
 ### Hinzugefügt

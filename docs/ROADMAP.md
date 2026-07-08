@@ -28,17 +28,20 @@ Dokumentation, Basistests. Kein Scanner, keine Daten, keine Handelslogik.
 - Cache-Statistik über `metadata["cache_hit"]`; neuer `[scanner]`-Config-Bereich.
 - 27 neue Tests (95 gesamt). Keine Indikatoren, Muster, Scores oder Signale.
 
-## Sprint 4 – Analyse-Engines / Indikatoren (geplant)
+## Sprint 4 – Indicator Engine ✅ (abgeschlossen)
 
-- Technische Indikatoren über `engines/` (Parameter aus
-  `knowledge/indicator_rules.toml`), Befüllung des `ScanResult.indicators`.
-- Verwendung von pandas / pandas-ta auf Basis der vom Scanner gelieferten
-  Rohdaten.
+- 11 unabhängige Indikatoren in `indicators/` (je eigene Datei).
+- `IndicatorRegistry` (einzige Erweiterungsstelle), `IndicatorEngine`,
+  `IndicatorResult`, `IndicatorCache`.
+- Parameter aus `knowledge/indicator_rules.toml`; Multi-Timeframe vorbereitet.
+- 53 neue Tests (148 gesamt), Testabdeckung neuer Module 92 %.
+- Keine Muster, keine Scores, keine Signale.
 
 ## Sprint 5 – Muster & Strategien (geplant)
 
 - Kursmuster in `patterns/` (Regeln aus `pattern_rules.toml`).
 - Setup-Bewertung in `strategies/` (Regeln aus `strategy_rules.toml`).
+- Anbindung der Indikatorergebnisse an den Scanner (`ScanResult.indicators`).
 
 ## Sprint 6 – Dashboard (geplant)
 

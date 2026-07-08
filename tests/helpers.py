@@ -71,6 +71,35 @@ class FakeClock:
         self._now += seconds
 
 
+def make_price_frame(
+    closes: list[float],
+    highs: list[float] | None = None,
+    lows: list[float] | None = None,
+    opens: list[float] | None = None,
+    volume: list[float] | None = None,
+    start: str = "2023-01-01",
+    freq: str = "D",
+) -> pd.DataFrame:
+    """Baut einen OHLCV-DataFrame im kanonischen Schema aus Schlusskursen.
+
+    High/Low/Open/Volume werden – falls nicht angegeben – aus den Schlusskursen
+    abgeleitet (High = Close + 1, Low = Close - 1, Open = Close, Volume = 1000).
+    """
+    n = len(closes)
+    index = pd.date_range(start=start, periods=n, freq=freq)
+    return pd.DataFrame(
+        {
+            "open": [float(v) for v in (opens if opens is not None else closes)],
+            "high": [float(v) for v in (highs if highs is not None else [c + 1 for c in closes])],
+            "low": [float(v) for v in (lows if lows is not None else [c - 1 for c in closes])],
+            "close": [float(v) for v in closes],
+            "adj_close": [float(v) for v in closes],
+            "volume": [float(v) for v in (volume if volume is not None else [1000.0] * n)],
+        },
+        index=index,
+    )
+
+
 def make_engine(
     download_fn: DownloadFn,
     settings: Settings,
