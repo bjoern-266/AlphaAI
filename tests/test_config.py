@@ -27,6 +27,17 @@ timezone = "Europe/Berlin"
 session_start = "09:00"
 session_end = "17:30"
 
+[data]
+default_provider = "yahoo"
+default_interval = "1d"
+default_timeframe = "6mo"
+
+[data.cache]
+enabled = true
+historical_ttl_seconds = 86400
+intraday_ttl_seconds = 300
+tickerlist_ttl_seconds = 604800
+
 [markets]
 symbols = ["AAPL", "MSFT"]
 """
@@ -49,6 +60,10 @@ def test_load_valid_settings(tmp_path: Path) -> None:
     assert settings.risk.max_open_positions == 5
     assert settings.trading_hours.timezone == "Europe/Berlin"
     assert settings.markets == ["AAPL", "MSFT"]
+    assert settings.data.default_provider == "yahoo"
+    assert settings.data.default_interval == "1d"
+    assert settings.data.cache.enabled is True
+    assert settings.data.cache.historical_ttl_seconds == 86400
 
 
 def test_settings_are_immutable(tmp_path: Path) -> None:
@@ -77,6 +92,18 @@ def test_invalid_risk_value_raises(tmp_path: Path) -> None:
 def test_empty_markets_raises(tmp_path: Path) -> None:
     content = VALID_TOML.replace('symbols = ["AAPL", "MSFT"]', "symbols = []")
     with pytest.raises(ConfigError, match="Markt"):
+        load_settings(_write(tmp_path, content))
+
+
+def test_missing_data_section_raises(tmp_path: Path) -> None:
+    content = VALID_TOML.replace("[data]", "[data_disabled]")
+    with pytest.raises(ConfigError, match=r"\[data\]"):
+        load_settings(_write(tmp_path, content))
+
+
+def test_negative_cache_ttl_raises(tmp_path: Path) -> None:
+    content = VALID_TOML.replace("historical_ttl_seconds = 86400", "historical_ttl_seconds = -1")
+    with pytest.raises(ConfigError, match="historical_ttl_seconds"):
         load_settings(_write(tmp_path, content))
 
 

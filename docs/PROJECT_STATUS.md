@@ -3,34 +3,57 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-08
-- **Aktueller Sprint:** Sprint 1 – Fundament
+- **Aktueller Sprint:** Sprint 2 – Data Layer
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
 
-- Vollständige, modulare Projektstruktur (`AlphaAI/`).
-- Konfigurations-System (`config/settings.toml` + `core/config.py`) mit
-  Validierung und typisierten, unveränderlichen Datenklassen.
-- Zentrale Pfadverwaltung (`core/paths.py`) – keine hartcodierten Pfade.
-- Einheitliches Logging (`core/logging_config.py`, Konsole + rotierende Datei).
-- Projektweite Fehlerklassen (`core/exceptions.py`).
-- Prüfskript `scripts/check_setup.py` (verifiziert das Fundament).
-- Wissensbasis in `knowledge/` (Regeln als Markdown, Parameter als TOML).
-- Vollständige Dokumentation in `docs/`.
-- Basistests mit pytest (Konfiguration, Logging, Struktur).
-- Werkzeugkonfiguration in `pyproject.toml` (Black, Ruff, pytest).
+### Fundament (Sprint 1)
+
+- Modulare Projektstruktur, Konfiguration, Logging, Fehlerklassen,
+  Wissensbasis, Dokumentation, Basistests.
+
+### Data Layer (Sprint 2)
+
+- **Anfrage/Ergebnis:** `MarketRequest` (unveränderlich, mit Cache-Schlüssel)
+  und `MarketResult` (kanonisches OHLCV-Schema inkl. Adjusted Close/Volume,
+  Status, Metadaten, Fehler).
+- **Provider:** `BaseProvider`-Schnittstelle und implementierter
+  `YahooProvider` (yfinance, mit injizierbarer Download-Funktion). Vorbereitet:
+  `finnhub`, `polygon`, `alphavantage`, `iex` (per Factory bekannt, ohne
+  Implementierung).
+- **Repository:** `MarketRepository` kapselt Provider, Cache und Validator.
+  `repository_factory` verdrahtet alles aus der Konfiguration.
+- **Engine:** `MarketDataEngine` als oberste, fachnahe Zugriffsschicht (kennt
+  ausschließlich das Repository).
+- **Cache:** `TTLCache` mit kategoriespezifischer TTL (historisch, intraday,
+  Tickerlisten), injizierbare Uhr.
+- **Validator:** Prüft NaN, nicht-positive Preise, doppelte/unsortierte
+  Zeitstempel, fehlende Kerzen (Warnung) und ungültige Symbole.
+- **Universe:** `config/universe.toml` + Loader für DAX, MDAX, SDAX, TecDAX,
+  S&P 500, Nasdaq-100, Russell 2000 sowie vorbereitetes ETF-Universum.
+- **Konfiguration:** neuer `[data]`-Bereich (Provider, Intervall, Zeitraum,
+  Cache-TTLs) – alles ausschließlich aus TOML.
+- **Tests:** 68 Tests (pytest), Ruff- und Black-konform.
 
 ## Was ist bewusst NICHT vorhanden
 
 - Kein Scanner.
-- Keine Datenquellen / APIs.
-- Keine Indikatoren / Engines.
-- Keine Muster- oder Strategielogik.
-- Kein Dashboard mit Inhalten.
+- Keine Indikatoren (EMA, RSI, FVG …).
+- Keine Muster-/Strategielogik, keine Scores.
+- Keine Handelsentscheidungen.
 
-Diese Teile folgen ab Sprint 2 (siehe `ROADMAP.md`).
+Diese Teile folgen ab Sprint 3 (siehe `ROADMAP.md`).
+
+## Qualitätsnachweis (Sprint 2)
+
+| Prüfung | Ergebnis |
+|---|---|
+| pytest  | 68 Tests bestanden |
+| Ruff    | keine Beanstandungen |
+| Black   | konform |
 
 ## Nächster Schritt
 
-Warten auf Freigabe für **Sprint 2 – Datenquellen** (Provider-Schnittstelle
-und Marktdatenzugriff).
+Warten auf Freigabe für **Sprint 3 – Analyse-Engines** (technische Indikatoren
+auf Basis der Data Layer).

@@ -9,18 +9,22 @@ Dokumentation.
 Projektstruktur, Konfiguration, Logging, Fehlerklassen, Wissensbasis,
 Dokumentation, Basistests. Kein Scanner, keine Daten, keine Handelslogik.
 
-## Sprint 2 – Datenquellen (geplant)
+## Sprint 2 – Data Layer ✅ (abgeschlossen)
 
-- Einheitliche Provider-Schnittstelle definieren.
-- Marktdatenzugriff über yfinance (mit Zwischenspeicherung).
-- Datenmodelle für Kursreihen in `data/` und `models/`.
-- Tests für den Datenzugriff.
+- Einheitliche Provider-Schnittstelle (`BaseProvider`) und `YahooProvider`.
+- Weitere Provider vorbereitet (Finnhub, Polygon, AlphaVantage, IEX).
+- `MarketRequest`/`MarketResult` mit kanonischem OHLCV-Schema.
+- `MarketRepository` (Provider + Cache + Validator) und `MarketDataEngine`.
+- `TTLCache` mit kategoriespezifischer TTL; Validator für Datenqualität.
+- Universen (DAX/MDAX/SDAX/TecDAX, S&P 500/Nasdaq-100/Russell 2000, ETF
+  vorbereitet) aus `config/universe.toml`.
+- 68 Tests. Kein Scanner, keine Indikatoren, keine Handelslogik.
 
 ## Sprint 3 – Analyse-Engines (geplant)
 
 - Technische Indikatoren über `engines/` (Parameter aus
   `knowledge/indicator_rules.toml`).
-- Verwendung von pandas / pandas-ta.
+- Verwendung von pandas / pandas-ta auf Basis der Data Layer.
 
 ## Sprint 4 – Muster & Strategien (geplant)
 

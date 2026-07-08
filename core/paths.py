@@ -23,6 +23,7 @@ DATABASE_DIR: Path = PROJECT_ROOT / "database"
 
 # Standard-Dateipfade.
 SETTINGS_FILE: Path = CONFIG_DIR / "settings.toml"
+UNIVERSE_FILE: Path = CONFIG_DIR / "universe.toml"
 LOG_FILE: Path = LOGS_DIR / "alpha_ai.log"
 
 

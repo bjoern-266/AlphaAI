@@ -42,9 +42,19 @@ Details in `ARCHITECTURE.md`.
 - Technische Grundlagen: `core/`.
 - Dokumentation & Historie: `docs/`.
 
+## Data Layer (ab Sprint 2 verfügbar)
+
+Zugriff auf Marktdaten immer über die `MarketDataEngine`
+(`data/market_data_engine.py`). Kette: `Engine → Repository → Provider`, mit
+`Cache` und `Validator` im Repository. Ergebnis ist ein `MarketResult` mit
+kanonischem Schema (`open, high, low, close, adj_close, volume`). Objekte via
+`repositories.repository_factory.build_repository(settings)` erzeugen. Neue
+Datenquellen: `BaseProvider` implementieren und in der `provider_factory`
+registrieren. Symbollisten ausschließlich in `config/universe.toml`.
+
 ## Aktueller Stand
 
-Sprint 1 (Fundament) ist abgeschlossen. Es gibt noch keinen Scanner, keine
-Datenquellen, keine Indikatoren und keine Handelslogik. Nächster Schritt:
-Sprint 2 (Datenquellen). Immer zuerst `PROJECT_STATUS.md` und `HANDOVER.md`
-lesen.
+Sprint 1 (Fundament) und Sprint 2 (Data Layer) sind abgeschlossen. Es gibt
+weiterhin keinen Scanner, keine Indikatoren, keine Scores und keine
+Handelslogik. Nächster Schritt: Sprint 3 (Analyse-Engines). Immer zuerst
+`PROJECT_STATUS.md` und `HANDOVER.md` lesen.

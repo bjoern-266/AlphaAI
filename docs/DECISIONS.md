@@ -61,6 +61,57 @@ das Projekt so aufgebaut ist, wie es ist.
 - **Konsequenzen:** Der spätere Code liest diese Dateien; das Format ist in
   Sprint 1 bereits festgelegt.
 
+### ADR-006 – Kanonisches OHLCV-Schema im MarketResult
+
+- **Datum:** 2026-07-08
+- **Kontext:** Verschiedene Provider liefern Kursdaten in unterschiedlichen
+  Formaten (Spaltennamen, MultiIndex).
+- **Entscheidung:** Jeder Provider normalisiert auf ein festes Schema
+  (`open, high, low, close, adj_close, volume`, DatetimeIndex).
+- **Begründung:** Nachgelagerte Schichten (Engines, Scanner) bleiben
+  provider-unabhängig und einfach.
+- **Konsequenzen:** Normalisierung ist Aufgabe des Providers; das Schema ist in
+  `data/market_result.py` zentral definiert.
+
+### ADR-007 – Dependency Injection für Netzwerk und Zeit
+
+- **Datum:** 2026-07-08
+- **Kontext:** Marktdaten (Netzwerk) und Cache-Ablauf (Zeit) sind schwer
+  testbar, wenn sie fest verdrahtet sind.
+- **Entscheidung:** Download-Funktion des Providers und Uhr des Caches sind
+  injizierbar; Standardwerte greifen im Normalbetrieb.
+- **Begründung:** Die gesamte Data Layer ist ohne echtes Netzwerk und ohne
+  echtes Warten testbar (68 schnelle Tests).
+- **Konsequenzen:** yfinance wird nur in der Standard-Download-Funktion und
+  verzögert importiert.
+
+### ADR-008 – Weitere Provider vorbereiten statt leer implementieren
+
+- **Datum:** 2026-07-08
+- **Kontext:** Finnhub, Polygon, AlphaVantage und IEX sollen vorbereitet, aber
+  nicht implementiert werden.
+- **Entscheidung:** Diese Provider sind in der Factory als „geplant" registriert
+  und lösen beim Abruf einen klaren `ProviderNotImplementedError` aus – statt
+  leerer Stub-Klassen.
+- **Begründung:** Vermeidet Dummy-Code und stillschweigend falsche Ergebnisse;
+  die Erweiterbarkeit ist dennoch dokumentiert und sichtbar.
+- **Konsequenzen:** Implementierung erfordert später nur eine neue
+  Provider-Klasse plus Registrierung.
+
+### ADR-009 – Universen datengetrieben, mit Ehrlichkeits-Flag
+
+- **Datum:** 2026-07-08
+- **Kontext:** Vollständige Indexzusammensetzungen (v. a. S&P 500,
+  Russell 2000) sind umfangreich und ändern sich; falsche „vollständige" Listen
+  wären irreführend.
+- **Entscheidung:** Universen stehen in `config/universe.toml`; jedes trägt ein
+  Feld `complete`. Nur nachweislich vollständige Listen (DAX) sind als
+  vollständig markiert, alle anderen als kuratierte Startliste.
+- **Begründung:** Keine Hardcodes im Code, Anpassbarkeit ohne Programmierung und
+  ehrliche Kennzeichnung der Datenqualität.
+- **Konsequenzen:** Die Vervollständigung großer Universen erfolgt in einem
+  späteren Sprint über eine Konstituenten-Quelle.
+
 ### ADR-005 – Logging zentral, idempotent, Konsole + Datei
 
 - **Datum:** 2026-07-08

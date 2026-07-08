@@ -68,8 +68,63 @@ Regeln und Parameter der Analyse leben in `knowledge/` (Markdown für
 Erklärungen, TOML für Parameter). Dadurch lassen sich Indikatoren, Muster und
 Strategien anpassen, ohne Programmcode zu ändern.
 
+## Data Layer (umgesetzt in Sprint 2)
+
+Die Data Layer beschafft, prüft und cached Marktdaten. Sie ist strikt
+geschichtet; jede Ebene kennt nur die direkt darunterliegende:
+
+```
+MarketDataEngine  →  MarketRepository  →  Provider  →  (externe Quelle)
+                              │
+                        Cache + Validator
+```
+
+**Datenfluss einer Anfrage:**
+
+1. Ein `MarketRequest` (Symbole, Zeitraum, Intervall, Markt, Cache-Flag)
+   beschreibt die Anfrage unveränderlich.
+2. Die `MarketDataEngine` ergänzt Standardwerte aus der Konfiguration und löst
+   bei Bedarf ein Universum in Symbole auf.
+3. Das `MarketRepository` prüft zuerst den `TTLCache`. Bei Fehltreffer lädt es
+   über den `Provider`, validiert das Ergebnis und legt brauchbare Daten im
+   Cache ab.
+4. Das Resultat ist ein `MarketResult` mit kanonischem OHLCV-Schema, Status
+   (`OK`/`PARTIAL`/`EMPTY`/`ERROR`), Metadaten und Fehlerliste.
+
+**Bausteine:**
+
+| Baustein            | Datei                                   | Aufgabe                                              |
+|---------------------|-----------------------------------------|------------------------------------------------------|
+| `MarketRequest`     | `data/market_request.py`                | Unveränderliche Anfrage inkl. Cache-Schlüssel        |
+| `MarketResult`      | `data/market_result.py`                 | Ergebnis mit festem OHLCV-Schema und Status          |
+| `TTLCache`          | `data/cache.py`                         | Cache mit kategoriespezifischer TTL                  |
+| `MarketDataValidator` | `data/validator.py`                   | Qualitätsprüfung (zerstörungsfrei)                   |
+| `Universe`          | `data/universe.py`                      | Symbollisten je Markt (aus `config/universe.toml`)   |
+| `BaseProvider`      | `providers/base_provider.py`            | Gemeinsame Provider-Schnittstelle                    |
+| `YahooProvider`     | `providers/yahoo_provider.py`           | Yahoo-Finance-Quelle (yfinance)                      |
+| `provider_factory`  | `providers/provider_factory.py`         | Provider-Erzeugung nach Name                         |
+| `MarketRepository`  | `repositories/market_repository.py`     | Kapselt Provider + Cache + Validator                 |
+| `repository_factory`| `repositories/repository_factory.py`    | Verdrahtung aus der Konfiguration (Composition Root) |
+| `MarketDataEngine`  | `data/market_data_engine.py`            | Fachnahe Zugriffsschicht (kennt nur das Repository)  |
+
+**Provider-Strategie:** Implementiert ist `yahoo`. Vorbereitet (per Factory
+bekannt, aber bewusst nicht implementiert) sind `finnhub`, `polygon`,
+`alphavantage`, `iex`; ihr Abruf löst einen klaren Fehler aus, statt falsche
+Daten zu liefern.
+
+**Testbarkeit durch Dependency Injection:** Netzwerk (Download-Funktion) und
+Zeit (Cache-Uhr) sind injizierbar. Dadurch ist die gesamte Data Layer ohne
+echte Netzwerkverbindung und ohne Warten testbar.
+
+**Cache-Kategorien:** historische Daten, Intraday-Daten und Tickerlisten haben
+je eine eigene, in `[data.cache]` konfigurierte TTL.
+
+**Validator-Prüfungen:** NaN, nicht-positive Preise, doppelte/unsortierte
+Zeitstempel (Fehler) sowie fehlende Kerzen (Warnung, da Wochenenden/Feiertage
+noch nicht kalendergenau berücksichtigt werden) und ungültige Symbolformate.
+
 ## Aktueller Stand
 
-Sprint 1 liefert ausschließlich das Fundament (Struktur, Konfiguration,
-Logging, Tests, Dokumentation). Es gibt bewusst noch **keinen Scanner, keine
-Datenquellen, keine Indikatoren und keine Handelslogik**.
+Sprint 1 lieferte das Fundament, Sprint 2 die vollständige Data Layer. Es gibt
+bewusst weiterhin **keinen Scanner, keine Indikatoren (EMA/RSI/FVG), keine
+Scores und keine Handelslogik**.

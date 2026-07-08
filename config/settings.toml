@@ -39,3 +39,24 @@ session_end = "17:30"
 # Zu beobachtende Märkte/Symbole (yfinance-Notation).
 # Diese Liste dient als Ausgangspunkt und wird in späteren Sprints genutzt.
 symbols = ["AAPL", "MSFT", "SPY"]
+
+# -----------------------------------------------------------------------------
+# Data Layer (Sprint 2)
+# -----------------------------------------------------------------------------
+[data]
+# Standard-Datenquelle. Aktuell ist ausschließlich "yahoo" implementiert.
+default_provider = "yahoo"
+# Standard-Kerzenintervall (z. B. "1d", "1h", "5m").
+default_interval = "1d"
+# Standard-Zeitraum/Rückschau (z. B. "6mo", "1y", "max").
+default_timeframe = "6mo"
+
+[data.cache]
+# Ob der Marktdaten-Cache verwendet wird.
+enabled = true
+# Lebensdauer (TTL) historischer Tagesdaten in Sekunden (Standard: 1 Tag).
+historical_ttl_seconds = 86400
+# Lebensdauer von Intraday-Daten in Sekunden (Standard: 5 Minuten).
+intraday_ttl_seconds = 300
+# Lebensdauer zwischengespeicherter Tickerlisten in Sekunden (Standard: 7 Tage).
+tickerlist_ttl_seconds = 604800

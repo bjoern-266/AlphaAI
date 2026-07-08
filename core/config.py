@@ -72,6 +72,40 @@ class TradingHoursConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class CacheConfig:
+    """Einstellungen für den Marktdaten-Cache.
+
+    Attributes:
+        enabled: Ob der Cache grundsätzlich verwendet wird.
+        historical_ttl_seconds: Lebensdauer historischer (Tages-)Daten.
+        intraday_ttl_seconds: Lebensdauer von Intraday-Daten.
+        tickerlist_ttl_seconds: Lebensdauer zwischengespeicherter Tickerlisten.
+    """
+
+    enabled: bool
+    historical_ttl_seconds: int
+    intraday_ttl_seconds: int
+    tickerlist_ttl_seconds: int
+
+
+@dataclass(frozen=True, slots=True)
+class DataConfig:
+    """Einstellungen der Data Layer.
+
+    Attributes:
+        default_provider: Name des standardmäßig genutzten Providers.
+        default_interval: Standard-Kerzenintervall (z. B. ``"1d"``).
+        default_timeframe: Standard-Zeitraum/Rückschau (z. B. ``"6mo"``).
+        cache: Cache-Einstellungen.
+    """
+
+    default_provider: str
+    default_interval: str
+    default_timeframe: str
+    cache: CacheConfig
+
+
+@dataclass(frozen=True, slots=True)
 class Settings:
     """Vollständige, validierte Projektkonfiguration.
 
@@ -83,12 +117,14 @@ class Settings:
         account: Depot- und Broker-Angaben.
         risk: Risikoparameter.
         trading_hours: Handelszeiten.
+        data: Einstellungen der Data Layer.
         markets: Liste der zu beobachtenden Märkte/Symbole.
     """
 
     account: AccountConfig
     risk: RiskConfig
     trading_hours: TradingHoursConfig
+    data: DataConfig
     markets: list[str] = field(default_factory=list)
 
 
@@ -123,6 +159,15 @@ def _validate(settings: Settings) -> None:
         raise ConfigError("risk.max_open_positions muss mindestens 1 sein.")
     if not settings.markets:
         raise ConfigError("Es muss mindestens ein Markt in [markets].symbols konfiguriert sein.")
+    if not settings.data.default_provider:
+        raise ConfigError("data.default_provider darf nicht leer sein.")
+    if not settings.data.default_interval:
+        raise ConfigError("data.default_interval darf nicht leer sein.")
+    if not settings.data.default_timeframe:
+        raise ConfigError("data.default_timeframe darf nicht leer sein.")
+    for ttl_name in ("historical_ttl_seconds", "intraday_ttl_seconds", "tickerlist_ttl_seconds"):
+        if getattr(settings.data.cache, ttl_name) < 0:
+            raise ConfigError(f"data.cache.{ttl_name} darf nicht negativ sein.")
 
 
 def load_settings(path: Path | None = None) -> Settings:
@@ -151,6 +196,8 @@ def load_settings(path: Path | None = None) -> Settings:
     account_raw = _require_section(data, "account")
     risk_raw = _require_section(data, "risk")
     hours_raw = _require_section(data, "trading_hours")
+    data_raw = _require_section(data, "data")
+    cache_raw = _require_section(data_raw, "cache")
     markets_raw = _require_section(data, "markets")
 
     settings = Settings(
@@ -169,6 +216,21 @@ def load_settings(path: Path | None = None) -> Settings:
             timezone=str(_require(hours_raw, "timezone", "trading_hours")),
             session_start=str(_require(hours_raw, "session_start", "trading_hours")),
             session_end=str(_require(hours_raw, "session_end", "trading_hours")),
+        ),
+        data=DataConfig(
+            default_provider=str(_require(data_raw, "default_provider", "data")),
+            default_interval=str(_require(data_raw, "default_interval", "data")),
+            default_timeframe=str(_require(data_raw, "default_timeframe", "data")),
+            cache=CacheConfig(
+                enabled=bool(_require(cache_raw, "enabled", "data.cache")),
+                historical_ttl_seconds=int(
+                    _require(cache_raw, "historical_ttl_seconds", "data.cache")
+                ),
+                intraday_ttl_seconds=int(_require(cache_raw, "intraday_ttl_seconds", "data.cache")),
+                tickerlist_ttl_seconds=int(
+                    _require(cache_raw, "tickerlist_ttl_seconds", "data.cache")
+                ),
+            ),
         ),
         markets=list(_require(markets_raw, "symbols", "markets")),
     )

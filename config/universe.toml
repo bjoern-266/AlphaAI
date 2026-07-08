@@ -1,0 +1,95 @@
+# =============================================================================
+# Alpha AI – Handelsuniversen
+# =============================================================================
+# Definiert die auswählbaren Märkte/Universen. Die Symbole stehen
+# ausschließlich hier (nicht im Code), sodass Universen ohne Programmier-
+# kenntnisse angepasst werden können.
+#
+# Feld "complete":
+#   true  = vollständige Indexzusammensetzung.
+#   false = kuratierte Startliste (Seed), die in einem späteren Sprint über
+#           eine Konstituenten-Quelle vervollständigt wird. Bewusst ehrlich
+#           gekennzeichnet, damit keine unvollständige Liste als vollständig
+#           missverstanden wird.
+#
+# "suffix" ist das an Yahoo-Symbole anzuhängende Börsenkürzel (z. B. ".DE").
+# =============================================================================
+
+# ------------------------------- Deutschland ---------------------------------
+[universes.dax]
+name = "DAX"
+region = "DE"
+suffix = ".DE"
+complete = true
+description = "Deutscher Leitindex (40 Werte)."
+symbols = [
+  "ADS", "AIR", "ALV", "BAS", "BAYN", "BEI", "BMW", "BNR", "CBK", "CON",
+  "1COV", "DBK", "DB1", "DHL", "DTE", "DTG", "EOAN", "FRE", "HeN", "HEI",
+  "HNR1", "IFX", "MBG", "MRK", "MTX", "MUV2", "P911", "PAH3", "QIA", "RHM",
+  "RWE", "SAP", "SHL", "SIE", "SRT3", "SY1", "VNA", "VOW3", "ZAL", "ENR",
+]
+
+[universes.mdax]
+name = "MDAX"
+region = "DE"
+suffix = ".DE"
+complete = false
+description = "Mittelgroße deutsche Werte – kuratierte Startliste."
+symbols = ["AIXA", "NDA", "EVK", "FRA", "G1A", "LHA", "LXS", "NEM", "TLX", "WCH"]
+
+[universes.sdax]
+name = "SDAX"
+region = "DE"
+suffix = ".DE"
+complete = false
+description = "Kleinere deutsche Werte – kuratierte Startliste."
+symbols = ["DEZ", "DWNI", "GXI", "KGX", "SAX", "SZG", "S92", "COK", "PSM", "VBK"]
+
+[universes.tecdax]
+name = "TecDAX"
+region = "DE"
+suffix = ".DE"
+complete = false
+description = "Deutsche Technologiewerte – kuratierte Startliste."
+symbols = ["SAP", "IFX", "DTE", "SHL", "QIA", "NEM", "AIXA", "EVT", "PSM", "JEN"]
+
+# ---------------------------------- USA --------------------------------------
+[universes.sp500]
+name = "S&P 500"
+region = "US"
+suffix = ""
+complete = false
+description = "US-Standardwerte – kuratierte Startliste."
+symbols = [
+  "AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "META", "BRK-B", "JPM", "JNJ", "V",
+  "PG", "UNH", "HD", "MA", "XOM", "KO", "PEP", "COST", "WMT", "DIS",
+]
+
+[universes.nasdaq100]
+name = "Nasdaq-100"
+region = "US"
+suffix = ""
+complete = false
+description = "Große US-Technologiewerte – kuratierte Startliste."
+symbols = [
+  "AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "META", "TSLA", "AVGO", "PEP", "COST",
+  "ADBE", "NFLX", "AMD", "INTC", "CSCO", "QCOM", "TXN", "AMAT", "MU", "PYPL",
+]
+
+[universes.russell2000]
+name = "Russell 2000"
+region = "US"
+suffix = ""
+complete = false
+description = "US-Nebenwerte – kuratierte Startliste."
+symbols = ["SMCI", "MSTR", "FIX", "ANF", "CVLT", "CROX", "ELF", "RMBS", "SPSC", "FN"]
+
+# ---------------------------------- ETF --------------------------------------
+# Vorbereitet: Struktur vorhanden, Inhalte folgen in einem späteren Sprint.
+[universes.etf]
+name = "ETF (vorbereitet)"
+region = "GLOBAL"
+suffix = ""
+complete = false
+description = "Platzhalter-Universum für ETFs. Wird später befüllt."
+symbols = []
