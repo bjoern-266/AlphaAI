@@ -83,9 +83,21 @@ Parameter ausschließlich aus `knowledge/pattern_rules.toml`. Einstieg:
 Highs/Lows, Liquidity Sweep, Market/Trend Structure), 3 vorbereitet (Order/
 Breaker/Mitigation Block).
 
+## Strategy Engine (ab Sprint 6 verfügbar)
+
+Kombiniert Indikatoren und Muster zu objektiven Hypothesen, trifft aber keine
+Kauf-/Verkaufsentscheidung und vergibt keinen Gesamtscore. Kette:
+`IndicatorResult + PatternReport → StrategyEngine → StrategyReport`. Jede
+Strategie liegt in `strategies/<name>.py`, ist unabhängig und wird nur über die
+`StrategyRegistry` (`engines/strategy_registry.py`) ergänzt. Ergebnistypen
+(`StrategyResult`) liegen in `strategies/base.py` (vermeidet Import-Zyklen).
+Parameter ausschließlich aus `knowledge/strategy_rules.toml`. Einstieg:
+`StrategyEngine.from_config()`. 5 Strategien: fvg_strategy, trend_following,
+momentum_strategy, breakout_strategy, mean_reversion.
+
 ## Aktueller Stand
 
-Sprint 1–5 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
-Engine, Pattern Engine). Es gibt weiterhin keine Strategy-/Score-/Risk-/
-Recommendation-Engine und keine Handelslogik. Nächster Schritt: Sprint 6
-(Strategien). Immer zuerst `PROJECT_STATUS.md` und `HANDOVER.md` lesen.
+Sprint 1–6 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Engine, Pattern Engine, Strategy Engine). Es gibt weiterhin keine Score-/Risk-/
+Recommendation-Engine und keine Handelslogik. Nächster Schritt: Sprint 7 (Score
+Engine). Immer zuerst `PROJECT_STATUS.md` und `HANDOVER.md` lesen.

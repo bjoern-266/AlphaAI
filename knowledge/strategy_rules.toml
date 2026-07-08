@@ -1,25 +1,50 @@
 # =============================================================================
 # Strategie-Regeln
 # =============================================================================
-# Kombiniert Indikatoren und Muster zu bewerteten Setups. Im Fundament
-# (Sprint 1) sind noch keine aktiven Strategien konfiguriert.
+# Parameter aller Strategien. Diese Datei ist die einzige Quelle der
+# Strategie-Parameter – im Code stehen keine hartcodierten Schwellenwerte.
 #
-# Diese Datei legt das VERBINDLICHE FORMAT fest. Schwellenwerte und
-# Gewichtungen leben hier, nicht im Code.
+# Jeder Abschnitt [strategies.<name>] beschreibt genau eine Strategie. Das Feld
+# "enabled" steuert, ob die Strategie ausgewertet wird. "base_confidence" ist
+# das der Strategie innewohnende Vertrauen (0..1) in ihre Hypothese.
+#
+# Wichtig: Strategien kombinieren Indikatoren und Muster zu objektiven
+# HYPOTHESEN. Sie treffen keine Kauf-/Verkaufsentscheidung und vergeben keinen
+# Gesamtscore. Strength/Confidence sind beschreibende Kennzahlen der Hypothese.
 # =============================================================================
 
 [meta]
 version = 1
-description = "Bewertungsregeln für Handels-Setups (Analyse, kein Auto-Trading)."
+description = "Parametersatz für Handelshypothesen (Sprint 6)."
 
-# Format je Strategie (Beispiel, hier noch nicht aktiv):
-#
-# [strategies.trend_pullback]
-# enabled           = true
-# min_confidence    = 0.6
-# required_patterns = ["inside_bar"]
-# required_trend    = "up"
-# description       = "Rücksetzer im übergeordneten Aufwärtstrend."
+[strategies.fvg_strategy]
+enabled = true
+base_confidence = 0.6
+# Nur frische (nicht mitigierte) FVGs berücksichtigen.
+require_fresh = true
 
-[strategies]
-# Noch keine aktiven Strategien – wird in einem späteren Sprint befüllt.
+[strategies.trend_following]
+enabled = true
+base_confidence = 0.65
+# Mindest-ADX, ab dem ein Trend als tragfähig gilt.
+adx_min = 20.0
+
+[strategies.momentum_strategy]
+enabled = true
+base_confidence = 0.6
+# RSI-Schwellen für bullisches bzw. bärisches Momentum.
+rsi_bull = 55.0
+rsi_bear = 45.0
+
+[strategies.breakout_strategy]
+enabled = true
+base_confidence = 0.6
+# Mindest-relatives-Volumen, das einen Ausbruch bestätigt.
+rvol_min = 1.5
+
+[strategies.mean_reversion]
+enabled = true
+base_confidence = 0.55
+# RSI-Schwellen für überverkauft/überkauft.
+rsi_oversold = 30.0
+rsi_overbought = 70.0

@@ -4,6 +4,44 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.6.0] – 2026-07-08 – Sprint 6: Strategy Engine
+
+### Hinzugefügt
+
+- **Strategy Engine** (kombiniert Indikatoren und Muster zu Hypothesen; keine
+  Entscheidungen, kein Gesamtscore):
+  - `engines/strategy_engine.py` – `StrategyEngine` (Kombination, Validierung,
+    optionaler Cache) + `load_strategy_rules`.
+  - `engines/strategy_registry.py` – `StrategyRegistry` (einzige
+    Erweiterungsstelle) + `build_default_registry`.
+  - `engines/strategy_result.py` – `StrategyReport` (Aggregat); re-exportiert
+    `StrategyResult`/`StrategyDirection` aus `strategies.base`.
+  - `engines/strategy_cache.py` – `StrategyCache` (FIFO).
+- **5 unabhängige Strategien** in `strategies/` (je eigene Datei):
+  `fvg_strategy`, `trend_following`, `momentum_strategy`, `breakout_strategy`,
+  `mean_reversion`. Gemeinsame Schnittstelle, Ergebnistypen (`StrategyResult`,
+  `StrategyContext`, `StrategyEvaluation`) und Hilfen in `strategies/base.py`;
+  keine Strategie hängt von einer anderen ab.
+- **StrategyResult** trägt Strategy Name, Hypothesis ID, Richtung, Confidence,
+  Strength, Matched Indicators/Patterns, Reasons, Warnings, Metadata (inkl.
+  Hypothesentext) und Timestamp.
+- **Konfiguration:** `knowledge/strategy_rules.toml` mit Parametern aller
+  Strategien.
+- **Validierung:** fehlende/ungültige Daten, fehlende Indikatoren, fehlende
+  Muster, inkonsistente Ergebnisse.
+- **Tests:** von 197 auf 247 erhöht (je Strategie, Registry, Cache, Engine).
+  Testabdeckung der Strategy-Module 96 %.
+
+### Qualitätsprüfung
+
+Import-Zyklen: 0. Strategie-Unabhängigkeit: 0 Verstöße. SOLID-Heuristik:
+0 Verstöße. Details in `HANDOVER.md`.
+
+### Hinweis
+
+Bewusst nicht enthalten: Score-, Risk- und Recommendation-Engine sowie
+Dashboard-Logik. Die Strategy Engine erzeugt ausschließlich Hypothesen.
+
 ## [0.5.0] – 2026-07-08 – Sprint 5: Pattern Engine
 
 ### Hinzugefügt

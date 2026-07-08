@@ -46,12 +46,21 @@ Dokumentation, Basistests. Kein Scanner, keine Daten, keine Handelslogik.
 - 49 neue Tests (197 gesamt), Testabdeckung Pattern-Module 95 %.
 - Keine Scores, keine Signale, keine Handelsentscheidungen.
 
-## Sprint 6 – Strategien (geplant)
+## Sprint 6 – Strategy Engine ✅ (abgeschlossen)
 
-- Setup-Bewertung in `strategies/` (Regeln aus `strategy_rules.toml`) auf Basis
-  von Indikator- und Muster-Ergebnissen.
-- Anbindung von Indikator-/Muster-Ergebnissen an den Scanner
-  (`ScanResult.indicators`/`.patterns`).
+- 5 unabhängige Strategien in `strategies/` (FVG, Trend Following, Momentum,
+  Breakout, Mean Reversion), die Indikatoren und Muster zu Hypothesen
+  kombinieren.
+- `StrategyRegistry` (einzige Erweiterungsstelle), `StrategyEngine`,
+  `StrategyResult`/`StrategyReport`, `StrategyCache`.
+- Parameter aus `knowledge/strategy_rules.toml`.
+- 50 neue Tests (247 gesamt), Testabdeckung Strategy-Module 96 %.
+- Nur Hypothesen; keine Scores, keine Kauf-/Verkaufsentscheidung.
+
+## Sprint 7 – Score Engine (geplant)
+
+- Aggregation der Strategie-Hypothesen zu einem Gesamtscore je Symbol.
+- Anbindung von Indikator-/Muster-/Strategie-Ergebnissen an den Scanner.
 
 ## Sprint 6 – Dashboard (geplant)
 

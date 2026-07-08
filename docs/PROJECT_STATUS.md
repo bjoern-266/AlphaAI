@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-08
-- **Aktueller Sprint:** Sprint 5 – Pattern Engine
+- **Aktueller Sprint:** Sprint 6 – Strategy Engine
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -19,7 +19,7 @@ _Wird nach jedem Sprint automatisch aktualisiert._
 ### Scanner Core (Sprint 3)
 
 - ScanRequest/ScanResult/ScanReport, ScanStatistics, ScanPipeline,
-  ScannerEngine, ScannerManager (reine Orchestrierung).
+  ScannerEngine, ScannerManager.
 
 ### Indicator Engine (Sprint 4)
 
@@ -27,47 +27,47 @@ _Wird nach jedem Sprint automatisch aktualisiert._
 
 ### Pattern Engine (Sprint 5)
 
-- **8 vollständig implementierte Muster** in `patterns/` (je eigene Datei):
-  FVG, BOS, CHoCH, Equal Highs, Equal Lows, Liquidity Sweep, Market Structure,
-  Trend Structure.
-- **3 vorbereitete Muster** (ohne Erkennung): Order Block, Breaker Block,
-  Mitigation Block.
-- **FVG** erkennt bullish/bearish, fresh/partially_mitigated/mitigated,
-  Gap-Größe, Gap-%, Kerzenindex, Timestamp und Preisbereich.
-- **BOS/CHoCH** über gemeinsamen Struktur-Break-Helper (BOS = Fortsetzung,
-  CHoCH = Trendwechsel).
-- **Trend Structure** liefert Higher High/Low, Lower High/Low und Trend.
-- **Registry** (`PatternRegistry`) als einzige Erweiterungsstelle.
-- **Engine** (`PatternEngine`): Input `MarketResult`/OHLCV → Output
-  `PatternReport` mit `PatternResult` je Muster (Name, Typ, Richtung,
-  Strength 0-100, Confidence 0-1, Timestamp, Price Level, Metadata).
-- **Cache** (`PatternCache`, FIFO).
-- **Validierung**: genug Kerzen, ungültige Muster, überlappende Muster,
-  ungültige Zeitreihen.
-- **Parameter** ausschließlich aus `knowledge/pattern_rules.toml`.
-- **Tests:** 197 gesamt (49 neue).
+- 11 Muster (8 implementiert, 3 vorbereitet), Registry, Engine, Result, Cache.
+
+### Strategy Engine (Sprint 6)
+
+- **5 vollständig implementierte Strategien** in `strategies/` (je eigene
+  Datei): `fvg_strategy`, `trend_following`, `momentum_strategy`,
+  `breakout_strategy`, `mean_reversion`.
+- **Jede Strategie** besitzt Name, Beschreibung, Version, Konfiguration,
+  Pattern-Anforderungen, Indikator-Anforderungen und Confidence.
+- **StrategyResult**: Strategy Name, Hypothesis ID, Richtung (bullish/bearish/
+  neutral), Confidence (0-1), Strength (0-100), Matched Indicators, Matched
+  Patterns, Reasons, Warnings, Metadata, Timestamp.
+- **StrategyEngine**: Input `IndicatorResult` + `PatternReport` (+ optionale
+  Rohdaten) → `StrategyReport` mit Hypothesen.
+- **Registry** (`StrategyRegistry`) als einzige Erweiterungsstelle.
+- **Cache** (`StrategyCache`, FIFO).
+- **Validierung**: fehlende Daten, fehlende Muster, fehlende Indikatoren,
+  inkonsistente Ergebnisse.
+- **Parameter** ausschließlich aus `knowledge/strategy_rules.toml`.
+- **Tests:** 247 gesamt (50 neue).
 
 ## Was ist bewusst NICHT vorhanden
 
-- Keine Strategy-Engine, keine Score-Engine, keine Risk-Engine, keine
-  Recommendation-Engine.
-- Keine Handelsentscheidungen, keine Buy/Sell-Signale.
+- Keine Score-Engine, keine Risk-Engine, keine Recommendation-Engine.
+- Keine Kauf-/Verkaufsentscheidung, kein Gesamtscore.
 - Keine Dashboard-Logik.
 
-Diese Teile folgen ab Sprint 6 (siehe `ROADMAP.md`).
+Diese Teile folgen ab Sprint 7 (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 5)
+## Qualitätsnachweis (Sprint 6)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 197 Tests bestanden |
+| pytest | 247 Tests bestanden |
 | Ruff / Black | konform |
-| Import-Zyklen | 0 (61 Module analysiert) |
-| Muster-Unabhängigkeit | 0 Verstöße |
-| SOLID-Heuristik (Muster) | 0 Verstöße |
-| Testabdeckung (Pattern-Module) | 95 % |
+| Import-Zyklen | 0 (72 Module analysiert) |
+| Strategie-Unabhängigkeit | 0 Verstöße |
+| SOLID-Heuristik (Strategien) | 0 Verstöße |
+| Testabdeckung (Strategy-Module) | 96 % |
 
 ## Nächster Schritt
 
-Warten auf Freigabe für **Sprint 6** (z. B. Strategie-Engine auf Basis von
-Indikator- und Muster-Ergebnissen).
+Warten auf Freigabe für **Sprint 7 – Score Engine** (aggregiert die Hypothesen
+zu einem Gesamtscore).

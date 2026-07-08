@@ -1,14 +1,19 @@
-"""Wiederverwendbare Hilfsfunktionen für die Data-Layer-Tests."""
+"""Wiederverwendbare Hilfsfunktionen für die Tests."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 import pandas as pd
 
 from core.config import Settings
 from data.market_data_engine import MarketDataEngine
 from data.market_result import OHLCV_COLUMNS
+from engines.indicator_result import IndicatorResult
+from engines.pattern_result import PatternReport
+from indicators.base import IndicatorOutput
+from patterns.base import PatternDirection, PatternResult, PatternType
 from providers.yahoo_provider import DownloadFn, YahooProvider
 from repositories.repository_factory import build_repository
 
@@ -114,3 +119,86 @@ def make_engine(
     provider = YahooProvider(download_fn=download_fn)
     repository = build_repository(settings, provider=provider, clock=clock)
     return MarketDataEngine(repository, settings, universe_resolver=universe_resolver)
+
+
+def _one(value: float) -> pd.Series:
+    """Einelementige Serie (für Test-Indikatorwerte)."""
+    return pd.Series([float(value)])
+
+
+def make_indicator_result(
+    ema: dict[int, float] | None = None,
+    rsi: float | None = None,
+    atr: float | None = None,
+    adx: float | None = None,
+    macd: dict[str, float] | None = None,
+    relative_volume: float | None = None,
+    bollinger: dict[str, float] | None = None,
+    valid: bool = True,
+    candle_count: int = 260,
+    timeframe: str = "base",
+) -> IndicatorResult:
+    """Baut ein IndicatorResult mit gezielt gesetzten letzten Werten (für Tests)."""
+    outputs: dict[str, IndicatorOutput] = {}
+    if ema is not None:
+        outputs["ema"] = IndicatorOutput(
+            name="ema", series={f"ema_{p}": _one(v) for p, v in ema.items()}
+        )
+    if rsi is not None:
+        outputs["rsi"] = IndicatorOutput(name="rsi", series={"rsi_14": _one(rsi)})
+    if atr is not None:
+        outputs["atr"] = IndicatorOutput(name="atr", series={"atr_14": _one(atr)})
+    if adx is not None:
+        outputs["adx"] = IndicatorOutput(name="adx", series={"adx": _one(adx)})
+    if macd is not None:
+        outputs["macd"] = IndicatorOutput(name="macd", series={k: _one(v) for k, v in macd.items()})
+    if relative_volume is not None:
+        outputs["relative_volume"] = IndicatorOutput(
+            name="relative_volume", series={"relative_volume": _one(relative_volume)}
+        )
+    if bollinger is not None:
+        outputs["bollinger"] = IndicatorOutput(
+            name="bollinger", series={k: _one(v) for k, v in bollinger.items()}
+        )
+    return IndicatorResult(
+        outputs=outputs,
+        valid=valid,
+        metadata={"candle_count": candle_count, "timeframe": timeframe, "rules_version": 2},
+    )
+
+
+def make_pattern_result(
+    name: str,
+    direction: PatternDirection = PatternDirection.BULLISH,
+    strength: float = 50.0,
+    confidence: float = 0.6,
+    price_level: float = 100.0,
+    timestamp: datetime | None = None,
+    fresh: bool = True,
+    pattern_type: PatternType = PatternType.FAIR_VALUE_GAP,
+) -> PatternResult:
+    """Baut ein einzelnes PatternResult (für Tests)."""
+    return PatternResult(
+        name=name,
+        pattern_type=pattern_type,
+        direction=direction,
+        strength=strength,
+        confidence=confidence,
+        timestamp=timestamp or datetime(2024, 1, 1, tzinfo=UTC),
+        price_level=price_level,
+        metadata={"fresh": fresh},
+    )
+
+
+def make_pattern_report(
+    results: list[PatternResult] | None = None,
+    valid: bool = True,
+    candle_count: int = 260,
+    timeframe: str = "base",
+) -> PatternReport:
+    """Baut ein PatternReport mit gegebenen Ergebnissen (für Tests)."""
+    return PatternReport(
+        results=results or [],
+        valid=valid,
+        metadata={"candle_count": candle_count, "timeframe": timeframe, "rules_version": 2},
+    )

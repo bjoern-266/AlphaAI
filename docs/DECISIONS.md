@@ -188,6 +188,46 @@ das Projekt so aufgebaut ist, wie es ist.
   Bewertung (spätere Strategy-/Score-Engine).
 - **Konsequenzen:** Die Pattern Engine bleibt frei von Handelslogik.
 
+### ADR-016 – Strategie-Ergebnistypen in strategies/base.py
+
+- **Datum:** 2026-07-08
+- **Kontext:** Wie bei den Mustern importiert die Registry (in `engines`) alle
+  Strategien; läge `StrategyResult` in `engines`, entstünde ein Import-Zyklus.
+- **Entscheidung:** `StrategyResult`, `StrategyContext`, `StrategyEvaluation`
+  und `StrategyDirection` liegen in `strategies/base.py`;
+  `engines/strategy_result.py` re-exportiert sie und definiert das Aggregat
+  `StrategyReport`. Verweise auf `IndicatorResult`/`PatternReport` erfolgen nur
+  unter `TYPE_CHECKING`.
+- **Begründung:** Zyklenfreiheit; ein automatischer Check bestätigt dies.
+- **Konsequenzen:** Strategien nutzen die Engine-Ergebnisse per Duck-Typing zur
+  Laufzeit (keine harten Engine-Importe).
+
+### ADR-017 – Strategien liefern Hypothesen, keine Scores/Entscheidungen
+
+- **Datum:** 2026-07-08
+- **Kontext:** `StrategyResult` trägt `strength` und `confidence`; diese dürfen
+  nicht als Kauf-/Verkaufsentscheidung oder Gesamtscore missverstanden werden.
+- **Entscheidung:** Jede Strategie erzeugt ausschließlich eine **Hypothese**
+  (Richtung + Begründungen, z. B. „Bullische Trendfortsetzung"). `strength` und
+  `confidence` sind beschreibende Kennzahlen der Hypothese (aus Muster-Stärken
+  bzw. konfigurierter Basis-Confidence), kein aggregierter Score. Die
+  Aggregation zu einem Gesamtscore ist Aufgabe der späteren Score Engine.
+- **Begründung:** Klare Trennung Hypothese (Sprint 6) ↔ Bewertung (Score
+  Engine, später) ↔ Empfehlung (Recommendation Engine, später).
+- **Konsequenzen:** Die Strategy Engine bleibt frei von Handelslogik.
+
+### ADR-018 – Anforderungen als deklarative Strategie-Attribute
+
+- **Datum:** 2026-07-08
+- **Kontext:** Strategien benötigen bestimmte Indikatoren/Muster; fehlen diese,
+  darf keine Hypothese erzwungen werden.
+- **Entscheidung:** Jede Strategie deklariert `indicator_requirements` und
+  `pattern_requirements`. Die Engine prüft sie vor der Auswertung und
+  überspringt Strategien mit fehlenden Anforderungen mit einer Warnung.
+- **Begründung:** Erfüllt die Validierungsvorgaben (fehlende Indikatoren/Muster)
+  zentral und testbar, ohne jede Strategie mit Prüf-Code zu belasten.
+- **Konsequenzen:** Strategien konzentrieren sich auf ihre Fachlogik.
+
 ### ADR-005 – Logging zentral, idempotent, Konsole + Datei
 
 - **Datum:** 2026-07-08

@@ -272,9 +272,58 @@ eindeutig/sortiert) sowie NaN in Schlusskursen.
 
 **Parameter:** ausschließlich aus `knowledge/pattern_rules.toml`.
 
+## Strategy Engine (umgesetzt in Sprint 6)
+
+Die Strategy Engine kombiniert Indikatoren und Muster zu objektiven
+**Handelshypothesen**. Sie trifft **keine** Kauf-/Verkaufsentscheidung und
+vergibt **keinen** Gesamtscore.
+
+```
+IndicatorResult + PatternReport → StrategyEngine → StrategyReport (StrategyResult je Hypothese) → ScoreEngine (später)
+                       │
+             Registry · Cache · strategies/
+```
+
+**Kernregel** (wie bei Indikatoren/Mustern): Jede Strategie liegt in einer
+eigenen Datei und ist **unabhängig** von den anderen. Die gemeinsame
+Schnittstelle und die Ergebnistypen stehen in `strategies/base.py`. Neue
+Strategien werden ausschließlich über die `StrategyRegistry` ergänzt.
+
+**Implementierte Strategien (5):** `fvg_strategy` (FVG + EMA200-Trendfilter),
+`trend_following` (EMA-Fächer + ADX), `momentum_strategy` (RSI + MACD),
+`breakout_strategy` (BOS + relatives Volumen), `mean_reversion` (RSI-Extrem +
+Bollinger-Band).
+
+**Jede Strategie besitzt:** Name, Beschreibung, Version, Konfiguration,
+Pattern-Anforderungen, Indikator-Anforderungen und (aus der Konfiguration) eine
+Confidence.
+
+**Bausteine:**
+
+| Baustein           | Datei                           | Aufgabe                                        |
+|--------------------|---------------------------------|------------------------------------------------|
+| `BaseStrategy`     | `strategies/base.py`            | Schnittstelle, Typen, Hilfen                   |
+| 5 Strategien       | `strategies/<name>.py`          | je eine Hypothesen-Logik                       |
+| `StrategyResult`   | `strategies/base.py`            | eine Hypothese (Name, ID, Richtung, Confidence, Strength, matched indicators/patterns, Reasons, Warnings, Metadata, Timestamp) |
+| `StrategyReport`   | `engines/strategy_result.py`    | Aggregat + Lauf-Metadaten                      |
+| `StrategyRegistry` | `engines/strategy_registry.py`  | Registrierung/Auflösung                        |
+| `StrategyCache`    | `engines/strategy_cache.py`     | Cache (FIFO)                                   |
+| `StrategyEngine`   | `engines/strategy_engine.py`    | Kombination, Validierung, Cache                |
+
+**Hypothesen statt Entscheidungen:** Jede Strategie erzeugt eine Hypothese wie
+„Bullische Trendfortsetzung" (in `metadata['hypothesis']` und `reasons`) – nie
+eine Kaufempfehlung. Strength/Confidence sind beschreibende Kennzahlen der
+Hypothese, kein Gesamtscore.
+
+**Validierung:** fehlende/ungültige Indikator- oder Musterdaten, fehlende
+Indikator-Anforderungen, fehlende Muster-Anforderungen und inkonsistente
+Ergebnisse (abweichender Timeframe/Kerzenzahl).
+
+**Parameter:** ausschließlich aus `knowledge/strategy_rules.toml`.
+
 ## Aktueller Stand
 
-Sprint 1–5 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
-Engine, Pattern Engine). Es gibt bewusst weiterhin **keine Strategy-Engine,
-keine Score-Engine, keine Risk-Engine, keine Recommendation-Engine und keine
+Sprint 1–6 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Engine, Pattern Engine, Strategy Engine). Es gibt bewusst weiterhin **keine
+Score-Engine, keine Risk-Engine, keine Recommendation-Engine und keine
 Dashboard-Logik**.

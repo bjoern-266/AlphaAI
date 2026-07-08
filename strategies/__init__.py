@@ -1,6 +1,12 @@
-"""Handelsstrategien (Analyse, kein Auto-Trading).
+"""Handelsstrategien (nur Hypothesen, kein Auto-Trading).
 
-Kombinieren Engine- und Pattern-Ergebnisse zu nachvollziehbaren
-Setup-Bewertungen. Die Parametrisierung erfolgt ueber
-knowledge/strategy_rules.toml.
+Jede Strategie liegt in einer eigenen Datei und ist **unabhängig** von den
+anderen Strategien. Eine Strategie kombiniert Indikatoren, Muster und
+Marktdaten zu einer objektiven **Hypothese** – sie trifft keine Kauf-/
+Verkaufsentscheidung und vergibt keinen Gesamtscore. Die gemeinsame
+Schnittstelle und die Ergebnistypen stehen in ``strategies.base``.
+
+Dieses Paket kennt die Engine-Schicht nicht (keine Importe aus ``engines``),
+wodurch Import-Zyklen ausgeschlossen sind. Neue Strategien werden über die
+Registry (``engines.strategy_registry``) ergänzt.
 """
