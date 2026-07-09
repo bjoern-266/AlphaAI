@@ -257,3 +257,122 @@ def make_score_context(
         hypotheses=hypotheses or [sr],
         components=components or make_components(),
     )
+
+
+def make_account(capital: float = 10000.0, fractional: bool = True):
+    """Baut eine AccountConfig (für Risk-Tests)."""
+    from core.config import AccountConfig
+
+    return AccountConfig(
+        capital=capital, currency="EUR", broker="Test", fractional_shares=fractional
+    )
+
+
+def make_risk_config(
+    risk_per_trade_pct: float = 0.01, max_open_positions: int = 5, max_daily_loss_pct: float = 0.03
+):
+    """Baut eine RiskConfig (für Risk-Tests)."""
+    from core.config import RiskConfig
+
+    return RiskConfig(
+        risk_per_trade_pct=risk_per_trade_pct,
+        max_open_positions=max_open_positions,
+        max_daily_loss_pct=max_daily_loss_pct,
+    )
+
+
+def make_settings(capital: float = 10000.0, fractional: bool = True, **risk_kwargs):
+    """Baut vollständige Settings (für die RiskEngine)."""
+    from core.config import (
+        CacheConfig,
+        DataConfig,
+        ScannerConfig,
+        Settings,
+        TradingHoursConfig,
+    )
+
+    return Settings(
+        account=make_account(capital=capital, fractional=fractional),
+        risk=make_risk_config(**risk_kwargs),
+        trading_hours=TradingHoursConfig("Europe/Berlin", "09:00", "17:30"),
+        data=DataConfig("yahoo", "1d", "6mo", CacheConfig(True, 86400, 300, 604800)),
+        scanner=ScannerConfig(4, ("indicators",)),
+        markets=["AAPL"],
+    )
+
+
+def make_score_result(
+    score_id: str = "score:h1",
+    hypothesis_id: str = "h1",
+    strategy_name: str = "strat",
+    total_score: float = 70.0,
+    confidence: float = 0.6,
+    quality_score: float = 80.0,
+    consensus_score: float = 60.0,
+    market_score: float = 60.0,
+    data_quality: float = 100.0,
+    timestamp: datetime | None = None,
+):
+    """Baut ein ScoreResult (für Risk-Tests)."""
+    from models.score import COMPONENT_NAMES, ScoreResult
+
+    component_scores = {name: 50.0 for name in COMPONENT_NAMES}
+    component_scores["data_quality"] = data_quality
+    return ScoreResult(
+        score_id=score_id,
+        strategy_name=strategy_name,
+        hypothesis_id=hypothesis_id,
+        total_score=total_score,
+        confidence=confidence,
+        quality_score=quality_score,
+        consensus_score=consensus_score,
+        market_score=market_score,
+        component_scores=component_scores,
+        timestamp=timestamp or datetime(2024, 1, 1, tzinfo=UTC),
+    )
+
+
+def make_score_report(results=None, valid: bool = True, candle_count: int = 60):
+    """Baut ein ScoreReport (für die RiskEngine)."""
+    from models.score import ScoreReport
+
+    return ScoreReport(
+        results=results if results is not None else [make_score_result()],
+        valid=valid,
+        metadata={"candle_count": candle_count, "timeframe": "base"},
+    )
+
+
+def make_risk_context(
+    atr: float | None = 2.0,
+    market_score: float = 60.0,
+    data_quality: float = 100.0,
+    capital: float = 10000.0,
+    fractional: bool = True,
+    rows: int = 60,
+    volume: float = 1_000_000.0,
+    price_data=None,
+    open_positions=(),
+    risk_per_trade_pct: float = 0.01,
+    max_open_positions: int = 5,
+):
+    """Baut einen RiskContext (für Risk-Modell-Tests)."""
+    from models.risk import RiskContext
+
+    if price_data is None:
+        closes = [100.0 + i * 0.2 for i in range(rows)]
+        price_data = make_price_frame(closes, volume=[volume] * rows)
+    indicators = make_indicator_result(atr=atr, candle_count=rows)
+    score = make_score_result(market_score=market_score, data_quality=data_quality)
+    return RiskContext(
+        score_result=score,
+        indicators=indicators,
+        account=make_account(capital=capital, fractional=fractional),
+        risk=make_risk_config(
+            risk_per_trade_pct=risk_per_trade_pct, max_open_positions=max_open_positions
+        ),
+        data=price_data,
+        open_positions=open_positions,
+        symbol="AAPL",
+        timeframe="base",
+    )

@@ -3,8 +3,8 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-09
-- **Aktueller Sprint:** Sprint 7.5 – Architecture Consolidation
-- **Status:** ✅ Abgeschlossen (Fundament-Tag `v0.1.0-foundation`)
+- **Aktueller Sprint:** Sprint 8 – Professional Risk Engine
+- **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
 
@@ -69,27 +69,49 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   `engines`. Prüfskript `scripts/quality_check.py` fest im Test verankert.
 - **Tests:** 335 gesamt (28 neue; bestehende unverändert).
 
+### Risk Engine (Sprint 8)
+
+- **8 unabhängige Risk-Modelle** in `risk/` (je eigene Datei): `position_sizing`,
+  `volatility_risk`, `liquidity_risk`, `gap_risk`, `market_risk`,
+  `correlation_risk`, `portfolio_risk`, `execution_risk`. Gemeinsame
+  Schnittstelle/Helfer in `risk/base.py`; kein Modell hängt von einem anderen ab.
+- **10 Risikokomponenten** (getrennt, erklärbar): Volatilität, Liquidität, Gap,
+  Spread, ATR, Markt, Korrelation, Portfolio-Exposure, Datenqualität, News
+  (News vorbereitet/neutral).
+- **RiskResult** mit Overall Risk (0-100), Risk Level (LOW/MEDIUM/HIGH),
+  Positionsgröße, Stückzahl/Orderwert/Slippage/Kommission, Stop-/Take-Profit-
+  Abstand, CRV, Komponenten, Reasons/Warnings.
+- **RiskEngine**: Input `ScoreReport` (+ Indikatoren/Rohdaten) → `RiskReport`.
+  `RiskRegistry` (einzige Erweiterungsstelle), `RiskCache` (FIFO).
+- **Positionsgröße** aus `settings.toml` (Depot, Fractional Shares, Risiko/Trade,
+  max. Positionen); Ausführungskosten/Schwellen aus `knowledge/risk_rules.toml`.
+- **Portfolio-Risiko vorbereitet** (offene Positionen werden durchgereicht).
+- **Validierung**: fehlende Scores, negative Depotgröße, ungültige ATR/Preise,
+  ungültige Positionsgrößen/Risk-Reward.
+- **Tests:** 413 gesamt (76 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
-- Keine Risk-Engine, keine Recommendation-Engine.
-- Keine Kauf-/Verkaufsentscheidung, keine Positionsgröße, kein Risiko.
-- Keine Dashboard-Logik.
+- Keine Recommendation-Engine, keine Dashboard-Logik.
+- Keine Kauf-/Verkaufsentscheidung, keine Positionseröffnung, keine Order,
+  keine Broker-API. Die Risk Engine liefert ausschließlich `RiskResult`.
 
-Diese Teile folgen ab Sprint 8 (siehe `ROADMAP.md`).
+Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 7.5)
+## Qualitätsnachweis (Sprint 8)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 335 Tests bestanden |
+| pytest | 413 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |
-| Plugin-Unabhängigkeit (alle Familien) | 0 Verstöße |
-| SOLID-Heuristik (alle Familien) | 0 Verstöße |
+| Plugin-Unabhängigkeit (inkl. Risk) | 0 Verstöße |
+| SOLID-Heuristik (inkl. Risk) | 0 Verstöße |
 | Ergebnisobjekte unveränderlich (`frozen`) | vollständig |
 
 ## Nächster Schritt
 
-Warten auf Freigabe für **Sprint 8 – Risk Engine** (leitet Risiko/Positionsgröße
-aus den Scores ab).
+Warten auf Freigabe für den nächsten Sprint (**Recommendation Engine**: führt
+Score und Risiko zu einer erklärten Empfehlung zusammen – weiterhin ohne
+automatische Orderausführung).

@@ -342,3 +342,31 @@ das Projekt so aufgebaut ist, wie es ist.
   Ausführungs-/Testumgebung nutzt teils 3.11. `Generic[T]` läuft überall gleich.
 - **Konsequenzen:** Wird die Mindestversion strikt auf 3.12 gehoben, kann die
   Entscheidung revidiert werden.
+
+### ADR-027 – Risk Engine: Komponenten, Positionsgröße, Portfolio-Vorbereitung
+
+- **Datum:** 2026-07-09 (Sprint 8)
+- **Kontext:** Nach dem Score braucht jede Hypothese eine objektive, erklärbare
+  Risikobewertung samt Positionsgrößen-Empfehlung – ohne Handelsentscheidung.
+- **Entscheidung:**
+  - Kette `ScoreReport → RiskEngine → RiskReport`; die Engine ist konsistent zu
+    den anderen Engines gebaut (frozen `models/risk.py`, generische
+    `Cache`/`Registry`, `AlphaAIError`-Hierarchie, Bau-am-Ende + `replace()`).
+  - Das Gesamtrisiko (0..100) ist die gewichtete Summe **zehn** getrennter
+    Komponenten (Gewichte aus `[overall]` in `risk_rules.toml`, Summe 100 %).
+    Sieben Komponenten liefern registrierte Modelle (`risk/*.py`), drei sind
+    Basis-Helfer in `risk/base.py` (ATR, Datenqualität, News – News neutral
+    vorbereitet).
+  - **Positionsgröße** ist eigenes Modell (`position_sizing`) ohne Beitrag zum
+    Gesamtrisiko; die Engine liest seine Kennzahlen aus `details['sizing']`
+    (analog zu `_FIELD_MODELS` der Score Engine). Konto-/Depotwerte kommen
+    ausschließlich aus `settings.toml`, Ausführungskosten aus `risk_rules.toml`.
+  - **Portfolio-Vorbereitung:** `RiskContext` führt `open_positions`; Portfolio-
+    und Korrelationsrisiko sind bereits verdrahtet (heute 0 ohne Positionen) und
+    können ohne Engine-Änderung voll implementiert werden.
+- **Begründung:** Volle Erklärbarkeit je Komponente, klare Erweiterung nur über
+  die Registry, keine Handelslogik in der Engine.
+- **Konsequenzen:** Neue Risk-Modelle = Datei in `risk/` + Registrierung +
+  Gewicht/Parameter in `risk_rules.toml`; die Engine bleibt unverändert. Die
+  Risk Engine trifft **keine** Kauf-/Verkaufsentscheidung und erzeugt **keine**
+  Order.

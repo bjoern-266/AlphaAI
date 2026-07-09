@@ -80,11 +80,18 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
 - Prüfskript `scripts/quality_check.py` fest im Test verankert.
 - 335 Tests (28 neue), Tag `v0.1.0-foundation`.
 
-## Sprint 8 – Risk Engine (geplant)
+## Sprint 8 – Risk Engine ✅ (abgeschlossen)
 
-- Ableitung von Risiko und Positionsgröße aus den Scores (Regeln aus
-  `knowledge/risk.md`/TOML).
-- Anbindung der Ergebnisse an den Scanner.
+- Kette `ScoreReport → RiskEngine → RiskReport`; nur Risikobewertung und
+  Positionsgrößen-Empfehlung, keine Handelsentscheidung/Order.
+- 8 unabhängige Risk-Modelle in `risk/` (position_sizing, volatility, liquidity,
+  gap, market, correlation, portfolio, execution); 10 erklärbare Komponenten.
+- `RiskRegistry` (einzige Erweiterungsstelle), `RiskEngine`,
+  `RiskResult`/`RiskReport`, `RiskCache`.
+- Positionsgröße aus `settings.toml`, übrige Parameter aus
+  `knowledge/risk_rules.toml`. Portfolio-Risiko vorbereitet (offene Positionen
+  werden durchgereicht).
+- 76 neue Tests (413 gesamt). News-Risiko vorbereitet (neutral).
 
 ## Sprint 6 – Dashboard (geplant)
 

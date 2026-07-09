@@ -127,9 +127,28 @@ ausschließlich aus `knowledge/score_rules.toml`. Einstieg:
 `ScoreEngine.from_config()`. Jeder Score ist über seine Komponenten vollständig
 erklärbar.
 
+## Risk Engine (ab Sprint 8 verfügbar)
+
+Bewertet das Risiko jeder Hypothese und empfiehlt eine Positionsgröße – **keine**
+Kauf-/Verkaufsentscheidung, **keine** Position, **keine** Order. Kette:
+`ScoreReport → RiskEngine → RiskReport`. Acht unabhängige Modelle in
+`risk/<name>.py` (position_sizing, volatility, liquidity, gap, market,
+correlation, portfolio, execution); zehn separat gespeicherte, erklärbare
+Komponenten (News vorbereitet/neutral). Ergebnistypen liegen in `models/risk.py`
+(re-exportiert über `engines/risk_result.py`), gemeinsame Helfer/Positionsgröße
+in `risk/base.py`. Neue Modelle nur über die `RiskRegistry`
+(`engines/risk_registry.py`); die Engine bleibt unverändert. Modellparameter,
+Gewichte und Schwellen ausschließlich aus `knowledge/risk_rules.toml`;
+Konto-/Depotwerte (Depot, Fractional Shares, Risiko/Trade, max. Positionen)
+ausschließlich aus `config/settings.toml`. Portfolio-Risiko ist vorbereitet
+(offene Positionen werden an die Modelle durchgereicht). Einstieg:
+`RiskEngine.from_config()`.
+
 ## Aktueller Stand
 
-Sprint 1–7 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
-Engine, Pattern Engine, Strategy Engine, Score Engine). Es gibt weiterhin keine
-Risk-/Recommendation-Engine und keine Handelslogik. Nächster Schritt: Sprint 8
-(Risk Engine). Immer zuerst `PROJECT_STATUS.md` und `HANDOVER.md` lesen.
+Sprint 1–8 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
+Risk Engine). Es gibt weiterhin **keine** Recommendation-Engine, **keine**
+Dashboard-Logik, **keine** Broker-API und **keine** automatische Orderausführung.
+Nächster Schritt: Recommendation Engine. Immer zuerst `PROJECT_STATUS.md` und
+`HANDOVER.md` lesen.

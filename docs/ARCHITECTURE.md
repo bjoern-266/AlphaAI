@@ -41,6 +41,7 @@ Dadurch bleiben beide stabil.
 | Analyse      | `engines`    | Technische Kennzahlen/Indikatoren                    |
 | Muster       | `patterns`   | Erkennung von Kursmustern                            |
 | Strategien   | `strategies` | Bewertung von Setups                                 |
+| Risiko       | `risk`       | Risikomodelle & Positionsgröße (keine Order)         |
 | Orchestr.    | `scanner`    | Zusammenführen der Analyse                            |
 | Persistenz   | `database`   | Speichern/Laden (SQLite)                             |
 | Präsentation | `dashboard`  | Streamlit-Oberfläche, Plotly-Charts                  |
@@ -403,9 +404,59 @@ Abgesichert durch `scripts/quality_check.py` (0 Import-Zyklen, saubere
 Entities-Schicht, Plugin-Unabhängigkeit, SOLID) – fest verankert in
 `tests/test_quality.py`.
 
+## Risk Engine (umgesetzt in Sprint 8)
+
+Die Risk Engine bewertet das Risiko jeder bewerteten Hypothese und empfiehlt
+eine Positionsgröße. Sie trifft **keine** Kauf-/Verkaufsentscheidung, eröffnet
+**keine** Position und sendet **keine** Order.
+
+```
+ScoreReport → RiskEngine → RiskReport (RiskResult je Score) → RecommendationEngine (später)
+                  │
+     Registry · Cache · risk/ · 10 Komponenten · Positionsgröße
+```
+
+**Zehn Risikokomponenten** (getrennt gespeichert, je Beitrag `name: 18/25`):
+Volatilität, Liquidität, Gap, Spread, ATR, Markt, Korrelation,
+Portfolio-Exposure, Datenqualität, News (News **vorbereitet**, neutral). Sieben
+liefern Modelle, drei sind Basiskomponenten (ATR, Datenqualität, News) in
+`risk/base.py`. Das Gesamtrisiko (0-100) ist ihre gewichtete Summe; daraus folgt
+die Stufe LOW/MEDIUM/HIGH.
+
+**Acht Risk-Modelle** (je eigene Datei, unabhängig): `position_sizing`
+(Positionsgröße/Order/Kosten, ohne Risikobeitrag), `volatility_risk`,
+`liquidity_risk`, `gap_risk`, `market_risk`, `correlation_risk` (vorbereitet),
+`portfolio_risk` (vorbereitet), `execution_risk`. Neue Modelle nur über die
+`RiskRegistry`; die Engine bleibt unverändert.
+
+**Positionsgröße:** aus `settings.toml` (Depotgröße, Fractional Shares, Risiko je
+Trade, max. Positionen) und `risk_rules.toml` (ATR-Stop, CRV, Slippage/Kommission,
+Positions-/Portfolio-Obergrenzen). **Portfolio-Vorbereitung:** der `RiskContext`
+führt `open_positions`, sodass Portfolio-/Korrelationsrisiko ohne Engine-Änderung
+voll implementiert werden kann.
+
+**Bausteine:**
+
+| Baustein        | Datei                        | Aufgabe                                        |
+|-----------------|------------------------------|------------------------------------------------|
+| `BaseRiskModel` | `risk/base.py`               | Schnittstelle, Positionsgröße, Basiskomponenten, Gewichte |
+| 8 Risk-Modelle  | `risk/<name>.py`             | je ein Risikoaspekt bzw. die Positionsgröße    |
+| `RiskResult`    | `models/risk.py`             | Risikobewertung einer Hypothese (Overall Risk, Level, Positionsgröße, Kosten, Stop/TP/CRV, Komponenten, Reasons, Warnings, Metadata, Timestamp) |
+| `RiskReport`    | `models/risk.py`             | Aggregat + Lauf-Metadaten                      |
+| `RiskRegistry`  | `engines/risk_registry.py`   | Registrierung/Auflösung                        |
+| `RiskCache`     | `engines/risk_cache.py`      | Cache (FIFO)                                   |
+| `RiskEngine`    | `engines/risk_engine.py`     | Bewertung, Validierung, Cache                  |
+
+**Validierung:** fehlende Scores, negative Depotgröße, ungültige ATR/Preise,
+ungültige Positionsgrößen, ungültige Risk-Reward-Werte.
+
+**Parameter:** ausschließlich aus `knowledge/risk_rules.toml` (Modelle/Gewichte/
+Schwellen) und `config/settings.toml` (Konto/Depot). Keine Hardcodes.
+
 ## Aktueller Stand
 
-Sprint 1–7 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
-Engine, Pattern Engine, Strategy Engine, Score Engine); Sprint 7.5 hat das
-Fundament konsolidiert (Tag `v0.1.0-foundation`). Es gibt bewusst weiterhin
-**keine Risk-Engine, keine Recommendation-Engine und keine Dashboard-Logik**.
+Sprint 1–8 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
+mit Tag `v0.1.0-foundation`, Risk Engine). Es gibt bewusst weiterhin **keine
+Recommendation-Engine, keine Dashboard-Logik, keine Broker-API und keine
+automatische Orderausführung**.

@@ -1,0 +1,102 @@
+# =============================================================================
+# Risk-Regeln (Sprint 8)
+# =============================================================================
+# Einzige Quelle aller Risiko-Parameter. Im Code gibt es keine hartcodierten
+# Werte. Konto-/Depotwerte (Depotgröße, Fractional Shares, Risiko je Trade,
+# max. Positionen) stehen ausschließlich in config/settings.toml.
+#
+# Wichtig: Die Risk Engine bewertet ausschließlich Risiko und empfiehlt eine
+# Positionsgröße. Sie trifft KEINE Kauf-/Verkaufsentscheidung, eröffnet KEINE
+# Position und sendet KEINE Orders. Jedes Risiko ist über seine zehn
+# Komponenten vollständig erklärbar.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Gewichte, Schwellen und Modellparameter der Risk-Modelle (Sprint 8)."
+
+# Gewichte der zehn Risikokomponenten für das Gesamtrisiko (0..100).
+# Regel: alle Gewichte in [0, 1], Summe = 1.0 (= 100 %).
+[overall]
+volatility = 0.18
+liquidity = 0.12
+gap = 0.12
+spread = 0.08
+atr = 0.12
+market = 0.12
+correlation = 0.06
+portfolio_exposure = 0.08
+data_quality = 0.06
+news = 0.06
+
+# Schwellen für die grobe Risikostufe (LOW/MEDIUM/HIGH).
+[levels]
+low_max = 33.0
+medium_max = 66.0
+
+# Parameter der Basiskomponenten (kein eigenes Modell): ATR und News.
+[components]
+# ATR im Verhältnis zum Preis: <= atr_low_pct => 0 Risiko, >= atr_high_pct => 100.
+atr_low_pct = 1.0
+atr_high_pct = 6.0
+# News-Risiko ist vorbereitet (neutral), bis eine Nachrichtenquelle angebunden ist.
+news_default = 50.0
+
+# --- Modelle (jeweils eigenes Plugin in risk/) --------------------------------
+
+# Positionsgröße aus dem Risiko je Trade. Trägt keine Komponente zum
+# Gesamtrisiko bei, liefert aber alle Order-/Kostenkennzahlen.
+[position_sizing]
+enabled = true
+# Stop-Abstand = ATR * Multiplikator.
+atr_stop_multiplier = 2.0
+# Ziel-Chance-Risiko-Verhältnis (Take-Profit = Stop-Abstand * risk_reward).
+risk_reward = 2.0
+# Slippage in Basispunkten (1 bp = 0,01 %).
+slippage_bps = 5.0
+# Kommission als Anteil des Orderwerts (0.001 = 0,1 %).
+commission_pct = 0.001
+# Mindestkommission je Order (Kontowährung).
+min_commission = 1.0
+# Obergrenze einer Einzelposition als Depotanteil.
+max_position_pct = 0.25
+# Obergrenze des Gesamtengagements als Depotanteil.
+max_portfolio_exposure_pct = 1.0
+
+[volatility_risk]
+enabled = true
+window = 20
+vol_low_pct = 1.0
+vol_high_pct = 5.0
+
+[liquidity_risk]
+enabled = true
+window = 20
+min_dollar_volume = 100000.0
+good_dollar_volume = 5000000.0
+
+[gap_risk]
+enabled = true
+window = 20
+gap_low_pct = 0.2
+gap_high_pct = 3.0
+
+[market_risk]
+enabled = true
+
+[correlation_risk]
+enabled = true
+# Risikobeitrag je potenziell korrelierter offener Position (0..100).
+risk_per_correlated = 20.0
+
+[portfolio_risk]
+enabled = true
+# Gesamtengagement / Depot: >= max_exposure_ratio => 100 Risiko.
+max_exposure_ratio = 1.0
+
+[execution_risk]
+enabled = true
+spread_bps = 5.0
+slippage_bps = 5.0
+cost_low_pct = 0.05
+cost_high_pct = 0.5

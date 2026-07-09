@@ -47,6 +47,7 @@ packages = [
     "patterns",
     "strategies",
     "scores",
+    "risk",
     "dashboard",
     "database",
     "models",

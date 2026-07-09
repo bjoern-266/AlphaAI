@@ -7,10 +7,10 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-09
-- **Abgeschlossener Sprint:** Sprint 7.5 – Architecture Consolidation
+- **Abgeschlossener Sprint:** Sprint 8 – Professional Risk Engine
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
-- **Tag:** `v0.1.0-foundation` (erster stabiler Fundament-Stand)
+- **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
 
 ## So startet die nächste Sitzung
 
@@ -18,10 +18,10 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 335 Tests).
+5. Tests ausführen: `pytest` (aktuell 413 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
-## Qualitätsprüfung Sprint 7.5 (Ergebnis)
+## Qualitätsprüfung Sprint 8 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -29,11 +29,32 @@ Vor dem Commit automatisch geprüft:
 |---|---|
 | Import-Zyklen | **0** |
 | Entities-Schicht `models/` (kein Import aus höheren Schichten) | **0 Verstöße** |
-| Plugin-Unabhängigkeit (Indikatoren/Muster/Strategien/Scores) | **0 Verstöße** |
-| SOLID-Heuristik (alle Familien) | **0 Verstöße** |
+| Plugin-Unabhängigkeit (inkl. Risk-Modelle) | **0 Verstöße** |
+| SOLID-Heuristik (inkl. Risk) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **335 bestanden** |
+| pytest | **413 bestanden** |
+
+## Risk Engine – Kurzüberblick für die Weiterarbeit
+
+- Einstieg: `RiskEngine.from_config()` lädt `knowledge/risk_rules.toml` und
+  `config/settings.toml` und registriert alle Standard-Modelle.
+- Bewertung: `engine.assess(score_report, indicators, data=frame, symbol=...,
+  open_positions=(...))` → `RiskReport` mit einem `RiskResult` je Score.
+- Ergebnis: `report.results`; `report.highest_risk(n)` sortiert nach Risiko
+  (reine Anzeige, **keine** Empfehlung). Jeder `RiskResult` trägt die zehn
+  Komponenten in `risk_components`, alle Modellwerte in
+  `metadata['model_values']` und erklärbare Beitragszeilen in `reasons`.
+- **Neues Risk-Modell hinzufügen** (einziger erlaubter Weg):
+  1. Datei in `risk/` anlegen, `BaseRiskModel` implementieren (`compute`),
+     `component` auf einen Namen aus `RISK_COMPONENT_NAMES` setzen (oder `""`),
+     nur `context`/`params` nutzen, kein anderes Modell importieren.
+  2. In `engines/risk_registry.py::build_default_registry` registrieren.
+  3. Abschnitt + ggf. Gewicht in `knowledge/risk_rules.toml` ergänzen. Die
+     Engine muss dafür **nicht** geändert werden.
+  4. Eigene Testdatei `tests/test_risk_<name>.py` anlegen.
+- **Konto-/Depotwerte** kommen ausschließlich aus `settings.toml`, alle übrigen
+  Parameter aus `risk_rules.toml`. Die Engine erzeugt **keine** Order.
 
 ## Architektur-Konsolidierung (Sprint 7.5) – für die Weiterarbeit
 

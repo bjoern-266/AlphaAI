@@ -61,6 +61,10 @@ class ScoreParameterError(ParameterError):
     """Score-Gewichte fehlen, sind ungültig oder ergeben ≠ 100 %."""
 
 
+class RiskParameterError(ParameterError):
+    """Risk-Parameter/-Gewichte fehlen, sind ungültig oder ergeben ≠ 100 %."""
+
+
 # --------------------------------------------------------------------------- #
 # Registry-Fehler (Erweiterungsstelle für Plugins)                             #
 # --------------------------------------------------------------------------- #

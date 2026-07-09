@@ -4,6 +4,60 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.8.0] – 2026-07-09 – Sprint 8: Professional Risk Engine
+
+Neue Fachschicht **Risk Engine** auf dem konsolidierten Fundament (Sprint 7.5):
+frozen-Modelle in `models/`, generische `Cache`/`Registry`, Registry als einzige
+Erweiterungsstelle, alle Parameter aus Config. Die Risk Engine **bewertet nur**
+Risiko und empfiehlt eine Positionsgröße – **keine** Kauf-/Verkaufsentscheidung,
+**keine** Position, **keine** Order, **keine** Broker-API.
+
+### Hinzugefügt
+
+- **Risk Engine** (`ScoreReport → RiskEngine → RiskReport`):
+  - `engines/risk_engine.py` – `RiskEngine` (Orchestrierung, Validierung,
+    optionaler Cache, `dataclasses.replace()` für die Rechenzeit) + `load_risk_rules`.
+  - `engines/risk_registry.py` – `RiskRegistry` (einzige Erweiterungsstelle) +
+    `build_default_registry`.
+  - `engines/risk_cache.py` – `RiskCache` (FIFO, generisch).
+  - `engines/risk_result.py` – Re-Export der Risk-Datentypen aus `models.risk`.
+- **Domänenmodelle** in `models/risk.py` (alle `frozen`): `RiskLevel`,
+  `OpenPosition`, `RiskComponent`, `RiskModelOutput`, `PositionSizing`,
+  `RiskContext`, `RiskResult`, `RiskReport`.
+- **8 unabhängige Risk-Modelle** in `risk/` (je eigene Datei): `position_sizing`,
+  `volatility_risk`, `liquidity_risk`, `gap_risk`, `market_risk`,
+  `correlation_risk`, `portfolio_risk`, `execution_risk`. Gemeinsame
+  Schnittstelle, Positionsgrößen-Berechnung und Basiskomponenten (ATR,
+  Datenqualität, News) in `risk/base.py`; kein Modell hängt von einem anderen ab.
+- **10 Risikokomponenten** (getrennt gespeichert, vollständig erklärbar):
+  Volatilität, Liquidität, Gap, Spread, ATR, Markt, Korrelation,
+  Portfolio-Exposure, Datenqualität, News (News **vorbereitet**, neutral).
+- **RiskResult**: Risk/Score/Hypothesis ID, Overall Risk (0-100), Risk Level
+  (LOW/MEDIUM/HIGH), Suggested Position Size, Maximum Risk %, Maximum Portfolio
+  Exposure, Estimated Shares/Order Value/Slippage/Commission, Suggested Stop
+  Distance/Take Profit/Risk Reward, Risk Components, Reasons, Warnings, Metadata,
+  Timestamp.
+- **Positionsgröße** aus Depotgröße, Fractional Shares, Risiko je Trade, max.
+  Positionen (alles aus `settings.toml`) + ATR-Stop, CRV, Slippage/Kommission
+  (aus `risk_rules.toml`). **Portfolio-Risiko vorbereitet**: die Engine reicht
+  bereits offene Positionen (`open_positions`) an die Modelle durch.
+- **Konfiguration:** `knowledge/risk_rules.toml` (Gewichte, Schwellen,
+  Modellparameter) – keine Hardcodes. `core/paths.py`: `RISK_RULES_FILE`.
+- **Validierung:** fehlende Scores, negative Depotgröße, ungültige ATR/Preise,
+  ungültige Positionsgrößen, ungültige Risk-Reward-Werte.
+- **Tests:** von 337 auf 413 erhöht (76 neue: jedes Modell, Engine, Registry,
+  Cache, Positionsgröße, Portfolio, Validierung, Immutability).
+
+### Qualitätsprüfung
+
+Import-Zyklen: 0. Risk-Modell-Unabhängigkeit: 0 Verstöße. Entities-Schicht
+`models/`: 0 Verstöße. SOLID-Heuristik (Risk): 0 Verstöße. Alle Risk-Modelle
+unveränderlich (`frozen`). `ruff`/`black` konform. 413 Tests grün.
+
+### ADR
+
+ADR-027 (Risk Engine – Architektur, Komponenten, Positionsgröße, Portfolio-Vorbereitung).
+
 ## [0.1.0-foundation] · [0.7.5] – 2026-07-09 – Sprint 7.5: Architecture Consolidation
 
 Reiner, **verhaltenserhaltender** Umbau (kein neues Feature, kein geändertes
