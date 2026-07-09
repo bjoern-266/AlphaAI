@@ -376,3 +376,102 @@ def make_risk_context(
         symbol="AAPL",
         timeframe="base",
     )
+
+
+def make_risk_result(
+    hypothesis_id: str = "h1",
+    score_id: str | None = None,
+    overall_risk: float = 20.0,
+    risk_level=None,
+    risk_components: dict[str, float] | None = None,
+    timestamp: datetime | None = None,
+):
+    """Baut ein RiskResult (für Recommendation-Tests)."""
+    from models.risk import RiskLevel, RiskResult
+
+    score_id = score_id or f"score:{hypothesis_id}"
+    return RiskResult(
+        risk_id=f"risk:{score_id}",
+        score_id=score_id,
+        hypothesis_id=hypothesis_id,
+        overall_risk=overall_risk,
+        risk_level=risk_level or RiskLevel.LOW,
+        suggested_position_size=2000.0,
+        maximum_risk_pct=1.0,
+        maximum_portfolio_exposure=10000.0,
+        estimated_shares=17.0,
+        estimated_order_value=2000.0,
+        estimated_slippage=1.0,
+        estimated_commission=2.0,
+        suggested_stop_distance=4.0,
+        suggested_take_profit=8.0,
+        suggested_risk_reward=2.0,
+        risk_components=risk_components or {"gap": 10.0, "volatility": 10.0, "data_quality": 0.0},
+        timestamp=timestamp or datetime(2024, 1, 1, tzinfo=UTC),
+    )
+
+
+def make_risk_report(results=None, valid: bool = True):
+    """Baut ein RiskReport (für die RecommendationEngine)."""
+    from models.risk import RiskReport
+
+    return RiskReport(
+        results=results if results is not None else [make_risk_result()],
+        valid=valid,
+        metadata={"timeframe": "base"},
+    )
+
+
+# Standardgewichte (spiegeln knowledge/recommendation_rules.toml) für Kontext-Bau.
+_REC_FACTOR_WEIGHTS = {
+    "strategy": 0.15,
+    "score": 0.25,
+    "risk": 0.20,
+    "consensus": 0.20,
+    "market_quality": 0.10,
+    "data_quality": 0.10,
+}
+_REC_CONFIDENCE_WEIGHTS = {
+    "strategy_confidence": 0.35,
+    "consensus": 0.30,
+    "risk": 0.20,
+    "data_quality": 0.15,
+}
+
+
+def make_recommendation_context(
+    strategy_result=None,
+    score_result=None,
+    risk_result=None,
+    strategies=None,
+    consensus_full_at: int = 2,
+    symbol: str = "AAPL",
+):
+    """Baut einen RecommendationContext mit vorab berechneten Faktoren/Rating/Confidence."""
+    from models.recommendation import RecommendationContext
+    from recommendation.base import (
+        compute_confidence,
+        compute_factors,
+        compute_overall_rating,
+    )
+
+    strat = strategy_result or make_strategy_result()
+    score = score_result or make_score_result(hypothesis_id=strat.hypothesis_id)
+    risk = risk_result or make_risk_result(hypothesis_id=strat.hypothesis_id)
+    all_strategies = strategies if strategies is not None else [strat]
+    factors = compute_factors(
+        strat, score, risk, all_strategies, consensus_full_at=consensus_full_at
+    )
+    overall_rating = compute_overall_rating(factors, _REC_FACTOR_WEIGHTS)
+    base_confidence = compute_confidence(strat, factors, _REC_CONFIDENCE_WEIGHTS)
+    return RecommendationContext(
+        strategy_result=strat,
+        score_result=score,
+        risk_result=risk,
+        strategies=all_strategies,
+        factors=factors,
+        overall_rating=overall_rating,
+        base_confidence=base_confidence,
+        symbol=symbol,
+        timeframe="base",
+    )

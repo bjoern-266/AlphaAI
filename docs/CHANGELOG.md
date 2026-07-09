@@ -4,6 +4,61 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.9.0] – 2026-07-09 – Sprint 9: Recommendation Engine
+
+Letzte fachliche Entscheidungsschicht auf dem konsolidierten Fundament. Die
+Recommendation Engine kombiniert `StrategyReport`, `ScoreReport` und
+`RiskReport` zu einer objektiven, **vollständig erklärbaren** Empfehlung. Sie
+eröffnet **keine** Position, sendet **keine** Order und kommuniziert **nicht**
+mit Brokern. `WAIT`/`AVOID` sind vollwertige Empfehlungen.
+
+### Hinzugefügt
+
+- **Recommendation Engine** (`Strategy+Score+Risk → RecommendationEngine → RecommendationReport`):
+  - `engines/recommendation_engine.py` – `RecommendationEngine` (Matching der
+    drei Reports je Hypothese, Validierung, optionaler Cache,
+    `dataclasses.replace()` für die Rechenzeit) + `load_recommendation_rules`.
+  - `engines/recommendation_registry.py` – `RecommendationRegistry` (einzige
+    Erweiterungsstelle) + `build_default_registry`.
+  - `engines/recommendation_cache.py` – `RecommendationCache` (FIFO, generisch).
+  - `engines/recommendation_result.py` – Re-Export aus `models.recommendation`.
+- **Domänenmodelle** in `models/recommendation.py` (alle `frozen`):
+  `RecommendationLevel` (STRONG_BUY/BUY/WATCH/WAIT/AVOID), `SuggestedAction`
+  (OPEN/WAIT/MONITOR/SKIP), `RecommendationFactor`, `RecommendationModelOutput`,
+  `RecommendationContext`, `RecommendationResult`, `RecommendationReport`.
+- **5 unabhängige Modelle** in `recommendation/` (je eigene Datei):
+  `decision_model`, `recommendation_model`, `confidence_model`, `summary_model`,
+  `explanation_model`. Gemeinsame Faktor-/Rating-/Confidence-Berechnung und die
+  No-Trade-Gates in `recommendation/base.py`; kein Modell hängt von einem anderen ab.
+- **Entscheidungslogik über 6 Faktoren** (Strategie, Score, Risiko, Konsens,
+  Marktqualität, Datenqualität): Das Gesamtrating ist ihre gewichtete Summe.
+  Der Score-Anteil ist bewusst begrenzt (0,25) und der Konsens belohnt **Breite**
+  (mehrere unabhängige, gleichgerichtete Strategien) – ein hoher Score allein
+  führt daher **nie** zu BUY/STRONG_BUY. **No-Trade-Gates** deckeln zusätzlich
+  bei erhöhtem Risiko, geringem Konsens, schwacher Datenqualität oder neutraler
+  Richtung.
+- **RecommendationResult**: Recommendation/Risk/Score/Hypothesis ID, Level,
+  Confidence (0-1), Overall Rating (0-100), Suggested Action, Reasons, Warnings,
+  Summary, Metadata, Timestamp – jede Empfehlung ist ohne Blackbox erklärbar.
+- **Konfiguration:** `knowledge/recommendation_rules.toml` (Faktorgewichte,
+  Confidence-Gewichte, Schwellen, Gates) – keine Hardcodes. `core/paths.py`:
+  `RECOMMENDATION_RULES_FILE`.
+- **Validierung:** fehlender/ungültiger Strategy-/Score-/Risk-Report, fehlende
+  Zuordnung je Hypothese, ungültige Level/Confidence/Ratings.
+- **Tests:** von 413 auf 502 erhöht (89 neue: Engine, Registry, Cache, alle
+  Modelle, Validierung, Entscheidungslogik, Erklärbarkeit, No-Trade).
+
+### Qualitätsprüfung
+
+Import-Zyklen: 0. Recommendation-Modell-Unabhängigkeit: 0 Verstöße.
+Entities-Schicht `models/`: 0 Verstöße. SOLID-Heuristik (Recommendation): 0
+Verstöße. Alle Modelle unveränderlich (`frozen`). `ruff`/`black` konform. 502
+Tests grün.
+
+### ADR
+
+ADR-028 (Recommendation Engine – Faktoren, No-Trade-Gates, Erklärbarkeit).
+
 ## [0.8.0] – 2026-07-09 – Sprint 8: Professional Risk Engine
 
 Neue Fachschicht **Risk Engine** auf dem konsolidierten Fundament (Sprint 7.5):

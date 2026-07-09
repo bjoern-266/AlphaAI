@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-09
-- **Aktueller Sprint:** Sprint 8 – Professional Risk Engine
+- **Aktueller Sprint:** Sprint 9 – Recommendation Engine
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -90,28 +90,49 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   ungültige Positionsgrößen/Risk-Reward.
 - **Tests:** 413 gesamt (76 neue).
 
+### Recommendation Engine (Sprint 9)
+
+- **5 unabhängige Modelle** in `recommendation/` (je eigene Datei):
+  `decision_model`, `recommendation_model`, `confidence_model`, `summary_model`,
+  `explanation_model`. Gemeinsame Logik in `recommendation/base.py`.
+- **6 Entscheidungsfaktoren** (Strategie, Score, Risiko, Konsens, Marktqualität,
+  Datenqualität) → Gesamtrating 0-100 → Stufe (STRONG_BUY/BUY/WATCH/WAIT/AVOID)
+  + Handlung (OPEN/WAIT/MONITOR/SKIP).
+- **No-Trade-Philosophie:** Der Score-Anteil ist begrenzt, Konsens belohnt
+  Breite, und Gates deckeln bei Risiko/geringem Konsens/schwacher Datenqualität
+  – ein hoher Score allein führt nie zu BUY. `WAIT`/`AVOID` sind vollwertig.
+- **RecommendationEngine**: Input `StrategyReport` + `ScoreReport` +
+  `RiskReport` → `RecommendationReport`. `RecommendationRegistry` (einzige
+  Erweiterungsstelle), `RecommendationCache` (FIFO).
+- **Erklärbarkeit:** jede Empfehlung mit Reasons, Warnings, Summary – keine
+  Blackbox. Regeln ausschließlich aus `knowledge/recommendation_rules.toml`.
+- **Validierung:** fehlender/ungültiger Strategy-/Score-/Risk-Report, fehlende
+  Zuordnung, ungültige Level/Confidence/Ratings.
+- **Tests:** 502 gesamt (89 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
-- Keine Recommendation-Engine, keine Dashboard-Logik.
-- Keine Kauf-/Verkaufsentscheidung, keine Positionseröffnung, keine Order,
-  keine Broker-API. Die Risk Engine liefert ausschließlich `RiskResult`.
+- Keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung,
+  keine Paper-Trading-Funktionen.
+- Keine Positionseröffnung, keine Order. Die Recommendation Engine liefert
+  ausschließlich `RecommendationResult`.
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 8)
+## Qualitätsnachweis (Sprint 9)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 413 Tests bestanden |
+| pytest | 502 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |
-| Plugin-Unabhängigkeit (inkl. Risk) | 0 Verstöße |
-| SOLID-Heuristik (inkl. Risk) | 0 Verstöße |
+| Plugin-Unabhängigkeit (inkl. Recommendation) | 0 Verstöße |
+| SOLID-Heuristik (inkl. Recommendation) | 0 Verstöße |
 | Ergebnisobjekte unveränderlich (`frozen`) | vollständig |
 
 ## Nächster Schritt
 
-Warten auf Freigabe für den nächsten Sprint (**Recommendation Engine**: führt
-Score und Risiko zu einer erklärten Empfehlung zusammen – weiterhin ohne
-automatische Orderausführung).
+Warten auf Freigabe für den nächsten Sprint (z. B. **Dashboard** oder
+**End-to-End-Verdrahtung im Scanner**) – weiterhin ohne automatische
+Orderausführung und ohne Broker-API.

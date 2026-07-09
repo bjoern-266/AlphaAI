@@ -42,6 +42,7 @@ Dadurch bleiben beide stabil.
 | Muster       | `patterns`   | Erkennung von Kursmustern                            |
 | Strategien   | `strategies` | Bewertung von Setups                                 |
 | Risiko       | `risk`       | Risikomodelle & Positionsgröße (keine Order)         |
+| Empfehlung   | `recommendation` | Objektive Handlungsempfehlung (keine Order)      |
 | Orchestr.    | `scanner`    | Zusammenführen der Analyse                            |
 | Persistenz   | `database`   | Speichern/Laden (SQLite)                             |
 | Präsentation | `dashboard`  | Streamlit-Oberfläche, Plotly-Charts                  |
@@ -453,10 +454,58 @@ ungültige Positionsgrößen, ungültige Risk-Reward-Werte.
 **Parameter:** ausschließlich aus `knowledge/risk_rules.toml` (Modelle/Gewichte/
 Schwellen) und `config/settings.toml` (Konto/Depot). Keine Hardcodes.
 
+## Recommendation Engine (umgesetzt in Sprint 9)
+
+Die Recommendation Engine ist die **letzte fachliche Entscheidungsschicht**. Sie
+kombiniert Strategie, Score und Risiko je Hypothese zu einer objektiven,
+vollständig erklärbaren Empfehlung. Sie eröffnet **keine** Position, sendet
+**keine** Order und kommuniziert **nicht** mit Brokern.
+
+```
+StrategyReport + ScoreReport + RiskReport → RecommendationEngine → RecommendationReport
+                          │
+        Registry · Cache · recommendation/ · 6 Faktoren · No-Trade-Gates
+```
+
+**Sechs Entscheidungsfaktoren** (in `recommendation/base.py` berechnet):
+Strategie, Score, Risiko, Konsens, Marktqualität, Datenqualität. Das
+Gesamtrating (0-100) ist ihre gewichtete Summe; daraus folgt die Stufe
+STRONG_BUY/BUY/WATCH/WAIT/AVOID und die Handlung OPEN/WAIT/MONITOR/SKIP.
+
+**No-Trade-Philosophie** („Kein Trade ist besser als ein schlechter Trade."):
+Der Score-Anteil ist bewusst begrenzt, der Konsens belohnt **Breite** (mehrere
+unabhängige, gleichgerichtete Strategien), und **Gates** deckeln bei erhöhtem
+Risiko, geringem Konsens, schwacher Datenqualität oder neutraler Richtung. Ein
+hoher Score allein führt daher **nie** zu BUY/STRONG_BUY; `WAIT`/`AVOID` sind
+vollwertige Empfehlungen.
+
+**Fünf Modelle** (je eigene Datei, unabhängig): `decision_model` (Rating +
+Faktor-Transparenz), `recommendation_model` (Stufe/Handlung + Gates),
+`confidence_model` (0-1), `summary_model` (Kurzfassung), `explanation_model`
+(Reasons/Warnings). Neue Modelle nur über die `RecommendationRegistry`.
+
+**Transparenz:** Jede Empfehlung trägt Reasons, Warnings und Summary – keine
+Blackbox. Parameter ausschließlich aus `knowledge/recommendation_rules.toml`.
+
+**Bausteine:**
+
+| Baustein                 | Datei                                   | Aufgabe                          |
+|--------------------------|-----------------------------------------|----------------------------------|
+| `BaseRecommendationModel`| `recommendation/base.py`                | Schnittstelle, Faktoren, Gates   |
+| 5 Modelle                | `recommendation/<name>.py`              | je ein Aspekt der Empfehlung     |
+| `RecommendationResult`   | `models/recommendation.py`              | Empfehlung einer Hypothese (Level, Action, Confidence, Rating, Reasons, Warnings, Summary, Metadata, Timestamp) |
+| `RecommendationReport`   | `models/recommendation.py`              | Aggregat + Lauf-Metadaten        |
+| `RecommendationRegistry` | `engines/recommendation_registry.py`    | Registrierung/Auflösung          |
+| `RecommendationCache`    | `engines/recommendation_cache.py`       | Cache (FIFO)                     |
+| `RecommendationEngine`   | `engines/recommendation_engine.py`      | Kombination, Validierung, Cache  |
+
+**Validierung:** fehlender/ungültiger Strategy-/Score-/Risk-Report, fehlende
+Zuordnung je Hypothese, ungültige Level/Confidence/Ratings.
+
 ## Aktueller Stand
 
-Sprint 1–8 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–9 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
-mit Tag `v0.1.0-foundation`, Risk Engine). Es gibt bewusst weiterhin **keine
-Recommendation-Engine, keine Dashboard-Logik, keine Broker-API und keine
-automatische Orderausführung**.
+mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine). Es gibt bewusst
+weiterhin **keine Dashboard-Logik, keine Broker-API, keine automatische
+Orderausführung und keine Paper-Trading-Funktionen**.

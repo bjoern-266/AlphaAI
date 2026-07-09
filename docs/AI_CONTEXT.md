@@ -144,11 +144,31 @@ ausschließlich aus `config/settings.toml`. Portfolio-Risiko ist vorbereitet
 (offene Positionen werden an die Modelle durchgereicht). Einstieg:
 `RiskEngine.from_config()`.
 
+## Recommendation Engine (ab Sprint 9 verfügbar)
+
+Letzte fachliche Entscheidungsschicht: kombiniert `StrategyReport`,
+`ScoreReport` und `RiskReport` je Hypothese zu einer objektiven, vollständig
+erklärbaren Empfehlung. Kette: `Strategy+Score+Risk → RecommendationEngine →
+RecommendationReport`. Fünf unabhängige Modelle in `recommendation/<name>.py`
+(decision, recommendation, confidence, summary, explanation); sechs
+Entscheidungsfaktoren (Strategie, Score, Risiko, Konsens, Marktqualität,
+Datenqualität). Stufen STRONG_BUY/BUY/WATCH/WAIT/AVOID und Handlungen
+OPEN/WAIT/MONITOR/SKIP. **No-Trade-Philosophie:** Score-Anteil begrenzt, Konsens
+belohnt Breite, Gates deckeln bei Risiko/geringem Konsens/schwacher
+Datenqualität – ein hoher Score allein führt nie zu BUY; `WAIT`/`AVOID` sind
+vollwertig. Ergebnistypen in `models/recommendation.py` (re-exportiert über
+`engines/recommendation_result.py`), Logik/Helfer in `recommendation/base.py`.
+Neue Modelle nur über die `RecommendationRegistry`; Regeln ausschließlich aus
+`knowledge/recommendation_rules.toml`. Einstieg:
+`RecommendationEngine.from_config()`. Jede Empfehlung ist über Reasons/Warnings/
+Summary vollständig erklärbar (keine Blackbox). **Keine** Order, **keine**
+Broker-Anbindung.
+
 ## Aktueller Stand
 
-Sprint 1–8 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–9 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
-Risk Engine). Es gibt weiterhin **keine** Recommendation-Engine, **keine**
-Dashboard-Logik, **keine** Broker-API und **keine** automatische Orderausführung.
-Nächster Schritt: Recommendation Engine. Immer zuerst `PROJECT_STATUS.md` und
+Risk Engine, Recommendation Engine). Es gibt bewusst weiterhin **keine**
+Dashboard-Logik, **keine** Broker-API, **keine** automatische Orderausführung und
+**keine** Paper-Trading-Funktionen. Immer zuerst `PROJECT_STATUS.md` und
 `HANDOVER.md` lesen.

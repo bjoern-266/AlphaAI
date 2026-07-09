@@ -370,3 +370,37 @@ das Projekt so aufgebaut ist, wie es ist.
   Gewicht/Parameter in `risk_rules.toml`; die Engine bleibt unverändert. Die
   Risk Engine trifft **keine** Kauf-/Verkaufsentscheidung und erzeugt **keine**
   Order.
+
+### ADR-028 – Recommendation Engine: Faktoren, No-Trade-Gates, Erklärbarkeit
+
+- **Datum:** 2026-07-09 (Sprint 9)
+- **Kontext:** Als letzte fachliche Schicht muss aus Strategie, Score und Risiko
+  eine objektive, nachvollziehbare Handlungsempfehlung entstehen – ohne
+  Blackbox, ohne automatische Orderausführung, mit vollwertigem „kein Trade".
+- **Entscheidung:**
+  - Kette `Strategy+Score+Risk → RecommendationEngine → RecommendationReport`;
+    konsistent zu den anderen Engines (frozen `models/recommendation.py`,
+    generische `Cache`/`Registry`, `AlphaAIError`-Hierarchie, Bau-am-Ende +
+    `replace()`). Die Engine ordnet die drei Reports je Hypothese über
+    `hypothesis_id` zu.
+  - Das Gesamtrating (0..100) ist die gewichtete Summe **sechs** Faktoren
+    (Strategie, Score, Risiko, Konsens, Marktqualität, Datenqualität; Gewichte
+    aus `[weights]`). Die Engine berechnet Faktoren, Rating und Confidence per
+    Basis-Helfer **vorab** und legt sie in den `RecommendationContext` (analog
+    zu `ScoreContext.components`); die fünf Modelle transformieren diesen
+    Kontext unabhängig voneinander.
+  - **No-Trade-Philosophie:** Der Score-Anteil ist bewusst begrenzt und der
+    Konsens belohnt **Breite** (voll ab `consensus_full_at` gleichgerichteten
+    Strategien). Zusätzlich deckeln **Gates** im `recommendation_model` bei
+    erhöhtem Risiko, geringem Konsens, schwacher Datenqualität oder neutraler
+    Richtung. So kann ein hoher Score allein **nie** zu BUY/STRONG_BUY führen;
+    `WAIT`/`AVOID` sind vollwertige Empfehlungen.
+  - **Erklärbarkeit:** `explanation_model` liefert Reasons/Warnings,
+    `summary_model` die Kurzfassung, das `recommendation_model` die
+    Gate-Begründungen – jede Empfehlung ist vollständig nachvollziehbar.
+- **Begründung:** Kombinierte, robuste Entscheidung statt Score-Fixierung; klare
+  Erweiterung nur über die Registry; keine Handels-/Orderlogik in der Engine.
+- **Konsequenzen:** Neue Recommendation-Modelle = Datei in `recommendation/` +
+  Registrierung + Parameter in `recommendation_rules.toml`; die Engine bleibt
+  unverändert. Sie liefert ausschließlich `RecommendationResult` – **keine**
+  Position, **keine** Order, **keine** Broker-Kommunikation.

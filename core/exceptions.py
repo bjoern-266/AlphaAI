@@ -65,6 +65,10 @@ class RiskParameterError(ParameterError):
     """Risk-Parameter/-Gewichte fehlen, sind ungültig oder ergeben ≠ 100 %."""
 
 
+class RecommendationParameterError(ParameterError):
+    """Recommendation-Parameter/-Gewichte fehlen, sind ungültig oder ≠ 100 %."""
+
+
 # --------------------------------------------------------------------------- #
 # Registry-Fehler (Erweiterungsstelle für Plugins)                             #
 # --------------------------------------------------------------------------- #

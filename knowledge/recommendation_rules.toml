@@ -1,0 +1,76 @@
+# =============================================================================
+# Recommendation-Regeln (Sprint 9)
+# =============================================================================
+# Einzige Quelle aller Regeln der Recommendation Engine. Im Code gibt es keine
+# hartcodierten Werte.
+#
+# Wichtig: Die Recommendation Engine liefert ausschließlich eine objektive,
+# vollständig erklärbare Empfehlung. Sie eröffnet KEINE Position, sendet KEINE
+# Order und kommuniziert NICHT mit Brokern. WAIT und AVOID sind vollwertige
+# Empfehlungen ("Kein Trade ist besser als ein schlechter Trade").
+#
+# Eine Empfehlung stützt sich nie ausschließlich auf den Score: Ein hoher Score
+# allein kann wegen der Faktorgewichte und der No-Trade-Gates NIE zu BUY/
+# STRONG_BUY führen.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Gewichte, Schwellen und Gates der Recommendation-Modelle (Sprint 9)."
+
+# Gewichte der sechs Entscheidungsfaktoren für das Gesamtrating (0..100).
+# Regel: alle in [0, 1], Summe = 1.0. Der Score-Anteil ist bewusst begrenzt.
+[weights]
+strategy = 0.15
+score = 0.25
+risk = 0.20
+consensus = 0.20
+market_quality = 0.10
+data_quality = 0.10
+
+# Faktor-Feineinstellung.
+[factors]
+# Anzahl gleichgerichteter Strategien, ab der voller Konsens erreicht ist.
+# Eine einzelne Strategie erhält dadurch bewusst nur Teil-Konsens.
+consensus_full_at = 2
+
+# Gewichte der Confidence (0..1). Regel: alle in [0, 1], Summe = 1.0.
+[confidence]
+strategy_confidence = 0.35
+consensus = 0.30
+risk = 0.20
+data_quality = 0.15
+
+# --- Modelle (jeweils eigenes Plugin in recommendation/) ----------------------
+
+[decision_model]
+enabled = true
+
+[recommendation_model]
+enabled = true
+# Rating-Schwellen für die Stufen (vor den Gates).
+strong_buy_min = 80.0
+buy_min = 65.0
+watch_min = 45.0
+wait_min = 25.0
+# No-Trade-Gates: BUY/STRONG_BUY nur, wenn zusätzlich erfüllt.
+# Höchstes Gesamtrisiko (0..100), bis zu dem BUY erlaubt ist.
+max_overall_risk_for_buy = 66.0
+# Mindestkonsens (0..100), damit mehr als WATCH möglich ist.
+min_consensus_for_buy = 60.0
+# Mindest-Datenqualität (0..100), damit mehr als WAIT möglich ist.
+min_data_quality = 60.0
+
+[confidence_model]
+enabled = true
+
+[summary_model]
+enabled = true
+
+[explanation_model]
+enabled = true
+# Schwellen für erklärende Reasons/Warnings.
+good_market_quality = 60.0
+good_volume_quality = 60.0
+weak_data_quality = 70.0
+elevated_component_risk = 60.0

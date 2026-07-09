@@ -48,6 +48,7 @@ packages = [
     "strategies",
     "scores",
     "risk",
+    "recommendation",
     "dashboard",
     "database",
     "models",

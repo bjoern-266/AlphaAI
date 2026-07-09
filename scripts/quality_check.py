@@ -37,6 +37,7 @@ PACKAGES = [
     "strategies",
     "scores",
     "risk",
+    "recommendation",
 ]
 
 # Schichten oberhalb der Entities: ``models`` darf daraus nichts importieren.
@@ -147,11 +148,15 @@ def run_checks() -> dict[str, list[str]]:
         "independence_strategies": check_independence("strategies"),
         "independence_scores": check_independence("scores"),
         "independence_risk": check_independence("risk"),
+        "independence_recommendation": check_independence("recommendation"),
         "solid_indicators": check_solid("indicators", "BaseIndicator", {"compute", "min_candles"}),
         "solid_patterns": check_solid("patterns", "BasePattern", {"detect", "min_candles"}),
         "solid_strategies": check_solid("strategies", "BaseStrategy", {"evaluate"}),
         "solid_scores": check_solid("scores", "BaseScoreModel", {"compute"}),
         "solid_risk": check_solid("risk", "BaseRiskModel", {"compute"}),
+        "solid_recommendation": check_solid(
+            "recommendation", "BaseRecommendationModel", {"compute"}
+        ),
     }
 
 

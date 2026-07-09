@@ -93,6 +93,18 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
   werden durchgereicht).
 - 76 neue Tests (413 gesamt). News-Risiko vorbereitet (neutral).
 
+## Sprint 9 – Recommendation Engine ✅ (abgeschlossen)
+
+- Kette `Strategy+Score+Risk → RecommendationEngine → RecommendationReport`;
+  letzte fachliche Entscheidungsschicht, keine Order/Broker-Anbindung.
+- 5 unabhängige Modelle in `recommendation/` (decision, recommendation,
+  confidence, summary, explanation); 6 Entscheidungsfaktoren.
+- Stufen STRONG_BUY/BUY/WATCH/WAIT/AVOID + Handlungen OPEN/WAIT/MONITOR/SKIP.
+- No-Trade-Philosophie mit Gates: hoher Score allein führt nie zu BUY; WAIT/
+  AVOID sind vollwertig. Vollständige Erklärbarkeit (Reasons/Warnings/Summary).
+- `RecommendationRegistry`, `RecommendationCache`, Regeln aus
+  `knowledge/recommendation_rules.toml`. 89 neue Tests (502 gesamt).
+
 ## Sprint 6 – Dashboard (geplant)
 
 - Streamlit-Oberfläche in `dashboard/`.

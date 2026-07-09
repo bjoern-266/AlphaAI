@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-09
-- **Abgeschlossener Sprint:** Sprint 8 – Professional Risk Engine
+- **Abgeschlossener Sprint:** Sprint 9 – Recommendation Engine
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,10 +18,10 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 413 Tests).
+5. Tests ausführen: `pytest` (aktuell 502 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
-## Qualitätsprüfung Sprint 8 (Ergebnis)
+## Qualitätsprüfung Sprint 9 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -29,11 +29,32 @@ Vor dem Commit automatisch geprüft:
 |---|---|
 | Import-Zyklen | **0** |
 | Entities-Schicht `models/` (kein Import aus höheren Schichten) | **0 Verstöße** |
-| Plugin-Unabhängigkeit (inkl. Risk-Modelle) | **0 Verstöße** |
-| SOLID-Heuristik (inkl. Risk) | **0 Verstöße** |
+| Plugin-Unabhängigkeit (inkl. Recommendation-Modelle) | **0 Verstöße** |
+| SOLID-Heuristik (inkl. Recommendation) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **413 bestanden** |
+| pytest | **502 bestanden** |
+
+## Recommendation Engine – Kurzüberblick für die Weiterarbeit
+
+- Einstieg: `RecommendationEngine.from_config()` lädt
+  `knowledge/recommendation_rules.toml` und registriert alle Standard-Modelle.
+- Empfehlung: `engine.recommend(strategy_report, score_report, risk_report,
+  symbol=...)` → `RecommendationReport` mit einer `RecommendationResult` je
+  bewerteter Hypothese (zugeordnet über `hypothesis_id`).
+- Ergebnis: `report.results`; `report.top(n)`/`by_level`/`by_action` sind reine
+  Anzeige. Jede `RecommendationResult` trägt Level, Handlung, Confidence (0-1),
+  Overall Rating (0-100), Reasons, Warnings, Summary und in `metadata['factors']`
+  die sechs Faktoren.
+- **Neues Recommendation-Modell hinzufügen** (einziger erlaubter Weg):
+  1. Datei in `recommendation/` anlegen, `BaseRecommendationModel` implementieren
+     (`compute`), nur `context`/`params` nutzen, kein anderes Modell importieren.
+  2. In `engines/recommendation_registry.py::build_default_registry` registrieren.
+  3. Abschnitt/Parameter in `knowledge/recommendation_rules.toml` ergänzen. Die
+     Engine muss dafür **nicht** geändert werden.
+  4. Eigene Testdatei `tests/test_recommendation_<name>.py` anlegen.
+- **Grundsatz:** No-Trade ist vollwertig; ein hoher Score allein führt nie zu
+  BUY. Die Engine erzeugt **keine** Order und **keine** Broker-Anbindung.
 
 ## Risk Engine – Kurzüberblick für die Weiterarbeit
 
