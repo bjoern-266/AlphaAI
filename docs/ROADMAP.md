@@ -57,10 +57,22 @@ Dokumentation, Basistests. Kein Scanner, keine Daten, keine Handelslogik.
 - 50 neue Tests (247 gesamt), Testabdeckung Strategy-Module 96 %.
 - Nur Hypothesen; keine Scores, keine Kauf-/Verkaufsentscheidung.
 
-## Sprint 7 – Score Engine (geplant)
+## Sprint 7 – Score Engine ✅ (abgeschlossen)
 
-- Aggregation der Strategie-Hypothesen zu einem Gesamtscore je Symbol.
-- Anbindung von Indikator-/Muster-/Strategie-Ergebnissen an den Scanner.
+- 5 unabhängige Score-Modelle in `scores/` (weighted, confidence, quality,
+  consensus, market) und 8 separat gespeicherte Komponenten.
+- `ScoreRegistry` (einzige Erweiterungsstelle), `ScoreEngine`,
+  `ScoreResult`/`ScoreReport`, `ScoreCache`.
+- Vollständig transparente Scores (Komponenten-Aufschlüsselung).
+- Gewichte aus `knowledge/score_rules.toml`.
+- 60 neue Tests (307 gesamt), Testabdeckung Score-Module 96 %.
+- Nur Scores; keine Entscheidung, keine Positionsgröße, kein Risiko.
+
+## Sprint 8 – Risk Engine (geplant)
+
+- Ableitung von Risiko und Positionsgröße aus den Scores (Regeln aus
+  `knowledge/risk.md`/TOML).
+- Anbindung der Ergebnisse an den Scanner.
 
 ## Sprint 6 – Dashboard (geplant)
 

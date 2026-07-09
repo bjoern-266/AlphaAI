@@ -1,0 +1,53 @@
+# =============================================================================
+# Score-Regeln
+# =============================================================================
+# Gewichtungen aller Score-Modelle. Diese Datei ist die einzige Quelle der
+# Gewichte – im Code stehen keine hartcodierten Gewichtungen.
+#
+# Wichtig: Die Score Engine berechnet ausschließlich objektive Scores. Sie
+# trifft keine Kauf-/Verkaufsentscheidung, erzeugt keine Positionsgröße und
+# kein Risiko. Jeder Score ist über seine Komponenten vollständig erklärbar.
+#
+# Regeln für Gewichte: je Modell müssen die Gewichte auf 1.0 (= 100 %)
+# summieren und im Bereich [0, 1] liegen.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Gewichtungen der Score-Modelle (Sprint 7)."
+
+# Gesamtscore (0-100) als gewichtete Summe aller acht Komponenten.
+[weighted_score]
+enabled = true
+trend = 0.20
+momentum = 0.20
+pattern_strength = 0.15
+pattern_confidence = 0.10
+indicator_quality = 0.10
+market_context = 0.10
+volume_quality = 0.075
+data_quality = 0.075
+
+# Confidence Score (0-1) aus Strategie-, Pattern-Confidence und Konsens.
+[confidence_score]
+enabled = true
+strategy_confidence = 0.5
+pattern_confidence = 0.3
+consensus = 0.2
+
+# Quality Score (0-100) aus Datenqualitäts-Komponenten.
+[quality_score]
+enabled = true
+indicator_quality = 0.4
+pattern_confidence = 0.4
+data_quality = 0.2
+
+# Consensus Score (0-100) – Übereinstimmung der Hypothesen-Richtungen.
+[consensus_score]
+enabled = true
+
+# Market Score (0-100) aus Marktkontext und Volumenqualität.
+[market_score]
+enabled = true
+market_context = 0.6
+volume_quality = 0.4

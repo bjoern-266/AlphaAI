@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-08
-- **Aktueller Sprint:** Sprint 6 – Strategy Engine
+- **Aktueller Sprint:** Sprint 7 – Score Engine
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -31,43 +31,48 @@ _Wird nach jedem Sprint automatisch aktualisiert._
 
 ### Strategy Engine (Sprint 6)
 
-- **5 vollständig implementierte Strategien** in `strategies/` (je eigene
-  Datei): `fvg_strategy`, `trend_following`, `momentum_strategy`,
-  `breakout_strategy`, `mean_reversion`.
-- **Jede Strategie** besitzt Name, Beschreibung, Version, Konfiguration,
-  Pattern-Anforderungen, Indikator-Anforderungen und Confidence.
-- **StrategyResult**: Strategy Name, Hypothesis ID, Richtung (bullish/bearish/
-  neutral), Confidence (0-1), Strength (0-100), Matched Indicators, Matched
-  Patterns, Reasons, Warnings, Metadata, Timestamp.
-- **StrategyEngine**: Input `IndicatorResult` + `PatternReport` (+ optionale
-  Rohdaten) → `StrategyReport` mit Hypothesen.
-- **Registry** (`StrategyRegistry`) als einzige Erweiterungsstelle.
-- **Cache** (`StrategyCache`, FIFO).
-- **Validierung**: fehlende Daten, fehlende Muster, fehlende Indikatoren,
-  inkonsistente Ergebnisse.
-- **Parameter** ausschließlich aus `knowledge/strategy_rules.toml`.
-- **Tests:** 247 gesamt (50 neue).
+- 5 Strategien, Registry, Engine, Result, Cache (nur Hypothesen).
+
+### Score Engine (Sprint 7)
+
+- **5 Score-Modelle** in `scores/` (je eigene Datei): `weighted_score`,
+  `confidence_score`, `quality_score`, `consensus_score`, `market_score`.
+- **8 Komponenten** (separat gespeichert): Trend, Momentum, Pattern Strength,
+  Pattern Confidence, Indicator Quality, Market Context, Volume Quality,
+  Data Quality.
+- **ScoreResult**: Score ID, Strategy Name, Hypothesis ID, Total Score (0-100),
+  Confidence (0-1), Quality/Consensus/Market Score, Component Scores, Reasons,
+  Warnings, Metadata, Timestamp.
+- **Transparenz**: jeder Score über Komponenten erklärbar (z. B. `trend: 18/20`).
+- **ScoreEngine**: Input `StrategyReport` (+ Indikatoren/Muster für Komponenten)
+  → `ScoreReport`.
+- **Registry** (`ScoreRegistry`) als einzige Erweiterungsstelle.
+- **Cache** (`ScoreCache`, FIFO).
+- **Validierung**: fehlende Hypothesen, ungültige Gewichte, Gewichte ≠ 100 %,
+  fehlende Komponenten.
+- **Gewichte** ausschließlich aus `knowledge/score_rules.toml`.
+- **Tests:** 307 gesamt (60 neue).
 
 ## Was ist bewusst NICHT vorhanden
 
-- Keine Score-Engine, keine Risk-Engine, keine Recommendation-Engine.
-- Keine Kauf-/Verkaufsentscheidung, kein Gesamtscore.
+- Keine Risk-Engine, keine Recommendation-Engine.
+- Keine Kauf-/Verkaufsentscheidung, keine Positionsgröße, kein Risiko.
 - Keine Dashboard-Logik.
 
-Diese Teile folgen ab Sprint 7 (siehe `ROADMAP.md`).
+Diese Teile folgen ab Sprint 8 (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 6)
+## Qualitätsnachweis (Sprint 7)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 247 Tests bestanden |
+| pytest | 307 Tests bestanden |
 | Ruff / Black | konform |
-| Import-Zyklen | 0 (72 Module analysiert) |
-| Strategie-Unabhängigkeit | 0 Verstöße |
-| SOLID-Heuristik (Strategien) | 0 Verstöße |
-| Testabdeckung (Strategy-Module) | 96 % |
+| Import-Zyklen | 0 (83 Module analysiert) |
+| Score-Modell-Unabhängigkeit | 0 Verstöße |
+| SOLID-Heuristik (Score-Modelle) | 0 Verstöße |
+| Testabdeckung (Score-Module) | 96 % |
 
 ## Nächster Schritt
 
-Warten auf Freigabe für **Sprint 7 – Score Engine** (aggregiert die Hypothesen
-zu einem Gesamtscore).
+Warten auf Freigabe für **Sprint 8 – Risk Engine** (leitet Risiko/Positionsgröße
+aus den Scores ab).

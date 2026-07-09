@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-08
-- **Abgeschlossener Sprint:** Sprint 6 – Strategy Engine
+- **Abgeschlossener Sprint:** Sprint 7 – Score Engine
 - **Projektwurzel:** `AlphaAI/` (innerhalb des Repositorys `reiseplaner`)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 
@@ -17,55 +17,56 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 247 Tests).
+5. Tests ausführen: `pytest` (aktuell 307 Tests).
 
-## Qualitätsprüfung Sprint 6 (Ergebnis)
+## Qualitätsprüfung Sprint 7 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
 | Prüfung | Ergebnis |
 |---|---|
-| Import-Zyklen | **0** (72 Module per AST-Graph analysiert) |
-| Strategie-Unabhängigkeit (keine Strategie hängt von anderer ab) | **0 Verstöße** |
-| strategies.* importiert nicht aus engines.* | **eingehalten** |
-| SOLID-Heuristik (genau eine Strategieklasse, evaluate) | **0 Verstöße** |
-| Testabdeckung Strategy-Module (engines/strategy_*, strategies) | **96 %** |
+| Import-Zyklen | **0** (83 Module per AST-Graph analysiert) |
+| Score-Modell-Unabhängigkeit (kein Modell hängt von anderem ab) | **0 Verstöße** |
+| scores.* importiert nicht aus engines.* | **eingehalten** |
+| SOLID-Heuristik (genau eine Modellklasse, compute) | **0 Verstöße** |
+| Testabdeckung Score-Module (engines/score_*, scores) | **96 %** |
 | Ruff / Black | **konform** |
-| pytest | **247 bestanden** |
+| pytest | **307 bestanden** |
 
-## Strategy Engine – Kurzüberblick für die Weiterarbeit
+## Score Engine – Kurzüberblick für die Weiterarbeit
 
-- Einstieg: `StrategyEngine.from_config()` erzeugt eine Engine mit Regeln aus
-  `knowledge/strategy_rules.toml` und allen Standard-Strategien.
-- Auswertung: `engine.evaluate(indicator_result, pattern_report, data=ohlcv,
-  symbol, timeframe)` → `StrategyReport` mit `StrategyResult`-Hypothesen.
-- Ergebnis: `report.results`, Filter über `report.by_name(...)` /
-  `report.by_direction(...)` / `report.bullish` / `report.bearish`.
-- Jede Strategie deklariert `pattern_requirements` und
-  `indicator_requirements`; die Engine überspringt Strategien mit fehlenden
-  Anforderungen und vermerkt dies als Warnung.
-- **Neue Strategie hinzufügen** (einziger erlaubter Weg):
-  1. Datei in `strategies/` anlegen, `BaseStrategy` implementieren
-     (`evaluate`), Anforderungen deklarieren, keine andere Strategie nutzen.
-  2. In `engines/strategy_registry.py::build_default_registry` registrieren.
-  3. Parameter in `knowledge/strategy_rules.toml` ergänzen.
-  4. Eigene Testdatei `tests/test_strategy_<name>.py` anlegen.
+- Einstieg: `ScoreEngine.from_config()` erzeugt eine Engine mit Gewichten aus
+  `knowledge/score_rules.toml` und allen Standard-Modellen.
+- Bewertung: `engine.score(strategy_report, indicators, patterns, symbol,
+  timeframe)` → `ScoreReport` mit einem `ScoreResult` je Hypothese.
+- Ergebnis: `report.results`; `report.top(n)` sortiert nach Gesamtscore (reine
+  Anzeige, **keine** Empfehlung). Jeder `ScoreResult` trägt die acht
+  Komponenten in `component_scores` und alle Modellwerte in
+  `metadata['model_scores']`.
+- **Neues Score-Modell hinzufügen** (einziger erlaubter Weg):
+  1. Datei in `scores/` anlegen, `BaseScoreModel` implementieren (`compute`),
+     nur Komponenten/Kontext nutzen, kein anderes Modell.
+  2. In `engines/score_registry.py::build_default_registry` registrieren.
+  3. Abschnitt in `knowledge/score_rules.toml` ergänzen (Sektionsname =
+     Modellname). Die Engine muss dafür **nicht** geändert werden.
+  4. Eigene Testdatei `tests/test_score_<name>.py` anlegen.
+- Neue **Komponenten** kommen in `scores/base.py::compute_components` hinzu und
+  werden in `COMPONENT_NAMES` sowie den Gewichten des Weighted Score ergänzt.
 
 ## Wichtige Konventionen (unbedingt einhalten)
 
-- **Keine hartcodierten Werte** – Parameter in `knowledge/*.toml`, Einstellungen
-  in `config/*.toml`. Strength/Confidence sind beschreibende Kennzahlen der
-  Hypothese, kein Gesamtscore.
+- **Keine hartcodierten Werte** – Gewichte in `knowledge/*.toml`, Einstellungen
+  in `config/*.toml`. Komponenten-Formeln sind dokumentierte Messungen.
 - **Type Hints und Docstrings** für jede öffentliche Funktion/Klasse.
 - **Black- und Ruff-konform** (Zeilenlänge 100).
-- **Abhängigkeiten zeigen nur nach unten**; keine Strategie/kein Muster/kein
+- **Abhängigkeiten zeigen nur nach unten**; kein Score-Modell/Strategie/Muster/
   Indikator hängt von einem anderen ab.
-- **Kein Auto-Trading**, keine Kauf-/Verkaufsentscheidung, kein Gesamtscore in
-  der Strategy Engine.
+- **Kein Auto-Trading**, keine Entscheidung/Positionsgröße/Risiko in der Score
+  Engine.
 - Nach jedem Sprint: `PROJECT_STATUS.md`, `CHANGELOG.md`, `ROADMAP.md`,
   `AI_CONTEXT.md`, `DECISIONS.md` und diese Datei aktualisieren.
 
 ## Nächster geplanter Schritt
 
-**Sprint 7 – Score Engine:** Aggregation der Strategie-Hypothesen zu einem
-Gesamtscore je Symbol. Details in `ROADMAP.md`.
+**Sprint 8 – Risk Engine:** Ableitung von Risiko und Positionsgröße aus den
+Scores. Details in `ROADMAP.md`.

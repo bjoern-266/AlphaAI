@@ -46,6 +46,7 @@ packages = [
     "indicators",
     "patterns",
     "strategies",
+    "scores",
     "dashboard",
     "database",
     "models",

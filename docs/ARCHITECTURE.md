@@ -321,9 +321,54 @@ Ergebnisse (abweichender Timeframe/Kerzenzahl).
 
 **Parameter:** ausschließlich aus `knowledge/strategy_rules.toml`.
 
+## Score Engine (umgesetzt in Sprint 7)
+
+Die Score Engine bewertet jede Hypothese (`StrategyResult`) **objektiv**. Sie
+trifft **keine** Kauf-/Verkaufsentscheidung, erzeugt **keine** Positionsgröße
+und **kein** Risiko.
+
+```
+StrategyReport → ScoreEngine → ScoreReport (ScoreResult je Hypothese) → RiskEngine (später)
+                     │
+        Registry · Cache · scores/ · 8 Komponenten
+```
+
+**Acht Komponenten** (in `scores/base.py` berechnet, je Score getrennt
+gespeichert): Trend, Momentum, Pattern Strength, Pattern Confidence, Indicator
+Quality, Market Context, Volume Quality, Data Quality.
+
+**Fünf Score-Modelle** (je eigene Datei, unabhängig voneinander):
+`weighted_score` (Gesamtscore 0-100 aus allen Komponenten), `confidence_score`
+(0-1), `quality_score` (0-100), `consensus_score` (0-100), `market_score`
+(0-100). Neue Modelle werden ausschließlich über die `ScoreRegistry` ergänzt;
+die Engine bleibt unverändert (unbekannte Modelle erscheinen zusätzlich in
+`metadata['model_scores']`).
+
+**Transparenz:** Jeder Score ist über seine Komponenten vollständig erklärbar.
+Der Weighted Score liefert je Komponente einen Beitrag im Format
+`trend: 18/20`; alle Komponenten-Erklärungen und Modell-Begründungen stehen in
+`ScoreResult.reasons`.
+
+**Bausteine:**
+
+| Baustein         | Datei                         | Aufgabe                                        |
+|------------------|-------------------------------|------------------------------------------------|
+| `BaseScoreModel` | `scores/base.py`              | Schnittstelle, Typen, Komponenten, Gewichtsvalidierung |
+| 5 Score-Modelle  | `scores/<name>.py`            | je ein Aggregat-Score                          |
+| `ScoreResult`    | `engines/score_result.py`     | Bewertung einer Hypothese (Score ID, Strategy Name, Hypothesis ID, Total/Confidence/Quality/Consensus/Market, Component Scores, Reasons, Warnings, Metadata, Timestamp) |
+| `ScoreReport`    | `engines/score_result.py`     | Aggregat + Lauf-Metadaten                      |
+| `ScoreRegistry`  | `engines/score_registry.py`   | Registrierung/Auflösung                        |
+| `ScoreCache`     | `engines/score_cache.py`      | Cache (FIFO)                                   |
+| `ScoreEngine`    | `engines/score_engine.py`     | Bewertung, Validierung, Cache                  |
+
+**Validierung:** fehlende Hypothesen, ungültige Gewichte, Gewichte ≠ 100 %,
+fehlende Komponenten (jeweils über `validate_weights` bzw. die Engine).
+
+**Gewichte:** ausschließlich aus `knowledge/score_rules.toml`.
+
 ## Aktueller Stand
 
-Sprint 1–6 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
-Engine, Pattern Engine, Strategy Engine). Es gibt bewusst weiterhin **keine
-Score-Engine, keine Risk-Engine, keine Recommendation-Engine und keine
+Sprint 1–7 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Engine, Pattern Engine, Strategy Engine, Score Engine). Es gibt bewusst
+weiterhin **keine Risk-Engine, keine Recommendation-Engine und keine
 Dashboard-Logik**.

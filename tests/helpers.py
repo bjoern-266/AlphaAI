@@ -16,6 +16,7 @@ from indicators.base import IndicatorOutput
 from patterns.base import PatternDirection, PatternResult, PatternType
 from providers.yahoo_provider import DownloadFn, YahooProvider
 from repositories.repository_factory import build_repository
+from strategies.base import StrategyDirection, StrategyResult
 
 
 def make_ohlcv(rows: int = 5, start: str = "2024-01-01", freq: str = "D") -> pd.DataFrame:
@@ -201,4 +202,58 @@ def make_pattern_report(
         results=results or [],
         valid=valid,
         metadata={"candle_count": candle_count, "timeframe": timeframe, "rules_version": 2},
+    )
+
+
+def make_strategy_result(
+    strategy_name: str = "strat",
+    direction: StrategyDirection | None = None,
+    confidence: float = 0.6,
+    strength: float = 50.0,
+    matched_indicators: list[str] | None = None,
+    matched_patterns: list[str] | None = None,
+    hypothesis_id: str | None = None,
+    timestamp: datetime | None = None,
+) -> StrategyResult:
+    """Baut ein StrategyResult (für Score-Tests)."""
+    direction = direction or StrategyDirection.BULLISH
+    return StrategyResult(
+        strategy_name=strategy_name,
+        hypothesis_id=hypothesis_id or f"{strategy_name}:{direction.value}:na",
+        direction=direction,
+        confidence=confidence,
+        strength=strength,
+        matched_indicators=matched_indicators or [],
+        matched_patterns=matched_patterns or [],
+        timestamp=timestamp or datetime(2024, 1, 1, tzinfo=UTC),
+    )
+
+
+def make_components(**overrides: float):
+    """Baut die acht Score-Komponenten mit gegebenen Werten (Standard 50)."""
+    from scores.base import COMPONENT_NAMES, ComponentScore
+
+    return {
+        name: ComponentScore(name, float(overrides.get(name, 50.0)), f"{name}: test")
+        for name in COMPONENT_NAMES
+    }
+
+
+def make_score_context(
+    strategy_result=None,
+    components=None,
+    hypotheses=None,
+    indicators=None,
+    patterns=None,
+):
+    """Baut einen ScoreContext (für Score-Modell-Tests)."""
+    from scores.base import ScoreContext
+
+    sr = strategy_result or make_strategy_result()
+    return ScoreContext(
+        strategy_result=sr,
+        indicators=indicators or make_indicator_result(),
+        patterns=patterns or make_pattern_report(),
+        hypotheses=hypotheses or [sr],
+        components=components or make_components(),
     )

@@ -4,6 +4,47 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.7.0] – 2026-07-08 – Sprint 7: Score Engine
+
+### Hinzugefügt
+
+- **Score Engine** (bewertet jede Hypothese objektiv; keine Entscheidung, keine
+  Positionsgröße, kein Risiko):
+  - `engines/score_engine.py` – `ScoreEngine` (Bewertung, Validierung,
+    optionaler Cache) + `load_score_rules`.
+  - `engines/score_registry.py` – `ScoreRegistry` (einzige Erweiterungsstelle)
+    + `build_default_registry`.
+  - `engines/score_result.py` – `ScoreResult` (Score ID, Strategy Name,
+    Hypothesis ID, Total/Confidence/Quality/Consensus/Market Score, Component
+    Scores, Reasons, Warnings, Metadata, Timestamp) + `ScoreReport`.
+  - `engines/score_cache.py` – `ScoreCache` (FIFO).
+- **5 unabhängige Score-Modelle** in `scores/` (je eigene Datei):
+  `weighted_score`, `confidence_score`, `quality_score`, `consensus_score`,
+  `market_score`. Gemeinsame Schnittstelle, Typen, **acht Komponenten** und die
+  Gewichtsvalidierung in `scores/base.py`; kein Modell hängt von einem anderen
+  ab.
+- **Komponenten** (separat gespeichert): Trend, Momentum, Pattern Strength,
+  Pattern Confidence, Indicator Quality, Market Context, Volume Quality,
+  Data Quality.
+- **Transparenz:** jeder Score über seine Komponenten erklärbar (z. B.
+  `trend: 18/20`).
+- **Konfiguration:** `knowledge/score_rules.toml` mit den Gewichten aller
+  Modelle (Sektionsname = Modellname).
+- **Validierung:** fehlende Hypothesen, ungültige Gewichte, Gewichte ≠ 100 %,
+  fehlende Komponenten.
+- **Tests:** von 247 auf 307 erhöht (je Modell, Registry, Cache, Engine,
+  Validierung). Testabdeckung der Score-Module 96 %.
+
+### Qualitätsprüfung
+
+Import-Zyklen: 0. Score-Modell-Unabhängigkeit: 0 Verstöße. SOLID-Heuristik:
+0 Verstöße. Details in `HANDOVER.md`.
+
+### Hinweis
+
+Bewusst nicht enthalten: Risk- und Recommendation-Engine sowie Dashboard-Logik.
+Die Score Engine liefert ausschließlich ScoreResult.
+
 ## [0.6.0] – 2026-07-08 – Sprint 6: Strategy Engine
 
 ### Hinzugefügt

@@ -95,9 +95,22 @@ Parameter ausschließlich aus `knowledge/strategy_rules.toml`. Einstieg:
 `StrategyEngine.from_config()`. 5 Strategien: fvg_strategy, trend_following,
 momentum_strategy, breakout_strategy, mean_reversion.
 
+## Score Engine (ab Sprint 7 verfügbar)
+
+Bewertet jede Hypothese objektiv, trifft aber keine Entscheidung, erzeugt keine
+Positionsgröße und kein Risiko. Kette: `StrategyReport → ScoreEngine →
+ScoreReport`. Fünf unabhängige Modelle in `scores/<name>.py` (weighted,
+confidence, quality, consensus, market), acht separat gespeicherte Komponenten.
+Ergebnistypen liegen in `engines/score_result.py`, Komponenten/Validierung in
+`scores/base.py`. Neue Modelle nur über die `ScoreRegistry`
+(`engines/score_registry.py`); die Engine bleibt unverändert. Gewichte
+ausschließlich aus `knowledge/score_rules.toml`. Einstieg:
+`ScoreEngine.from_config()`. Jeder Score ist über seine Komponenten vollständig
+erklärbar.
+
 ## Aktueller Stand
 
-Sprint 1–6 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
-Engine, Pattern Engine, Strategy Engine). Es gibt weiterhin keine Score-/Risk-/
-Recommendation-Engine und keine Handelslogik. Nächster Schritt: Sprint 7 (Score
-Engine). Immer zuerst `PROJECT_STATUS.md` und `HANDOVER.md` lesen.
+Sprint 1–7 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Engine, Pattern Engine, Strategy Engine, Score Engine). Es gibt weiterhin keine
+Risk-/Recommendation-Engine und keine Handelslogik. Nächster Schritt: Sprint 8
+(Risk Engine). Immer zuerst `PROJECT_STATUS.md` und `HANDOVER.md` lesen.

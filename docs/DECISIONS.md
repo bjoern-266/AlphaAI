@@ -228,6 +228,47 @@ das Projekt so aufgebaut ist, wie es ist.
   zentral und testbar, ohne jede Strategie mit Prüf-Code zu belasten.
 - **Konsequenzen:** Strategien konzentrieren sich auf ihre Fachlogik.
 
+### ADR-019 – Komponenten getrennt von Score-Modellen
+
+- **Datum:** 2026-07-08
+- **Kontext:** Mehrere Score-Modelle nutzen dieselben acht Komponenten (Trend,
+  Momentum, …). Würden Modelle Komponenten voneinander beziehen, entstünden
+  Abhängigkeiten zwischen Modellen.
+- **Entscheidung:** Die Komponenten-Berechnung liegt zentral in
+  `scores/base.py::compute_components`; die Engine berechnet sie einmal je
+  Hypothese und übergibt sie über den `ScoreContext`. Modelle lesen nur
+  Komponenten, nie ein anderes Modell.
+- **Begründung:** Erfüllt die Score-Modell-Unabhängigkeit ohne Duplikate; ein
+  automatischer Check bestätigt dies.
+- **Konsequenzen:** Neue Komponenten werden an einer Stelle ergänzt und stehen
+  allen Modellen zur Verfügung.
+
+### ADR-020 – Engine bleibt bei neuen Score-Modellen unverändert
+
+- **Datum:** 2026-07-08
+- **Kontext:** Neue Score-Modelle sollen ohne Eingriff in die Engine ergänzbar
+  sein; zugleich hat `ScoreResult` benannte Felder (total/confidence/…).
+- **Entscheidung:** Die Engine führt **alle** registrierten und aktivierten
+  Modelle generisch aus und legt deren Werte in `metadata['model_scores']` ab.
+  Die benannten Felder werden aus wohlbekannten Modellnamen befüllt; unbekannte
+  Modelle erscheinen zusätzlich in den Metadaten.
+- **Begründung:** Open/Closed-Prinzip – Registry und TOML genügen, die Engine
+  bleibt geschlossen.
+- **Konsequenzen:** Der Sektionsname in `score_rules.toml` muss dem Modellnamen
+  entsprechen.
+
+### ADR-021 – Scores sind beschreibend, keine Entscheidung
+
+- **Datum:** 2026-07-08
+- **Kontext:** Ein Gesamtscore könnte als Kaufsignal missverstanden werden.
+- **Entscheidung:** Die Score Engine berechnet ausschließlich objektive,
+  vollständig erklärbare Scores (Komponenten-Aufschlüsselung). Sie erzeugt keine
+  Kauf-/Verkaufsentscheidung, keine Positionsgröße und kein Risiko;
+  `ScoreReport.top()` ist reine Sortierung/Anzeige.
+- **Begründung:** Klare Trennung Bewertung (Sprint 7) ↔ Risiko (Sprint 8) ↔
+  Empfehlung (später).
+- **Konsequenzen:** Die Score Engine bleibt frei von Handelslogik.
+
 ### ADR-005 – Logging zentral, idempotent, Konsole + Datei
 
 - **Datum:** 2026-07-08

@@ -27,6 +27,7 @@ UNIVERSE_FILE: Path = CONFIG_DIR / "universe.toml"
 INDICATOR_RULES_FILE: Path = KNOWLEDGE_DIR / "indicator_rules.toml"
 PATTERN_RULES_FILE: Path = KNOWLEDGE_DIR / "pattern_rules.toml"
 STRATEGY_RULES_FILE: Path = KNOWLEDGE_DIR / "strategy_rules.toml"
+SCORE_RULES_FILE: Path = KNOWLEDGE_DIR / "score_rules.toml"
 LOG_FILE: Path = LOGS_DIR / "alpha_ai.log"
 
 
