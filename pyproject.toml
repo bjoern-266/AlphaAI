@@ -69,6 +69,8 @@ ignore = [
     "D213",    # Mehrzeiliger Docstring-Beginn (Konflikt mit D212)
     "D107",    # __init__: Argumente werden im Klassendocstring dokumentiert
     "ANN401",  # 'Any' beim Parsen dynamischer TOML-Daten ist unvermeidbar
+    "UP046",   # PEP-695-Generics (class C[T]) bewusst nicht: Laufzeit-Kompat. 3.11
+    "UP047",   # dito für generische Funktionen (siehe ADR-026)
 ]
 
 [tool.ruff.lint.per-file-ignores]

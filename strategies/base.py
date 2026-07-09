@@ -1,9 +1,15 @@
-"""Gemeinsame Schnittstelle, Ergebnistypen und Hilfsmittel für Strategien.
+"""Gemeinsame Schnittstelle und Hilfsmittel für Strategien.
 
 Alle Strategien implementieren :class:`BaseStrategy` und geben ihr Ergebnis als
-:class:`StrategyEvaluation` zurück. Die Ergebnistypen liegen bewusst hier
-(nicht in ``engines``), damit kein Import-Zyklus zwischen ``strategies`` und
-``engines`` entsteht.
+:class:`~models.strategy.StrategyEvaluation` zurück.
+
+Die reinen Datentypen (``StrategyDirection``, ``StrategyContext``,
+``StrategyResult``, ``StrategyEvaluation``, ``StrategyReport``) liegen seit
+Sprint 7.5 in :mod:`models.strategy`; :class:`StrategyParameterError` in
+:mod:`core.exceptions`. Sie werden hier zur Rückwärtskompatibilität
+re-exportiert. Dieses Modul enthält ausschließlich Schnittstelle und Logik –
+und importiert **nichts** aus ``engines`` (die frühere ``TYPE_CHECKING``-
+Kopplung ist damit aufgelöst).
 
 Eine Strategie erzeugt ausschließlich eine **Hypothese** (Richtung, Vertrauen,
 beschreibende Stärke, Begründungen). Sie trifft keine Handelsentscheidung und
@@ -14,105 +20,29 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:  # nur für Typannotationen – kein Laufzeit-Import aus engines
-    import pandas as pd
+from core.exceptions import StrategyParameterError
+from models.strategy import (
+    StrategyContext,
+    StrategyDirection,
+    StrategyEvaluation,
+    StrategyResult,
+)
 
-    from engines.indicator_result import IndicatorResult
-    from engines.pattern_result import PatternReport
-
-
-class StrategyParameterError(ValueError):
-    """Wird ausgelöst, wenn ein Pflichtparameter fehlt oder ungültig ist."""
-
-
-class StrategyDirection(Enum):
-    """Richtung einer Handelshypothese."""
-
-    BULLISH = "bullish"
-    BEARISH = "bearish"
-    NEUTRAL = "neutral"
-
-
-@dataclass(slots=True)
-class StrategyContext:
-    """Eingabe für eine Strategie.
-
-    Attributes:
-        indicators: Ergebnis der Indicator Engine.
-        patterns: Ergebnis der Pattern Engine.
-        data: Optionale OHLCV-Rohdaten (für Preisvergleiche).
-        symbol: Symbolname.
-        timeframe: Zeitebenen-Label.
-    """
-
-    indicators: IndicatorResult
-    patterns: PatternReport
-    data: pd.DataFrame | None = None
-    symbol: str = ""
-    timeframe: str = "base"
-
-    @property
-    def last_close(self) -> float | None:
-        """Letzter Schlusskurs aus den Rohdaten oder ``None``."""
-        if self.data is None or self.data.empty or "close" not in self.data.columns:
-            return None
-        return float(self.data["close"].iloc[-1])
-
-    @property
-    def last_timestamp(self) -> datetime | None:
-        """Letzter Zeitstempel aus den Rohdaten oder ``None``."""
-        if self.data is None or self.data.empty:
-            return None
-        return self.data.index[-1]
-
-
-@dataclass(slots=True)
-class StrategyResult:
-    """Eine objektive Handelshypothese.
-
-    Attributes:
-        strategy_name: Name der erzeugenden Strategie.
-        hypothesis_id: Stabiler Bezeichner der Hypothese.
-        direction: Richtung (bullish/bearish/neutral).
-        confidence: Vertrauen 0..1 in die Hypothese.
-        strength: Beschreibende Stärke 0..100 (kein Score, keine Bewertung).
-        matched_indicators: Verwendete Indikatoren.
-        matched_patterns: Verwendete Muster.
-        reasons: Menschenlesbare Begründungen der Hypothese.
-        warnings: Während der Auswertung gesammelte Warnungen.
-        metadata: Zusatzinformationen (u. a. der Hypothesentext).
-        timestamp: Zeitpunkt der Hypothese.
-    """
-
-    strategy_name: str
-    hypothesis_id: str
-    direction: StrategyDirection
-    confidence: float
-    strength: float
-    matched_indicators: list[str] = field(default_factory=list)
-    matched_patterns: list[str] = field(default_factory=list)
-    reasons: list[str] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
-    metadata: dict[str, Any] = field(default_factory=dict)
-    timestamp: datetime | None = None
-
-
-@dataclass(slots=True)
-class StrategyEvaluation:
-    """Ergebnis der Auswertung einer einzelnen Strategie.
-
-    Attributes:
-        result: Die erzeugte Hypothese oder ``None`` (kein Setup).
-        warnings: Warnungen der Auswertung.
-    """
-
-    result: StrategyResult | None = None
-    warnings: list[str] = field(default_factory=list)
+__all__ = [
+    "StrategyParameterError",
+    "StrategyDirection",
+    "StrategyContext",
+    "StrategyResult",
+    "StrategyEvaluation",
+    "BaseStrategy",
+    "require_float",
+    "require_bool",
+    "build_hypothesis_id",
+    "direction_from_value",
+]
 
 
 class BaseStrategy(ABC):

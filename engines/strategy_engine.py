@@ -15,7 +15,7 @@ from __future__ import annotations
 import time
 import tomllib
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +29,12 @@ from engines.pattern_result import PatternReport
 from engines.strategy_cache import StrategyCache
 from engines.strategy_registry import StrategyRegistry, build_default_registry
 from engines.strategy_result import StrategyReport
-from strategies.base import StrategyContext, StrategyParameterError
+from strategies.base import (
+    StrategyContext,
+    StrategyDirection,
+    StrategyParameterError,
+    StrategyResult,
+)
 
 _logger = get_logger(__name__)
 
@@ -123,7 +128,8 @@ class StrategyEngine:
 
         start = self._timer()
         report = self._evaluate(indicators, patterns, data, symbol, timeframe)
-        report.calculation_time = self._timer() - start
+        # Report ist unveränderlich (frozen): Rechenzeit über eine Kopie setzen.
+        report = replace(report, calculation_time=self._timer() - start)
 
         if self._cache is not None:
             self._cache.set(cache_key, report)
@@ -137,19 +143,27 @@ class StrategyEngine:
         symbol: str,
         timeframe: str,
     ) -> StrategyReport:
-        """Kern der Auswertung inkl. Validierung (ohne Zeitmessung/Cache)."""
-        report = StrategyReport()
-        report.metadata.update(
-            {"symbol": symbol, "timeframe": timeframe, "rules_version": self._rules.version}
-        )
+        """Kern der Auswertung inkl. Validierung (ohne Zeitmessung/Cache).
+
+        Sammelt Hypothesen/Warnungen/Gültigkeit lokal und konstruiert den
+        unveränderlichen :class:`StrategyReport` **einmalig** am Ende.
+        """
+        metadata: dict[str, Any] = {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "rules_version": self._rules.version,
+        }
+        warnings: list[str] = []
+        results: list[StrategyResult] = []
+        valid = True
 
         if not indicators.valid:
-            report.valid = False
-            report.warnings.append("Ungültige/fehlende Indikatordaten.")
+            valid = False
+            warnings.append("Ungültige/fehlende Indikatordaten.")
         if not patterns.valid:
-            report.valid = False
-            report.warnings.append("Ungültige/fehlende Musterdaten.")
-        self._check_consistency(indicators, patterns, report)
+            valid = False
+            warnings.append("Ungültige/fehlende Musterdaten.")
+        self._check_consistency(indicators, patterns, warnings)
 
         context = StrategyContext(
             indicators=indicators,
@@ -159,12 +173,13 @@ class StrategyEngine:
             timeframe=timeframe,
         )
         for name, cfg in self._rules.strategies.items():
-            self._run_strategy(name, cfg, context, indicators, patterns, report)
+            if not self._run_strategy(name, cfg, context, indicators, patterns, results, warnings):
+                valid = False
 
-        report.metadata["hypotheses"] = [r.strategy_name for r in report.results]
-        report.metadata["bullish"] = len(report.bullish)
-        report.metadata["bearish"] = len(report.bearish)
-        return report
+        metadata["hypotheses"] = [r.strategy_name for r in results]
+        metadata["bullish"] = sum(1 for r in results if r.direction is StrategyDirection.BULLISH)
+        metadata["bearish"] = sum(1 for r in results if r.direction is StrategyDirection.BEARISH)
+        return StrategyReport(results=results, valid=valid, warnings=warnings, metadata=metadata)
 
     def _run_strategy(
         self,
@@ -173,60 +188,62 @@ class StrategyEngine:
         context: StrategyContext,
         indicators: IndicatorResult,
         patterns: PatternReport,
-        report: StrategyReport,
-    ) -> None:
-        """Wertet eine einzelne Strategie aus und ergänzt den Report."""
+        results: list[StrategyResult],
+        warnings: list[str],
+    ) -> bool:
+        """Wertet eine einzelne Strategie aus und ergänzt die Akkumulatoren.
+
+        Returns:
+            ``False``, wenn die Strategie das Gesamtergebnis ungültig macht
+            (ungültige Parameter), sonst ``True``.
+        """
         if not cfg.get("enabled", False):
-            return
+            return True
         if name not in self._registry:
-            report.warnings.append(f"Strategie '{name}' ist nicht registriert.")
-            return
+            warnings.append(f"Strategie '{name}' ist nicht registriert.")
+            return True
 
         strategy = self._registry.get(name)
         missing_ind = [r for r in strategy.indicator_requirements if r not in indicators.outputs]
         if missing_ind:
-            report.warnings.append(
-                f"Strategie '{name}' übersprungen: fehlende Indikatoren {missing_ind}."
-            )
-            return
+            warnings.append(f"Strategie '{name}' übersprungen: fehlende Indikatoren {missing_ind}.")
+            return True
         missing_pat = [r for r in strategy.pattern_requirements if not patterns.by_name(r)]
         if missing_pat:
-            report.warnings.append(
-                f"Strategie '{name}' übersprungen: fehlende Muster {missing_pat}."
-            )
-            return
+            warnings.append(f"Strategie '{name}' übersprungen: fehlende Muster {missing_pat}.")
+            return True
 
         params = {key: value for key, value in cfg.items() if key != "enabled"}
         try:
             evaluation = strategy.evaluate(context, params)
         except StrategyParameterError as error:
-            report.valid = False
-            report.warnings.append(str(error))
-            return
+            warnings.append(str(error))
+            return False
         except Exception as error:  # Fehler einer Strategie isoliert behandeln.
             _logger.warning("Strategie '%s' fehlgeschlagen: %s", name, error)
-            report.warnings.append(f"Auswertung von '{name}' fehlgeschlagen: {error}")
-            return
+            warnings.append(f"Auswertung von '{name}' fehlgeschlagen: {error}")
+            return True
 
-        report.warnings.extend(evaluation.warnings)
+        warnings.extend(evaluation.warnings)
         if evaluation.result is not None:
-            report.results.append(evaluation.result)
+            results.append(evaluation.result)
+        return True
 
     @staticmethod
     def _check_consistency(
-        indicators: IndicatorResult, patterns: PatternReport, report: StrategyReport
+        indicators: IndicatorResult, patterns: PatternReport, warnings: list[str]
     ) -> None:
         """Meldet inkonsistente Ergebnisse (abweichender Timeframe/Kerzenzahl)."""
         ind_tf = indicators.metadata.get("timeframe")
         pat_tf = patterns.metadata.get("timeframe")
         if ind_tf is not None and pat_tf is not None and ind_tf != pat_tf:
-            report.warnings.append(
+            warnings.append(
                 f"Inkonsistente Ergebnisse: Timeframe {ind_tf} (Indikatoren) != {pat_tf} (Muster)."
             )
         ind_cc = indicators.metadata.get("candle_count")
         pat_cc = patterns.metadata.get("candle_count")
         if ind_cc is not None and pat_cc is not None and ind_cc != pat_cc:
-            report.warnings.append(f"Inkonsistente Ergebnisse: Kerzenzahl {ind_cc} != {pat_cc}.")
+            warnings.append(f"Inkonsistente Ergebnisse: Kerzenzahl {ind_cc} != {pat_cc}.")
 
     def _cache_key(
         self, indicators: IndicatorResult, patterns: PatternReport, symbol: str, timeframe: str

@@ -8,6 +8,7 @@ Registry, nicht die einzelnen Musterklassen (Open/Closed-Prinzip).
 
 from __future__ import annotations
 
+from core.registry import Registry
 from patterns.base import BasePattern
 from patterns.bos import BosPattern
 from patterns.breaker_block import BreakerBlockPattern
@@ -22,43 +23,15 @@ from patterns.order_block import OrderBlockPattern
 from patterns.trend_structure import TrendStructurePattern
 
 
-class PatternRegistry:
-    """Verwaltet die verfügbaren Muster nach Name."""
+class PatternRegistry(Registry[BasePattern]):
+    """Verwaltet die verfügbaren Muster nach Name.
+
+    Erbt Registrierung/Abfrage von der generischen :class:`core.registry.Registry`;
+    das öffentliche Interface bleibt unverändert.
+    """
 
     def __init__(self) -> None:
-        self._by_name: dict[str, BasePattern] = {}
-
-    def register(self, pattern: BasePattern) -> None:
-        """Registriert ein Muster.
-
-        Raises:
-            ValueError: Wenn bereits ein Muster mit demselben Namen existiert.
-        """
-        if pattern.name in self._by_name:
-            raise ValueError(f"Muster '{pattern.name}' ist bereits registriert.")
-        self._by_name[pattern.name] = pattern
-
-    def get(self, name: str) -> BasePattern:
-        """Gibt das Muster mit dem Namen zurück.
-
-        Raises:
-            KeyError: Wenn kein Muster mit diesem Namen registriert ist.
-        """
-        if name not in self._by_name:
-            raise KeyError(f"Unbekanntes Muster '{name}'.")
-        return self._by_name[name]
-
-    def __contains__(self, name: str) -> bool:
-        """Prüft, ob ein Mustername registriert ist."""
-        return name in self._by_name
-
-    def names(self) -> list[str]:
-        """Gibt die registrierten Musternamen sortiert zurück."""
-        return sorted(self._by_name)
-
-    def __len__(self) -> int:
-        """Anzahl registrierter Muster."""
-        return len(self._by_name)
+        super().__init__(label="Muster")
 
 
 def build_default_registry() -> PatternRegistry:

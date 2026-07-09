@@ -22,7 +22,7 @@ from __future__ import annotations
 import time
 import tomllib
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +35,7 @@ from data.market_result import MarketResult
 from engines.indicator_cache import IndicatorCache
 from engines.indicator_registry import IndicatorRegistry, build_default_registry
 from engines.indicator_result import IndicatorResult
-from indicators.base import IndicatorParameterError, has_usable_volume
+from indicators.base import IndicatorOutput, IndicatorParameterError, has_usable_volume
 
 _logger = get_logger(__name__)
 
@@ -148,7 +148,9 @@ class IndicatorEngine:
 
         start = self._timer()
         result = self._calculate(data, symbol, timeframe)
-        result.calculation_time = self._timer() - start
+        # Ergebnis ist unveränderlich (frozen): Rechenzeit über einen neuen,
+        # ansonsten identischen Wert setzen statt das Objekt zu mutieren.
+        result = replace(result, calculation_time=self._timer() - start)
 
         if self._cache is not None and cache_key is not None:
             self._cache.set(cache_key, result)
@@ -170,10 +172,11 @@ class IndicatorEngine:
         """
         frame = market_result.frame(symbol)
         if frame is None:
-            result = IndicatorResult(valid=False)
-            result.warnings.append(f"Keine Marktdaten für Symbol '{symbol}'.")
-            result.metadata.update({"symbol": symbol, "timeframe": timeframe, "candle_count": 0})
-            return result
+            return IndicatorResult(
+                valid=False,
+                warnings=[f"Keine Marktdaten für Symbol '{symbol}'."],
+                metadata={"symbol": symbol, "timeframe": timeframe, "candle_count": 0},
+            )
         return self.calculate(frame, symbol=symbol, timeframe=timeframe)
 
     def calculate_all(
@@ -186,38 +189,43 @@ class IndicatorEngine:
         }
 
     def _calculate(self, data: pd.DataFrame, symbol: str, timeframe: str) -> IndicatorResult:
-        """Kern der Berechnung inkl. Validierung (ohne Zeitmessung/Cache)."""
-        result = IndicatorResult()
+        """Kern der Berechnung inkl. Validierung (ohne Zeitmessung/Cache).
+
+        Sammelt Ausgaben/Warnungen/Gültigkeit in lokalen Akkumulatoren und
+        konstruiert das unveränderliche :class:`IndicatorResult` **einmalig** am
+        Ende – es wird nach seiner Erstellung nicht mehr verändert.
+        """
         candle_count = len(data)
-        result.metadata.update(
-            {
-                "symbol": symbol,
-                "timeframe": timeframe,
-                "candle_count": candle_count,
-                "rules_version": self._rules.version,
-            }
-        )
+        metadata: dict[str, Any] = {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "candle_count": candle_count,
+            "rules_version": self._rules.version,
+        }
+        warnings: list[str] = []
+        outputs: dict[str, IndicatorOutput] = {}
+        valid = True
 
         missing_columns = [c for c in _REQUIRED_COLUMNS if c not in data.columns]
         if missing_columns:
-            result.valid = False
-            result.warnings.append(f"Fehlende Pflichtspalten: {', '.join(missing_columns)}.")
-            return result
+            warnings.append(f"Fehlende Pflichtspalten: {', '.join(missing_columns)}.")
+            return IndicatorResult(valid=False, warnings=warnings, metadata=metadata)
 
         if candle_count < self._rules.min_candles:
-            result.valid = False
-            result.warnings.append(
+            valid = False
+            warnings.append(
                 f"Zu wenig Historie: {candle_count} Kerzen (< {self._rules.min_candles})."
             )
         if data["close"].isna().any():
-            result.warnings.append("NaN in Schlusskursen entdeckt.")
+            warnings.append("NaN in Schlusskursen entdeckt.")
 
         volume_ok = has_usable_volume(data)
         for name, cfg in self._rules.indicators.items():
-            self._run_indicator(name, cfg, data, candle_count, volume_ok, result)
+            if not self._run_indicator(name, cfg, data, candle_count, volume_ok, outputs, warnings):
+                valid = False
 
-        result.metadata["computed"] = list(result.outputs)
-        return result
+        metadata["computed"] = list(outputs)
+        return IndicatorResult(outputs=outputs, valid=valid, warnings=warnings, metadata=metadata)
 
     def _run_indicator(
         self,
@@ -226,42 +234,48 @@ class IndicatorEngine:
         data: pd.DataFrame,
         candle_count: int,
         volume_ok: bool,
-        result: IndicatorResult,
-    ) -> None:
-        """Berechnet einen einzelnen Indikator und ergänzt das Ergebnis."""
+        outputs: dict[str, IndicatorOutput],
+        warnings: list[str],
+    ) -> bool:
+        """Berechnet einen einzelnen Indikator und ergänzt die Akkumulatoren.
+
+        Returns:
+            ``False``, wenn der Indikator das Gesamtergebnis ungültig macht
+            (ungültige Parameter), sonst ``True``.
+        """
         if not cfg.get("enabled", False):
-            return
+            return True
         if name not in self._registry:
-            result.warnings.append(f"Indikator '{name}' ist nicht registriert.")
-            return
+            warnings.append(f"Indikator '{name}' ist nicht registriert.")
+            return True
 
         indicator = self._registry.get(name)
         params = {key: value for key, value in cfg.items() if key != "enabled"}
 
         if indicator.requires_volume and not volume_ok:
-            result.warnings.append(f"Fehlende Volumendaten – '{name}' übersprungen.")
-            return
+            warnings.append(f"Fehlende Volumendaten – '{name}' übersprungen.")
+            return True
         try:
             min_needed = indicator.min_candles(params)
         except IndicatorParameterError as error:
-            result.valid = False
-            result.warnings.append(str(error))
-            return
+            warnings.append(str(error))
+            return False
         if candle_count < min_needed:
-            result.warnings.append(
+            warnings.append(
                 f"Zu wenig Historie für '{name}' ({candle_count} < {min_needed}) – übersprungen."
             )
-            return
+            return True
 
         try:
             output = indicator.compute(data, params)
         except Exception as error:  # Rechenfehler eines Indikators isoliert behandeln.
             _logger.warning("Indikator '%s' fehlgeschlagen: %s", name, error)
-            result.warnings.append(f"Berechnung von '{name}' fehlgeschlagen: {error}")
-            return
+            warnings.append(f"Berechnung von '{name}' fehlgeschlagen: {error}")
+            return True
 
-        result.outputs[name] = output
-        result.warnings.extend(output.warnings)
+        outputs[name] = output
+        warnings.extend(output.warnings)
+        return True
 
     def _cache_key(self, data: pd.DataFrame, symbol: str, timeframe: str) -> str | None:
         """Bildet einen stabilen Cache-Schlüssel oder ``None`` (leere Daten)."""

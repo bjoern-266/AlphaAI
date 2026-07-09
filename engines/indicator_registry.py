@@ -9,6 +9,7 @@ einzelnen Indikatorklassen.
 
 from __future__ import annotations
 
+from core.registry import Registry
 from indicators.adx import AdxIndicator
 from indicators.atr import AtrIndicator
 from indicators.base import BaseIndicator
@@ -23,46 +24,16 @@ from indicators.volume_profile import VolumeProfileIndicator
 from indicators.vwap import VwapIndicator
 
 
-class IndicatorRegistry:
-    """Verwaltet die verfügbaren Indikatoren nach Name."""
+class IndicatorRegistry(Registry[BaseIndicator]):
+    """Verwaltet die verfügbaren Indikatoren nach Name.
+
+    Erbt Registrierung/Abfrage von der generischen :class:`core.registry.Registry`;
+    das öffentliche Interface (``register``/``get``/``__contains__``/``names``/
+    ``len``) bleibt unverändert.
+    """
 
     def __init__(self) -> None:
-        self._by_name: dict[str, BaseIndicator] = {}
-
-    def register(self, indicator: BaseIndicator) -> None:
-        """Registriert einen Indikator.
-
-        Args:
-            indicator: Die zu registrierende Indikatorinstanz.
-
-        Raises:
-            ValueError: Wenn bereits ein Indikator mit demselben Namen existiert.
-        """
-        if indicator.name in self._by_name:
-            raise ValueError(f"Indikator '{indicator.name}' ist bereits registriert.")
-        self._by_name[indicator.name] = indicator
-
-    def get(self, name: str) -> BaseIndicator:
-        """Gibt den Indikator mit dem Namen zurück.
-
-        Raises:
-            KeyError: Wenn kein Indikator mit diesem Namen registriert ist.
-        """
-        if name not in self._by_name:
-            raise KeyError(f"Unbekannter Indikator '{name}'.")
-        return self._by_name[name]
-
-    def __contains__(self, name: str) -> bool:
-        """Prüft, ob ein Indikatorname registriert ist."""
-        return name in self._by_name
-
-    def names(self) -> list[str]:
-        """Gibt die registrierten Indikatornamen sortiert zurück."""
-        return sorted(self._by_name)
-
-    def __len__(self) -> int:
-        """Anzahl registrierter Indikatoren."""
-        return len(self._by_name)
+        super().__init__(label="Indikator")
 
 
 def build_default_registry() -> IndicatorRegistry:

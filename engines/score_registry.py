@@ -9,6 +9,7 @@ einzelnen Modellklassen (Open/Closed-Prinzip).
 
 from __future__ import annotations
 
+from core.registry import Registry
 from scores.base import BaseScoreModel
 from scores.confidence_score import ConfidenceScoreModel
 from scores.consensus_score import ConsensusScoreModel
@@ -17,43 +18,15 @@ from scores.quality_score import QualityScoreModel
 from scores.weighted_score import WeightedScoreModel
 
 
-class ScoreRegistry:
-    """Verwaltet die verfügbaren Score-Modelle nach Name."""
+class ScoreRegistry(Registry[BaseScoreModel]):
+    """Verwaltet die verfügbaren Score-Modelle nach Name.
+
+    Erbt Registrierung/Abfrage von der generischen :class:`core.registry.Registry`;
+    das öffentliche Interface bleibt unverändert.
+    """
 
     def __init__(self) -> None:
-        self._by_name: dict[str, BaseScoreModel] = {}
-
-    def register(self, model: BaseScoreModel) -> None:
-        """Registriert ein Score-Modell.
-
-        Raises:
-            ValueError: Wenn bereits ein Modell mit demselben Namen existiert.
-        """
-        if model.name in self._by_name:
-            raise ValueError(f"Score-Modell '{model.name}' ist bereits registriert.")
-        self._by_name[model.name] = model
-
-    def get(self, name: str) -> BaseScoreModel:
-        """Gibt das Score-Modell mit dem Namen zurück.
-
-        Raises:
-            KeyError: Wenn kein Modell mit diesem Namen registriert ist.
-        """
-        if name not in self._by_name:
-            raise KeyError(f"Unbekanntes Score-Modell '{name}'.")
-        return self._by_name[name]
-
-    def __contains__(self, name: str) -> bool:
-        """Prüft, ob ein Modellname registriert ist."""
-        return name in self._by_name
-
-    def names(self) -> list[str]:
-        """Gibt die registrierten Modellnamen sortiert zurück."""
-        return sorted(self._by_name)
-
-    def __len__(self) -> int:
-        """Anzahl registrierter Modelle."""
-        return len(self._by_name)
+        super().__init__(label="Score-Modell")
 
 
 def build_default_registry() -> ScoreRegistry:

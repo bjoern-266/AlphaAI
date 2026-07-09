@@ -1,9 +1,14 @@
 """Gemeinsame Schnittstelle und Hilfsmittel für Indikatoren.
 
 Alle Indikatoren implementieren :class:`BaseIndicator` und geben ihr Ergebnis
-als :class:`IndicatorOutput` zurück. Die Hilfsfunktionen stellen sicher, dass
-Parameter ausschließlich aus der Konfiguration stammen (kein stiller Default)
-und dass Division durch Null kontrolliert behandelt wird.
+als :class:`~models.indicator.IndicatorOutput` zurück. Die Hilfsfunktionen
+stellen sicher, dass Parameter ausschließlich aus der Konfiguration stammen
+(kein stiller Default) und dass Division durch Null kontrolliert behandelt wird.
+
+Der reine Datentyp :class:`IndicatorOutput` liegt seit Sprint 7.5 in
+:mod:`models.indicator`; :class:`IndicatorParameterError` in
+:mod:`core.exceptions`. Beide werden hier zur Rückwärtskompatibilität
+re-exportiert. Dieses Modul enthält ausschließlich Schnittstelle und Logik.
 """
 
 from __future__ import annotations
@@ -11,55 +16,26 @@ from __future__ import annotations
 import math
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
+from core.exceptions import IndicatorParameterError
+from models.indicator import IndicatorOutput
 
-class IndicatorParameterError(ValueError):
-    """Wird ausgelöst, wenn ein Pflichtparameter fehlt oder ungültig ist."""
-
-
-@dataclass(slots=True)
-class IndicatorOutput:
-    """Ergebnis eines einzelnen Indikators.
-
-    Attributes:
-        name: Name des Indikators.
-        series: Zuordnung Komponentenname -> berechnete Zeitreihe (z. B.
-            ``"ema_20"`` -> Serie). Enthält die vollständige Historie.
-        warnings: Während der Berechnung gesammelte Warnungen.
-        extra: Zusätzliche skalare Kennzahlen (z. B. Point of Control beim
-            Volume Profile), die keine Zeitreihe sind.
-    """
-
-    name: str
-    series: dict[str, pd.Series] = field(default_factory=dict)
-    warnings: list[str] = field(default_factory=list)
-    extra: dict[str, Any] = field(default_factory=dict)
-
-    def latest(self, component: str) -> float | None:
-        """Gibt den letzten gültigen Wert einer Komponente zurück.
-
-        Args:
-            component: Name der Komponente (z. B. ``"ema_20"``).
-
-        Returns:
-            Der letzte nicht-NaN-Wert als ``float`` oder ``None``.
-        """
-        series = self.series.get(component)
-        if series is None:
-            return None
-        cleaned = series.dropna()
-        if cleaned.empty:
-            return None
-        return float(cleaned.iloc[-1])
-
-    def latest_all(self) -> dict[str, float | None]:
-        """Gibt die letzten gültigen Werte aller Komponenten zurück."""
-        return {name: self.latest(name) for name in self.series}
+__all__ = [
+    "IndicatorOutput",
+    "IndicatorParameterError",
+    "BaseIndicator",
+    "require_int",
+    "require_float",
+    "require_int_list",
+    "true_range",
+    "safe_divide",
+    "has_usable_volume",
+    "clean_value",
+]
 
 
 class BaseIndicator(ABC):

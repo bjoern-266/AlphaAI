@@ -20,7 +20,7 @@ from __future__ import annotations
 import time
 import tomllib
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -133,7 +133,8 @@ class PatternEngine:
 
         start = self._timer()
         report = self._detect(data, symbol, timeframe, indicators)
-        report.calculation_time = self._timer() - start
+        # Report ist unveränderlich (frozen): Rechenzeit über eine Kopie setzen.
+        report = replace(report, calculation_time=self._timer() - start)
 
         if self._cache is not None and cache_key is not None:
             self._cache.set(cache_key, report)
@@ -145,10 +146,11 @@ class PatternEngine:
         """Erkennt Muster für ein Symbol eines :class:`MarketResult`."""
         frame = market_result.frame(symbol)
         if frame is None:
-            report = PatternReport(valid=False)
-            report.warnings.append(f"Keine Marktdaten für Symbol '{symbol}'.")
-            report.metadata.update({"symbol": symbol, "timeframe": timeframe, "candle_count": 0})
-            return report
+            return PatternReport(
+                valid=False,
+                warnings=[f"Keine Marktdaten für Symbol '{symbol}'."],
+                metadata={"symbol": symbol, "timeframe": timeframe, "candle_count": 0},
+            )
         return self.detect(frame, symbol=symbol, timeframe=timeframe)
 
     def detect_all(
@@ -167,46 +169,49 @@ class PatternEngine:
         timeframe: str,
         indicators: IndicatorResult | None,
     ) -> PatternReport:
-        """Kern der Erkennung inkl. Validierung (ohne Zeitmessung/Cache)."""
-        report = PatternReport()
+        """Kern der Erkennung inkl. Validierung (ohne Zeitmessung/Cache).
+
+        Sammelt Ergebnisse/Warnungen/Gültigkeit lokal und konstruiert den
+        unveränderlichen :class:`PatternReport` **einmalig** am Ende.
+        """
         candle_count = len(data)
-        report.metadata.update(
-            {
-                "symbol": symbol,
-                "timeframe": timeframe,
-                "candle_count": candle_count,
-                "rules_version": self._rules.version,
-                "has_indicators": indicators is not None,
-            }
-        )
+        metadata: dict[str, Any] = {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "candle_count": candle_count,
+            "rules_version": self._rules.version,
+            "has_indicators": indicators is not None,
+        }
+        warnings: list[str] = []
+        results: list[PatternResult] = []
+        valid = True
 
         missing_columns = [c for c in _REQUIRED_COLUMNS if c not in data.columns]
         if missing_columns:
-            report.valid = False
-            report.warnings.append(f"Fehlende Pflichtspalten: {', '.join(missing_columns)}.")
-            return report
+            warnings.append(f"Fehlende Pflichtspalten: {', '.join(missing_columns)}.")
+            return PatternReport(valid=False, warnings=warnings, metadata=metadata)
 
         if not self._is_valid_series(data):
-            report.valid = False
-            report.warnings.append("Ungültige Zeitreihe (Index nicht eindeutig/sortiert).")
+            valid = False
+            warnings.append("Ungültige Zeitreihe (Index nicht eindeutig/sortiert).")
         if candle_count < self._rules.min_candles:
-            report.valid = False
-            report.warnings.append(
+            valid = False
+            warnings.append(
                 f"Zu wenig Historie: {candle_count} Kerzen (< {self._rules.min_candles})."
             )
         if data["close"].isna().any():
-            report.warnings.append("NaN in Schlusskursen entdeckt.")
+            warnings.append("NaN in Schlusskursen entdeckt.")
 
         for name, cfg in self._rules.patterns.items():
-            self._run_pattern(name, cfg, data, candle_count, report)
+            if not self._run_pattern(name, cfg, data, candle_count, results, warnings):
+                valid = False
 
-        report.metadata["detected"] = sorted({r.name for r in report.results})
-        report.metadata["overlapping_patterns"] = self._count_overlaps(report.results)
-        if report.metadata["overlapping_patterns"]:
-            report.warnings.append(
-                f"{report.metadata['overlapping_patterns']} überlappende Muster erkannt."
-            )
-        return report
+        overlaps = self._count_overlaps(results)
+        metadata["detected"] = sorted({r.name for r in results})
+        metadata["overlapping_patterns"] = overlaps
+        if overlaps:
+            warnings.append(f"{overlaps} überlappende Muster erkannt.")
+        return PatternReport(results=results, valid=valid, warnings=warnings, metadata=metadata)
 
     def _run_pattern(
         self,
@@ -214,42 +219,48 @@ class PatternEngine:
         cfg: dict[str, Any],
         data: pd.DataFrame,
         candle_count: int,
-        report: PatternReport,
-    ) -> None:
-        """Führt einen einzelnen Muster-Detektor aus und ergänzt den Report."""
+        results: list[PatternResult],
+        warnings: list[str],
+    ) -> bool:
+        """Führt einen einzelnen Muster-Detektor aus und ergänzt die Akkumulatoren.
+
+        Returns:
+            ``False``, wenn der Detektor das Gesamtergebnis ungültig macht
+            (ungültige Parameter), sonst ``True``.
+        """
         if not cfg.get("enabled", False):
-            return
+            return True
         if name not in self._registry:
-            report.warnings.append(f"Muster '{name}' ist nicht registriert.")
-            return
+            warnings.append(f"Muster '{name}' ist nicht registriert.")
+            return True
 
         pattern = self._registry.get(name)
         if not pattern.implemented:
-            report.warnings.append(f"Muster '{name}' ist vorbereitet, aber nicht implementiert.")
-            return
+            warnings.append(f"Muster '{name}' ist vorbereitet, aber nicht implementiert.")
+            return True
 
         params = {key: value for key, value in cfg.items() if key != "enabled"}
         try:
             min_needed = pattern.min_candles(params)
         except PatternParameterError as error:
-            report.valid = False
-            report.warnings.append(str(error))
-            return
+            warnings.append(str(error))
+            return False
         if candle_count < min_needed:
-            report.warnings.append(
+            warnings.append(
                 f"Zu wenig Historie für '{name}' ({candle_count} < {min_needed}) – übersprungen."
             )
-            return
+            return True
 
         try:
             detection = pattern.detect(data, params)
         except Exception as error:  # Fehler eines Detektors isoliert behandeln.
             _logger.warning("Muster '%s' fehlgeschlagen: %s", name, error)
-            report.warnings.append(f"Erkennung von '{name}' fehlgeschlagen: {error}")
-            return
+            warnings.append(f"Erkennung von '{name}' fehlgeschlagen: {error}")
+            return True
 
-        report.results.extend(detection.patterns)
-        report.warnings.extend(detection.warnings)
+        results.extend(detection.patterns)
+        warnings.extend(detection.warnings)
+        return True
 
     @staticmethod
     def _is_valid_series(data: pd.DataFrame) -> bool:

@@ -1,9 +1,14 @@
-"""Gemeinsame Schnittstelle, Ergebnistypen und Hilfsmittel für Muster.
+"""Gemeinsame Schnittstelle und Hilfsmittel für Muster.
 
 Alle Muster implementieren :class:`BasePattern` und geben ihr Ergebnis als
-:class:`PatternDetection` (Liste von :class:`PatternResult` plus Warnungen)
-zurück. Die Ergebnistypen liegen bewusst hier (nicht in ``engines``), damit
-kein Import-Zyklus zwischen ``patterns`` und ``engines`` entsteht.
+:class:`~models.pattern.PatternDetection` (Liste von
+:class:`~models.pattern.PatternResult` plus Warnungen) zurück.
+
+Die reinen Datentypen (Enums, ``PatternResult``, ``PatternDetection``,
+``StructureBreak``, ``PatternReport``) liegen seit Sprint 7.5 in
+:mod:`models.pattern`; :class:`PatternParameterError` in
+:mod:`core.exceptions`. Sie werden hier zur Rückwärtskompatibilität
+re-exportiert. Dieses Modul enthält ausschließlich Schnittstelle und Logik.
 
 Gemeinsame Hilfsmittel (Swing-Erkennung, Struktur-Break-Erkennung,
 Parameterprüfung, Skalierung) sind kein eigenes Muster – sie stehen hier, damit
@@ -14,76 +19,34 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from dataclasses import dataclass, field
-from datetime import datetime
-from enum import Enum
 from typing import Any
 
 import pandas as pd
 
+from core.exceptions import PatternParameterError
+from models.pattern import (
+    PatternDetection,
+    PatternDirection,
+    PatternResult,
+    PatternType,
+    StructureBreak,
+)
 
-class PatternParameterError(ValueError):
-    """Wird ausgelöst, wenn ein Pflichtparameter fehlt oder ungültig ist."""
-
-
-class PatternType(Enum):
-    """Kategorie eines Musters."""
-
-    FAIR_VALUE_GAP = "fair_value_gap"
-    STRUCTURE_BREAK = "structure_break"
-    EQUAL_LEVEL = "equal_level"
-    LIQUIDITY = "liquidity"
-    MARKET_STRUCTURE = "market_structure"
-    TREND = "trend"
-    ORDER_BLOCK = "order_block"
-    BREAKER_BLOCK = "breaker_block"
-    MITIGATION_BLOCK = "mitigation_block"
-
-
-class PatternDirection(Enum):
-    """Richtung/Bias eines Musters."""
-
-    BULLISH = "bullish"
-    BEARISH = "bearish"
-    NEUTRAL = "neutral"
-
-
-@dataclass(slots=True)
-class PatternResult:
-    """Ein einzelnes erkanntes Muster.
-
-    Attributes:
-        name: Name des Musters (z. B. ``"fvg"``).
-        pattern_type: Kategorie des Musters.
-        direction: Richtung/Bias (bullish/bearish/neutral).
-        strength: Ausprägung 0..100 (beschreibend, keine Bewertung/Signal).
-        confidence: Vertrauen 0..1 in die Erkennung.
-        timestamp: Zeitpunkt des Musters (Index der auslösenden Kerze).
-        price_level: Charakteristisches Preisniveau des Musters.
-        metadata: Zusätzliche Detailinformationen.
-    """
-
-    name: str
-    pattern_type: PatternType
-    direction: PatternDirection
-    strength: float
-    confidence: float
-    timestamp: datetime | None = None
-    price_level: float | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(slots=True)
-class PatternDetection:
-    """Ergebnis eines einzelnen Muster-Detektors.
-
-    Attributes:
-        patterns: Erkannte Muster (kann leer sein).
-        warnings: Während der Erkennung gesammelte Warnungen.
-    """
-
-    patterns: list[PatternResult] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
+__all__ = [
+    "PatternParameterError",
+    "PatternType",
+    "PatternDirection",
+    "PatternResult",
+    "PatternDetection",
+    "StructureBreak",
+    "BasePattern",
+    "require_int",
+    "require_float",
+    "scaled_strength",
+    "swing_highs",
+    "swing_lows",
+    "detect_structure_breaks",
+]
 
 
 class BasePattern(ABC):
@@ -199,25 +162,6 @@ def swing_lows(data: pd.DataFrame, left: int, right: int) -> list[int]:
 # --------------------------------------------------------------------------- #
 # Struktur-Break-Erkennung (gemeinsames Hilfsmittel, kein Muster)             #
 # --------------------------------------------------------------------------- #
-
-
-@dataclass(slots=True)
-class StructureBreak:
-    """Ein Bruch der Marktstruktur.
-
-    Attributes:
-        index: Positionsindex der auslösenden Kerze.
-        timestamp: Zeitstempel der auslösenden Kerze.
-        level: Durchbrochenes Preisniveau (vorheriger Swing).
-        direction: Richtung des Bruchs.
-        kind: ``"bos"`` (Trendfortsetzung) oder ``"choch"`` (Trendwechsel).
-    """
-
-    index: int
-    timestamp: datetime
-    level: float
-    direction: PatternDirection
-    kind: str
 
 
 def detect_structure_breaks(data: pd.DataFrame, swing_lookback: int) -> list[StructureBreak]:

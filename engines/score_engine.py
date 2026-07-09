@@ -15,7 +15,7 @@ from __future__ import annotations
 import time
 import tomllib
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -127,7 +127,8 @@ class ScoreEngine:
 
         start = self._timer()
         report = self._score(strategy_report, indicators, patterns, symbol, timeframe)
-        report.calculation_time = self._timer() - start
+        # Report ist unveränderlich (frozen): Rechenzeit über eine Kopie setzen.
+        report = replace(report, calculation_time=self._timer() - start)
 
         if self._cache is not None:
             self._cache.set(cache_key, report)
@@ -141,29 +142,38 @@ class ScoreEngine:
         symbol: str,
         timeframe: str,
     ) -> ScoreReport:
-        """Kern der Bewertung inkl. Validierung (ohne Zeitmessung/Cache)."""
-        report = ScoreReport()
-        report.metadata.update(
-            {"symbol": symbol, "timeframe": timeframe, "rules_version": self._rules.version}
-        )
+        """Kern der Bewertung inkl. Validierung (ohne Zeitmessung/Cache).
+
+        Sammelt Bewertungen/Warnungen/Gültigkeit lokal und konstruiert den
+        unveränderlichen :class:`ScoreReport` **einmalig** am Ende.
+        """
+        metadata: dict[str, Any] = {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "rules_version": self._rules.version,
+        }
+        warnings: list[str] = []
+        results: list[ScoreResult] = []
+        valid = True
 
         if not strategy_report.valid:
-            report.valid = False
-            report.warnings.append("Ungültiger/fehlender Strategie-Report.")
+            valid = False
+            warnings.append("Ungültiger/fehlender Strategie-Report.")
         if not strategy_report.results:
-            report.warnings.append("Keine Hypothesen zum Bewerten vorhanden.")
-            return report
+            warnings.append("Keine Hypothesen zum Bewerten vorhanden.")
+            return ScoreReport(results=results, valid=valid, warnings=warnings, metadata=metadata)
 
         hypotheses = strategy_report.results
         for hypothesis in hypotheses:
-            report.results.append(
-                self._score_hypothesis(
-                    hypothesis, hypotheses, indicators, patterns, symbol, timeframe, report
-                )
+            score_result, model_ok = self._score_hypothesis(
+                hypothesis, hypotheses, indicators, patterns, symbol, timeframe
             )
+            results.append(score_result)
+            if not model_ok:
+                valid = False
 
-        report.metadata["scored"] = report.score_count
-        return report
+        metadata["scored"] = len(results)
+        return ScoreReport(results=results, valid=valid, warnings=warnings, metadata=metadata)
 
     def _score_hypothesis(
         self,
@@ -173,9 +183,13 @@ class ScoreEngine:
         patterns: PatternReport,
         symbol: str,
         timeframe: str,
-        report: ScoreReport,
-    ) -> ScoreResult:
-        """Bewertet eine einzelne Hypothese über alle aktivierten Modelle."""
+    ) -> tuple[ScoreResult, bool]:
+        """Bewertet eine einzelne Hypothese über alle aktivierten Modelle.
+
+        Returns:
+            Die :class:`ScoreResult` und ein Flag, das ``False`` ist, wenn ein
+            Modell wegen ungültiger Gewichte scheiterte (macht den Lauf ungültig).
+        """
         components = compute_components(hypothesis, indicators, patterns)
         context = ScoreContext(
             strategy_result=hypothesis,
@@ -190,6 +204,7 @@ class ScoreEngine:
         model_scores: dict[str, float] = {}
         reasons: list[str] = [cs.reason for cs in components.values()]
         warnings: list[str] = []
+        valid = True
 
         for name, cfg in self._rules.models.items():
             if not cfg.get("enabled", False):
@@ -201,7 +216,7 @@ class ScoreEngine:
             try:
                 output = self._registry.get(name).compute(context, params)
             except ScoreParameterError as error:
-                report.valid = False
+                valid = False
                 warnings.append(str(error))
                 continue
             except Exception as error:  # Fehler eines Modells isoliert behandeln.
@@ -213,7 +228,7 @@ class ScoreEngine:
             warnings.extend(output.warnings)
 
         fields = {field: model_scores.get(model, 0.0) for field, model in _FIELD_MODELS.items()}
-        return ScoreResult(
+        result = ScoreResult(
             score_id=f"score:{hypothesis.hypothesis_id}",
             strategy_name=hypothesis.strategy_name,
             hypothesis_id=hypothesis.hypothesis_id,
@@ -228,6 +243,7 @@ class ScoreEngine:
             metadata={"model_scores": model_scores},
             timestamp=hypothesis.timestamp,
         )
+        return result, valid
 
     def _cache_key(
         self,

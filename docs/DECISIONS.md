@@ -278,3 +278,67 @@ das Projekt so aufgebaut ist, wie es ist.
   schreibt gleichzeitig auf Konsole und in eine rotierende Datei.
 - **Begründung:** Einheitliche, dauerhafte und wiederholbar sichere Protokolle.
 - **Konsequenzen:** Module holen sich Logger über `get_logger(__name__)`.
+
+---
+
+### ADR-022 – Domänenmodelle in `models/` (Entities-Schicht) mit Re-Exports
+
+- **Datum:** 2026-07-09 (Sprint 7.5)
+- **Kontext:** Ergebnis-/Datentypen lagen verstreut (`data.market_result`,
+  `engines/*_result.py`, `*/base.py`). Das erschwerte Clean Architecture und
+  koppelte `strategies`/`scores` über `TYPE_CHECKING` an `engines`.
+- **Entscheidung:** Alle reinen Datencontainer werden in `models/` gebündelt
+  (`market`, `indicator`, `pattern`, `strategy`, `score`; `risk`/
+  `recommendation` vorbereitet). Die bisherigen Pfade re-exportieren die Typen.
+- **Begründung:** `models/` ist die blattnahe Entities-Schicht und importiert
+  nichts aus höheren Schichten; Engines und `*/base.py` enthalten nur Logik.
+  Re-Exports erhalten alle öffentlichen Importpfade (keine Teständerung nötig).
+- **Konsequenzen:** Neue Datentypen entstehen in `models/`; die frühere
+  `engines`-Kopplung von `strategies`/`scores` entfällt (TD-05 gelöst).
+
+### ADR-023 – Unveränderliche (frozen) Ergebnisobjekte
+
+- **Datum:** 2026-07-09 (Sprint 7.5)
+- **Kontext:** Reports wurden von den Engines nach der Erstellung mutiert
+  (`report.valid = …`, `report.calculation_time = …`).
+- **Entscheidung:** Alle Modelle sind `frozen`. Die Engines sammeln
+  Zwischenstände in lokalen Akkumulatoren und konstruieren das Ergebnis
+  **einmalig am Ende**; die Rechenzeit wird über `dataclasses.replace()` gesetzt.
+- **Begründung:** Unveränderliche Ergebnisse sind sicherer (kein versehentliches
+  Verändern, cache-fest, threadfreundlicher) und machen die Datenflüsse klar.
+- **Konsequenzen:** Kein Code verändert ein Ergebnisobjekt nach der Erstellung;
+  Änderungen erzeugen bewusst eine Kopie via `replace()`.
+
+### ADR-024 – Generische `Cache[T]` und `Registry[T]` in `core/`
+
+- **Datum:** 2026-07-09 (Sprint 7.5)
+- **Kontext:** Cache- und Registry-Logik existierte viermal nahezu identisch.
+- **Entscheidung:** Eine generische `Cache[T]` (FIFO, Trefferzählung) und
+  `Registry[T]` in `core/`; die vier Engine-Caches/-Registries erben nur noch.
+- **Begründung:** Weniger Duplikat, eine Stelle für Verhalten/Fehler; das
+  öffentliche Interface (`get`/`set`/`register`/`names`/…) bleibt unverändert.
+- **Konsequenzen:** Ein künftiger Risk-Cache nutzt dieselbe Basis.
+
+### ADR-025 – Einheitliche Exception-Hierarchie unter `AlphaAIError`
+
+- **Datum:** 2026-07-09 (Sprint 7.5)
+- **Kontext:** Fachliche Fehler wurden teils als blankes `ValueError`/`KeyError`
+  ausgelöst; es fehlte eine gemeinsame Wurzel.
+- **Entscheidung:** Alle fachlichen Fehler stammen aus `AlphaAIError`
+  (`ParameterError`, `RegistryError`, `CacheError` …). Zur
+  Rückwärtskompatibilität erben ausgewählte Klassen zusätzlich von
+  `ValueError` bzw. `KeyError`.
+- **Begründung:** Aufrufer können alle Alpha-AI-Fehler mit `except AlphaAIError`
+  gezielt fangen; bestehende `except ValueError`-Erwartungen bleiben gültig.
+- **Konsequenzen:** Kein blankes `ValueError`/`KeyError` mehr für Fachfehler.
+
+### ADR-026 – PEP-695-Generics bewusst vermieden
+
+- **Datum:** 2026-07-09 (Sprint 7.5)
+- **Kontext:** `ruff` (UP046/UP047) empfiehlt die 3.12-Syntax `class C[T]`.
+- **Entscheidung:** Es wird weiterhin `typing.Generic[T]`/`TypeVar` verwendet;
+  UP046/UP047 sind in `ruff` ignoriert.
+- **Begründung:** Die `class C[T]`-Syntax ist erst ab Python 3.12 lauffähig; die
+  Ausführungs-/Testumgebung nutzt teils 3.11. `Generic[T]` läuft überall gleich.
+- **Konsequenzen:** Wird die Mindestversion strikt auf 3.12 gehoben, kann die
+  Entscheidung revidiert werden.

@@ -68,6 +68,18 @@ Dokumentation, Basistests. Kein Scanner, keine Daten, keine Handelslogik.
 - 60 neue Tests (307 gesamt), Testabdeckung Score-Module 96 %.
 - Nur Scores; keine Entscheidung, keine Positionsgröße, kein Risiko.
 
+## Sprint 7.5 – Architecture Consolidation ✅ (abgeschlossen)
+
+Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature):
+
+- Domänenmodelle in der Entities-Schicht `models/` konsolidiert (alte Pfade als
+  Re-Exports), `strategies`/`scores` entkoppelt von `engines`.
+- Alle Ergebnisobjekte unveränderlich (`frozen`); Engines konstruieren einmalig.
+- Generische `Cache[T]`/`Registry[T]` und einheitliche Exception-Hierarchie in
+  `core/`.
+- Prüfskript `scripts/quality_check.py` fest im Test verankert.
+- 335 Tests (28 neue), Tag `v0.1.0-foundation`.
+
 ## Sprint 8 – Risk Engine (geplant)
 
 - Ableitung von Risiko und Positionsgröße aus den Scores (Regeln aus

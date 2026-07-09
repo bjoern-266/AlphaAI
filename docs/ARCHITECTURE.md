@@ -20,18 +20,22 @@ testbar und erweiterbar (Clean Architecture, SOLID).
               │
         Database (SQLite)             ← speichert Ergebnisse
               │
+        Models (Entities)             ← unveränderliche Datentypen
+              │
         Core (Config, Logging, …)     ← technische Grundlage
 ```
 
 Regel: **Abhängigkeiten zeigen nur nach unten.** Die Kernschicht (`core`)
-kennt keine Fachlogik. Dadurch bleibt sie stabil.
+kennt keine Fachlogik. Die Entities-Schicht (`models`) enthält ausschließlich
+unveränderliche Datentypen und importiert nichts aus höheren Schichten.
+Dadurch bleiben beide stabil.
 
 ## Schichten im Detail
 
 | Schicht      | Paket        | Verantwortung                                        |
 |--------------|--------------|------------------------------------------------------|
 | Kern         | `core`       | Konfiguration, Logging, Pfade, Fehlerklassen         |
-| Domäne       | `models`     | Gemeinsame Datenstrukturen (Setup, Empfehlung, …)    |
+| Domäne       | `models`     | Unveränderliche Ergebnistypen (market/indicator/…)   |
 | Daten        | `data`       | Modelle & Zugriff auf Marktdaten                     |
 | Datenquellen | `providers`  | Kapselung externer Quellen (z. B. yfinance)          |
 | Analyse      | `engines`    | Technische Kennzahlen/Indikatoren                    |
@@ -366,9 +370,42 @@ fehlende Komponenten (jeweils über `validate_weights` bzw. die Engine).
 
 **Gewichte:** ausschließlich aus `knowledge/score_rules.toml`.
 
+## Architektur-Konsolidierung (umgesetzt in Sprint 7.5)
+
+Verhaltenserhaltender Umbau, der das Fundament vor den nächsten Fachschichten
+festigt (Tag `v0.1.0-foundation`). Vier Bausteine:
+
+1. **Domänenmodelle in `models/`.** Alle Ergebnis-/Datentypen liegen in der
+   Entities-Schicht: `models/market.py`, `models/indicator.py`,
+   `models/pattern.py`, `models/strategy.py`, `models/score.py`
+   (`models/risk.py`, `models/recommendation.py` vorbereitet). Die bisherigen
+   Pfade (`data.market_result`, `engines/*_result.py`, `*/base.py`)
+   **re-exportieren** diese Typen – bestehender Code bleibt unverändert gültig.
+   Dadurch importieren `strategies`/`scores` nichts mehr aus `engines`.
+
+2. **Unveränderliche Ergebnisobjekte.** Jedes Modell ist eine `frozen`
+   Dataclass. Die Engines bauen ihr Ergebnis aus lokalen Akkumulatoren auf und
+   konstruieren es **einmalig am Ende**; die Rechenzeit wird über
+   `dataclasses.replace()` gesetzt. Kein Ergebnis wird nach der Erstellung
+   verändert.
+
+3. **Generische Basis in `core/`.** `core/cache.py` (`Cache[T]`, FIFO,
+   Trefferzählung) und `core/registry.py` (`Registry[T]`) bündeln die zuvor
+   vierfach duplizierte Logik. Die Engine-Caches/-Registries sind nur noch
+   dünne Spezialisierungen mit unverändertem öffentlichem Verhalten.
+
+4. **Einheitliche Fehler.** Alle fachlichen Fehler stammen aus `AlphaAIError`
+   (`core/exceptions.py`): `ParameterError`, `RegistryError`, `CacheError` und
+   ihre Unterklassen. Für Rückwärtskompatibilität erben ausgewählte Klassen
+   zusätzlich von `ValueError`/`KeyError`.
+
+Abgesichert durch `scripts/quality_check.py` (0 Import-Zyklen, saubere
+Entities-Schicht, Plugin-Unabhängigkeit, SOLID) – fest verankert in
+`tests/test_quality.py`.
+
 ## Aktueller Stand
 
 Sprint 1–7 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
-Engine, Pattern Engine, Strategy Engine, Score Engine). Es gibt bewusst
-weiterhin **keine Risk-Engine, keine Recommendation-Engine und keine
-Dashboard-Logik**.
+Engine, Pattern Engine, Strategy Engine, Score Engine); Sprint 7.5 hat das
+Fundament konsolidiert (Tag `v0.1.0-foundation`). Es gibt bewusst weiterhin
+**keine Risk-Engine, keine Recommendation-Engine und keine Dashboard-Logik**.

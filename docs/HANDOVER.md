@@ -6,10 +6,11 @@ dass Wissen nur im Chat existiert.
 
 ## Stand der Übergabe
 
-- **Datum:** 2026-07-08
-- **Abgeschlossener Sprint:** Sprint 7 – Score Engine
-- **Projektwurzel:** `AlphaAI/` (innerhalb des Repositorys `reiseplaner`)
+- **Datum:** 2026-07-09
+- **Abgeschlossener Sprint:** Sprint 7.5 – Architecture Consolidation
+- **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
+- **Tag:** `v0.1.0-foundation` (erster stabiler Fundament-Stand)
 
 ## So startet die nächste Sitzung
 
@@ -17,21 +18,35 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 307 Tests).
+5. Tests ausführen: `pytest` (aktuell 335 Tests).
+6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
-## Qualitätsprüfung Sprint 7 (Ergebnis)
+## Qualitätsprüfung Sprint 7.5 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
 | Prüfung | Ergebnis |
 |---|---|
-| Import-Zyklen | **0** (83 Module per AST-Graph analysiert) |
-| Score-Modell-Unabhängigkeit (kein Modell hängt von anderem ab) | **0 Verstöße** |
-| scores.* importiert nicht aus engines.* | **eingehalten** |
-| SOLID-Heuristik (genau eine Modellklasse, compute) | **0 Verstöße** |
-| Testabdeckung Score-Module (engines/score_*, scores) | **96 %** |
+| Import-Zyklen | **0** |
+| Entities-Schicht `models/` (kein Import aus höheren Schichten) | **0 Verstöße** |
+| Plugin-Unabhängigkeit (Indikatoren/Muster/Strategien/Scores) | **0 Verstöße** |
+| SOLID-Heuristik (alle Familien) | **0 Verstöße** |
+| Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **307 bestanden** |
+| pytest | **335 bestanden** |
+
+## Architektur-Konsolidierung (Sprint 7.5) – für die Weiterarbeit
+
+- **Datentypen** liegen in `models/` (`market`, `indicator`, `pattern`,
+  `strategy`, `score`; `risk`/`recommendation` vorbereitet). Neue Datentypen
+  dort anlegen. Alte Pfade (`data.market_result`, `engines.*_result`,
+  `*/base.py`) re-exportieren weiterhin – bestehender Code bleibt gültig.
+- **Ergebnisobjekte sind `frozen`.** Nichts nach der Erstellung mutieren; für
+  Änderungen `dataclasses.replace(obj, feld=…)` verwenden. Engines sammeln in
+  lokalen Listen/Dicts und konstruieren das Ergebnis **einmalig am Ende**.
+- **Caches/Registries** erben von `core.cache.Cache[T]` bzw.
+  `core.registry.Registry[T]`. **Fehler** immer aus `core.exceptions`
+  (`AlphaAIError`-Hierarchie), nie blankes `ValueError`/`KeyError`.
 
 ## Score Engine – Kurzüberblick für die Weiterarbeit
 

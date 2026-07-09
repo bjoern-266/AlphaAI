@@ -1,9 +1,18 @@
 # Technische Schuld – AlphaAI
 
-**Stand:** 2026-07-09 (nach Sprint 7)
-**Charakter:** Bestandsaufnahme, keine Umsetzung. Der geordnete Umbau steht in
+**Stand:** 2026-07-09 (nach Sprint 7; Teilumsetzung in Sprint 7.5)
+**Charakter:** Bestandsaufnahme. Der geordnete Umbau steht in
 [`REFACTOR_PLAN.md`](REFACTOR_PLAN.md); die Gesamtbewertung in
 [`ARCHITECTURE_REVIEW.md`](ARCHITECTURE_REVIEW.md).
+
+> **In Sprint 7.5 erledigt (verhaltenserhaltend):**
+> **TD-03** (Domänentypen nach `models/` verschoben, alte Pfade als
+> Re-Exports), **TD-05** (`strategies`/`scores` importieren nichts mehr aus
+> `engines`), **TD-01** (generischer `Cache[T]` in `core/`), **TD-02**
+> (generische `Registry[T]` in `core/`), **TD-04** (einheitliche
+> `AlphaAIError`-Hierarchie, keine blanken `ValueError`/`KeyError` für
+> Fachfehler). Zusätzlich: alle Ergebnisobjekte sind jetzt unveränderlich
+> (`frozen`); `scripts/quality_check.py` prüft die Architektur automatisch.
 
 **Legende**
 Priorität: **Hoch** / Mittel / Niedrig · Aufwand: **S** (< ½ Tag) /

@@ -32,8 +32,27 @@ Der Auftraggeber besitzt **keine Programmierkenntnisse**. Deshalb gilt:
 ## Architektur in einem Satz
 
 Schichten mit Abhängigkeiten nur nach unten: `dashboard → scanner →
-{engines, patterns, strategies} → {data, providers} → database → core`.
+{engines, patterns, strategies} → {data, providers} → database →
+models → core`.
 Details in `ARCHITECTURE.md`.
+
+## Konsolidiertes Fundament (ab Sprint 7.5, Tag `v0.1.0-foundation`)
+
+Verbindliche Regeln für jede Weiterarbeit:
+
+- **Datentypen gehören in `models/`** (Entities-Schicht, importiert nichts aus
+  höheren Schichten): `market`, `indicator`, `pattern`, `strategy`, `score`;
+  `risk`/`recommendation` sind vorbereitet. Alte Importpfade
+  (`data.market_result`, `engines.*_result`, `*/base.py`) bleiben als
+  Re-Exports gültig – Engines und `*/base.py` enthalten **nur** Logik.
+- **Alle Ergebnisobjekte sind unveränderlich (`frozen`).** Nie nach der
+  Erstellung mutieren; Engines sammeln in lokalen Akkumulatoren und
+  konstruieren einmalig am Ende, Änderungen via `dataclasses.replace()`.
+- **Caches/Registries** erben von `core.cache.Cache[T]` /
+  `core.registry.Registry[T]`. **Fehler** nur aus der `AlphaAIError`-Hierarchie
+  in `core.exceptions` – kein blankes `ValueError`/`KeyError` für Fachfehler.
+- **Prüfen vor jedem Commit:** `python scripts/quality_check.py` (0 Zyklen,
+  0 Verstöße) und `pytest`.
 
 ## Wo liegt was
 

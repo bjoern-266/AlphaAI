@@ -9,6 +9,7 @@ einzelnen Strategieklassen (Open/Closed-Prinzip).
 
 from __future__ import annotations
 
+from core.registry import Registry
 from strategies.base import BaseStrategy
 from strategies.breakout_strategy import BreakoutStrategy
 from strategies.fvg_strategy import FvgStrategy
@@ -17,43 +18,15 @@ from strategies.momentum_strategy import MomentumStrategy
 from strategies.trend_following import TrendFollowingStrategy
 
 
-class StrategyRegistry:
-    """Verwaltet die verfügbaren Strategien nach Name."""
+class StrategyRegistry(Registry[BaseStrategy]):
+    """Verwaltet die verfügbaren Strategien nach Name.
+
+    Erbt Registrierung/Abfrage von der generischen :class:`core.registry.Registry`;
+    das öffentliche Interface bleibt unverändert.
+    """
 
     def __init__(self) -> None:
-        self._by_name: dict[str, BaseStrategy] = {}
-
-    def register(self, strategy: BaseStrategy) -> None:
-        """Registriert eine Strategie.
-
-        Raises:
-            ValueError: Wenn bereits eine Strategie mit demselben Namen existiert.
-        """
-        if strategy.name in self._by_name:
-            raise ValueError(f"Strategie '{strategy.name}' ist bereits registriert.")
-        self._by_name[strategy.name] = strategy
-
-    def get(self, name: str) -> BaseStrategy:
-        """Gibt die Strategie mit dem Namen zurück.
-
-        Raises:
-            KeyError: Wenn keine Strategie mit diesem Namen registriert ist.
-        """
-        if name not in self._by_name:
-            raise KeyError(f"Unbekannte Strategie '{name}'.")
-        return self._by_name[name]
-
-    def __contains__(self, name: str) -> bool:
-        """Prüft, ob ein Strategiename registriert ist."""
-        return name in self._by_name
-
-    def names(self) -> list[str]:
-        """Gibt die registrierten Strategienamen sortiert zurück."""
-        return sorted(self._by_name)
-
-    def __len__(self) -> int:
-        """Anzahl registrierter Strategien."""
-        return len(self._by_name)
+        super().__init__(label="Strategie")
 
 
 def build_default_registry() -> StrategyRegistry:

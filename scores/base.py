@@ -1,9 +1,15 @@
-"""Gemeinsame Schnittstelle, Typen und Hilfsmittel für Score-Modelle.
+"""Gemeinsame Schnittstelle und Hilfsmittel für Score-Modelle.
 
 Alle Score-Modelle implementieren :class:`BaseScoreModel` und geben ihr
-Ergebnis als :class:`ScoreModelOutput` zurück. Die Typen liegen bewusst hier
-(nicht in ``engines``), damit kein Import-Zyklus zwischen ``scores`` und
-``engines`` entsteht.
+Ergebnis als :class:`~models.score.ScoreModelOutput` zurück.
+
+Die reinen Datentypen (``COMPONENT_NAMES``, ``ComponentScore``,
+``ScoreModelOutput``, ``ScoreContext``, ``ScoreResult``, ``ScoreReport``) liegen
+seit Sprint 7.5 in :mod:`models.score`; :class:`ScoreParameterError` in
+:mod:`core.exceptions`. Sie werden hier zur Rückwärtskompatibilität
+re-exportiert. Dieses Modul enthält ausschließlich Schnittstelle und Logik –
+und importiert **nichts** aus ``engines`` (die frühere ``TYPE_CHECKING``-
+Kopplung ist aufgelöst).
 
 Hier stehen außerdem die **Komponenten-Berechnung** (acht Komponenten) und die
 **Gewichtsvalidierung** – gemeinsame Hilfsmittel, kein eigenes Score-Modell,
@@ -17,25 +23,31 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:  # nur für Typannotationen – kein Laufzeit-Import aus engines
-    from engines.indicator_result import IndicatorResult
-    from engines.pattern_result import PatternReport
-    from strategies.base import StrategyResult
-
-# Die acht Komponenten, die jeder Score getrennt speichert.
-COMPONENT_NAMES: tuple[str, ...] = (
-    "trend",
-    "momentum",
-    "pattern_strength",
-    "pattern_confidence",
-    "indicator_quality",
-    "market_context",
-    "volume_quality",
-    "data_quality",
+from core.exceptions import ScoreParameterError
+from models.indicator import IndicatorResult
+from models.pattern import PatternReport
+from models.score import (
+    COMPONENT_NAMES,
+    ComponentScore,
+    ScoreContext,
+    ScoreModelOutput,
 )
+from models.strategy import StrategyResult
+
+__all__ = [
+    "ScoreParameterError",
+    "COMPONENT_NAMES",
+    "ComponentScore",
+    "ScoreModelOutput",
+    "ScoreContext",
+    "BaseScoreModel",
+    "validate_weights",
+    "weighted_sum",
+    "consensus_fraction",
+    "compute_components",
+]
 
 # Standard-Indikatorsatz zur Bewertung der Indikatorqualität.
 _EXPECTED_INDICATORS: frozenset[str] = frozenset(
@@ -53,67 +65,6 @@ _EXPECTED_INDICATORS: frozenset[str] = frozenset(
         "volume_profile",
     }
 )
-
-
-class ScoreParameterError(ValueError):
-    """Wird ausgelöst, wenn Gewichte fehlen, ungültig sind oder ≠ 100 % ergeben."""
-
-
-@dataclass(slots=True)
-class ComponentScore:
-    """Eine einzelne Score-Komponente.
-
-    Attributes:
-        name: Komponentenname (aus :data:`COMPONENT_NAMES`).
-        value: Wert 0..100.
-        reason: Erklärung des Werts (Transparenz).
-    """
-
-    name: str
-    value: float
-    reason: str
-
-
-@dataclass(slots=True)
-class ScoreModelOutput:
-    """Ergebnis eines einzelnen Score-Modells.
-
-    Attributes:
-        name: Name des Score-Modells.
-        value: Score-Wert (Wertebereich modellabhängig, z. B. 0..100 oder 0..1).
-        reasons: Nachvollziehbare Begründungen (Transparenz).
-        warnings: Während der Berechnung gesammelte Warnungen.
-        details: Zusätzliche Aufschlüsselung (z. B. Beitrag je Komponente).
-    """
-
-    name: str
-    value: float
-    reasons: list[str] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
-    details: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(slots=True)
-class ScoreContext:
-    """Eingabe für ein Score-Modell.
-
-    Attributes:
-        strategy_result: Die zu bewertende Hypothese.
-        indicators: Ergebnis der Indicator Engine.
-        patterns: Ergebnis der Pattern Engine.
-        hypotheses: Alle Hypothesen des Laufs (für Konsens).
-        components: Vorab berechnete Komponenten (Name -> ComponentScore).
-        symbol: Symbolname.
-        timeframe: Zeitebenen-Label.
-    """
-
-    strategy_result: StrategyResult
-    indicators: IndicatorResult
-    patterns: PatternReport
-    hypotheses: Sequence[StrategyResult]
-    components: dict[str, ComponentScore]
-    symbol: str = ""
-    timeframe: str = "base"
 
 
 class BaseScoreModel(ABC):

@@ -2,9 +2,9 @@
 
 _Wird nach jedem Sprint automatisch aktualisiert._
 
-- **Datum:** 2026-07-08
-- **Aktueller Sprint:** Sprint 7 – Score Engine
-- **Status:** ✅ Abgeschlossen
+- **Datum:** 2026-07-09
+- **Aktueller Sprint:** Sprint 7.5 – Architecture Consolidation
+- **Status:** ✅ Abgeschlossen (Fundament-Tag `v0.1.0-foundation`)
 
 ## Was ist vorhanden
 
@@ -53,6 +53,22 @@ _Wird nach jedem Sprint automatisch aktualisiert._
 - **Gewichte** ausschließlich aus `knowledge/score_rules.toml`.
 - **Tests:** 307 gesamt (60 neue).
 
+### Architecture Consolidation (Sprint 7.5)
+
+Verhaltenserhaltender Umbau (kein neues Feature):
+
+- **Entities-Schicht `models/`** bündelt alle Ergebnis-/Datentypen
+  (`market`, `indicator`, `pattern`, `strategy`, `score`; `risk`/
+  `recommendation` vorbereitet). Alte Importpfade bleiben als Re-Exports gültig.
+- **Alle Ergebnisobjekte sind unveränderlich** (`frozen`); Engines konstruieren
+  einmalig am Ende und nutzen `dataclasses.replace()` für die Rechenzeit.
+- **Generische `Cache[T]`/`Registry[T]`** in `core/`; die Engine-Varianten sind
+  dünne Spezialisierungen. **Einheitliche Exception-Hierarchie** unter
+  `AlphaAIError`.
+- **Kopplung reduziert:** `strategies`/`scores` importieren nichts mehr aus
+  `engines`. Prüfskript `scripts/quality_check.py` fest im Test verankert.
+- **Tests:** 335 gesamt (28 neue; bestehende unverändert).
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Risk-Engine, keine Recommendation-Engine.
@@ -61,16 +77,17 @@ _Wird nach jedem Sprint automatisch aktualisiert._
 
 Diese Teile folgen ab Sprint 8 (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 7)
+## Qualitätsnachweis (Sprint 7.5)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 307 Tests bestanden |
+| pytest | 335 Tests bestanden |
 | Ruff / Black | konform |
-| Import-Zyklen | 0 (83 Module analysiert) |
-| Score-Modell-Unabhängigkeit | 0 Verstöße |
-| SOLID-Heuristik (Score-Modelle) | 0 Verstöße |
-| Testabdeckung (Score-Module) | 96 % |
+| Import-Zyklen | 0 |
+| Entities-Schicht `models/` | 0 Verstöße |
+| Plugin-Unabhängigkeit (alle Familien) | 0 Verstöße |
+| SOLID-Heuristik (alle Familien) | 0 Verstöße |
+| Ergebnisobjekte unveränderlich (`frozen`) | vollständig |
 
 ## Nächster Schritt
 

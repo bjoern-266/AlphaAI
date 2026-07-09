@@ -4,6 +4,66 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.1.0-foundation] · [0.7.5] – 2026-07-09 – Sprint 7.5: Architecture Consolidation
+
+Reiner, **verhaltenserhaltender** Umbau (kein neues Feature, kein geändertes
+Fachverhalten). Alle bisherigen Tests bleiben unverändert grün; die öffentlichen
+Importpfade bleiben über Re-Exports erhalten. Erster stabiler Fundament-Stand,
+markiert mit dem Tag `v0.1.0-foundation`.
+
+### Geändert (Konsolidierung)
+
+- **Domänenmodelle konsolidiert** in der Entities-Schicht `models/`
+  (importiert nichts aus höheren Schichten):
+  - `models/market.py` (`MarketResult`, `MarketStatus`, OHLCV-Schema),
+    `models/indicator.py` (`IndicatorOutput`, `IndicatorResult`),
+    `models/pattern.py` (`PatternType`, `PatternDirection`, `PatternResult`,
+    `PatternDetection`, `StructureBreak`, `PatternReport`),
+    `models/strategy.py` (`StrategyDirection`, `StrategyContext`,
+    `StrategyResult`, `StrategyEvaluation`, `StrategyReport`),
+    `models/score.py` (`COMPONENT_NAMES`, `ComponentScore`, `ScoreModelOutput`,
+    `ScoreContext`, `ScoreResult`, `ScoreReport`).
+  - `models/risk.py` und `models/recommendation.py` als **vorbereitete**
+    Platzhalter (keine Risk-/Recommendation-Engine in dieser Version).
+  - Alte Pfade (`data.market_result`, `engines.*_result`, `*/base.py`) bleiben
+    als **Re-Exports** vollständig gültig; die Engines und `*/base.py` enthalten
+    nur noch Logik/Schnittstellen.
+- **Unveränderliche Ergebnisobjekte:** alle Modelle sind `frozen`. Die Engines
+  konstruieren ihr Ergebnis **einmalig am Ende** aus lokalen Akkumulatoren; die
+  Rechenzeit wird über `dataclasses.replace()` gesetzt statt durch Mutation.
+  Keine Engine verändert ein Ergebnisobjekt nach seiner Erstellung.
+- **Generische Basis in `core/`:** `core/cache.py` (`Cache[T]`, FIFO) und
+  `core/registry.py` (`Registry[T]`). Die vier Engine-Caches und -Registries
+  sind nur noch dünne Spezialisierungen; öffentliches Verhalten unverändert.
+- **Einheitliche Exception-Hierarchie** unter `AlphaAIError` in
+  `core/exceptions.py` (`ParameterError`/`RegistryError`/`CacheError` u. a.).
+  Kein blankes `ValueError`/`KeyError` mehr für fachliche Fehler; zur
+  Rückwärtskompatibilität erben ausgewählte Klassen zusätzlich von
+  `ValueError`/`KeyError`.
+- **Kopplung reduziert:** `strategies/base.py` und `scores/base.py` importieren
+  nichts mehr aus `engines` (frühere `TYPE_CHECKING`-Kopplung aufgelöst, TD-05).
+
+### Hinzugefügt
+
+- `scripts/quality_check.py` – versioniertes Architektur-Prüfskript
+  (Import-Zyklen, Plugin-Unabhängigkeit, SOLID, saubere Entities-Schicht),
+  fest verankert über `tests/test_quality.py`.
+- `tests/test_immutability.py` (alle Modelle frozen) und
+  `tests/test_core_generics.py` (generische Cache/Registry + Exception-Hierarchie).
+- **Tests:** von 307 auf 335 erhöht (nur neue Tests; bestehende unverändert).
+
+### Qualitätsprüfung
+
+Import-Zyklen: 0. Entities-Schicht `models/`: 0 Verstöße. Plugin-Unabhängigkeit
+(Indikatoren/Muster/Strategien/Scores): 0 Verstöße. SOLID-Heuristik: 0 Verstöße.
+`ruff` und `black`: ohne Beanstandung. 335 Tests grün.
+
+### ADRs
+
+ADR-022 (Modelle in `models/`), ADR-023 (unveränderliche Ergebnisobjekte),
+ADR-024 (generische `Cache`/`Registry`), ADR-025 (Exception-Hierarchie),
+ADR-026 (PEP-695-Generics bewusst vermieden).
+
 ## [0.7.0] – 2026-07-08 – Sprint 7: Score Engine
 
 ### Hinzugefügt
