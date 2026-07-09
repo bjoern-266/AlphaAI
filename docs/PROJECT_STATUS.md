@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-09
-- **Aktueller Sprint:** Sprint 9 – Recommendation Engine
+- **Aktueller Sprint:** Sprint 9.5 – End-to-End Integration & Validation
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -110,6 +110,20 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   Zuordnung, ungültige Level/Confidence/Ratings.
 - **Tests:** 502 gesamt (89 neue).
 
+### End-to-End-Integration (Sprint 9.5)
+
+- **IntegrationRunner** (`pipeline/runner.py`) verkettet die komplette Pipeline
+  `MarketData → Indicator → Pattern → Strategy → Score → Risk → Recommendation`.
+  Keine neue Fachlogik, keine Umgehung von Schichten.
+- **PipelineResult** (`models/pipeline.py`, `frozen`) bündelt alle Stufen.
+- **Konsistenzprüfung** (`pipeline/consistency.py`): jede Empfehlung → genau ein
+  Risk → genau ein Score → genau eine Strategie; IDs eindeutig, Referenzen gültig.
+- **13 echte Szenarien** + **180 Integrations-Tests** (kein Mock): 0
+  Konsistenzverstöße, alle Entscheidungs-Invarianten bestätigt.
+- **Reports:** `docs/PIPELINE.md`, `docs/VALIDATION_REPORT.md` (mit
+  Auffälligkeiten und Verbesserungsvorschlägen; keine Engine geändert).
+- **Tests:** 682 gesamt (180 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung,
@@ -119,20 +133,22 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 9)
+## Qualitätsnachweis (Sprint 9.5)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 502 Tests bestanden |
+| pytest | 682 Tests bestanden (180 Integrations-Tests) |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |
-| Plugin-Unabhängigkeit (inkl. Recommendation) | 0 Verstöße |
-| SOLID-Heuristik (inkl. Recommendation) | 0 Verstöße |
+| Plugin-Unabhängigkeit | 0 Verstöße |
+| SOLID-Heuristik | 0 Verstöße |
+| Pipeline-Konsistenz | 0 Verstöße |
 | Ergebnisobjekte unveränderlich (`frozen`) | vollständig |
 
 ## Nächster Schritt
 
-Warten auf Freigabe für den nächsten Sprint (z. B. **Dashboard** oder
-**End-to-End-Verdrahtung im Scanner**) – weiterhin ohne automatische
-Orderausführung und ohne Broker-API.
+Warten auf Freigabe für den nächsten Sprint. Aus dem Validation Report
+priorisiert: **Kalibrierung** (Richtung in `RecommendationResult`,
+Schwellen/Gewichte an realen Daten) sowie perspektivisch **Dashboard** –
+weiterhin ohne automatische Orderausführung und ohne Broker-API.

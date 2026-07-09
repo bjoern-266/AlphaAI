@@ -164,11 +164,24 @@ Neue Modelle nur über die `RecommendationRegistry`; Regeln ausschließlich aus
 Summary vollständig erklärbar (keine Blackbox). **Keine** Order, **keine**
 Broker-Anbindung.
 
+## Gesamtpipeline (ab Sprint 9.5 verdrahtet)
+
+Die komplette Kette ist über den `IntegrationRunner` (`pipeline/runner.py`)
+End-to-End verbunden: `MarketData → Indicator → Pattern → Strategy → Score →
+Risk → Recommendation`. Ergebnis je Symbol ist ein `PipelineResult`
+(`models/pipeline.py`, frozen). `pipeline.consistency.verify_pipeline` prüft,
+dass jede Empfehlung genau einen Risk-, jeder Risk genau einen Score- und jeder
+Score genau einen Strategy-Result hat (IDs eindeutig, Referenzen gültig).
+Datenfluss: `docs/PIPELINE.md`; Validierung/Auffälligkeiten:
+`docs/VALIDATION_REPORT.md`. Der Runner enthält **keine** neue Fachlogik.
+
 ## Aktueller Stand
 
-Sprint 1–9 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–9.5 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
-Risk Engine, Recommendation Engine). Es gibt bewusst weiterhin **keine**
-Dashboard-Logik, **keine** Broker-API, **keine** automatische Orderausführung und
-**keine** Paper-Trading-Funktionen. Immer zuerst `PROJECT_STATUS.md` und
+Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung). Es
+gibt bewusst weiterhin **keine** Dashboard-Logik, **keine** Broker-API, **keine**
+automatische Orderausführung und **keine** Paper-Trading-Funktionen. Offene
+fachliche Kalibrierung (Richtung in der Empfehlung, Schwellen an realen Daten)
+ist im Validation Report festgehalten. Immer zuerst `PROJECT_STATUS.md` und
 `HANDOVER.md` lesen.

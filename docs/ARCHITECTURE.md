@@ -502,10 +502,32 @@ Blackbox. Parameter ausschließlich aus `knowledge/recommendation_rules.toml`.
 **Validierung:** fehlender/ungültiger Strategy-/Score-/Risk-Report, fehlende
 Zuordnung je Hypothese, ungültige Level/Confidence/Ratings.
 
+## End-to-End-Integration (umgesetzt in Sprint 9.5)
+
+Der `IntegrationRunner` (`pipeline/runner.py`) verbindet alle sieben Stufen zu
+einem vollständigen Durchlauf und liefert ein unveränderliches `PipelineResult`
+(`models/pipeline.py`). Er enthält **keine** neue Fachlogik: jede Engine erhält
+nur vorgelagerte Ausgaben (Indikatoren/Muster sind gemeinsame Vorstufen).
+
+```
+MarketData → Indicator → Pattern → Strategy → Score → Risk → Recommendation
+                              │
+                    IntegrationRunner (pipeline/)
+                              │
+                        PipelineResult
+```
+
+`pipeline.consistency.verify_pipeline` prüft automatisch: jede Empfehlung → genau
+ein Risk → genau ein Score → genau eine Strategie; alle IDs eindeutig, alle
+Referenzen gültig. Validiert über 13 echte Szenarien und 180 Integrations-Tests
+(kein Mock). Details: `docs/PIPELINE.md`, `docs/VALIDATION_REPORT.md`.
+
 ## Aktueller Stand
 
-Sprint 1–9 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–9.5 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
-mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine). Es gibt bewusst
-weiterhin **keine Dashboard-Logik, keine Broker-API, keine automatische
-Orderausführung und keine Paper-Trading-Funktionen**.
+mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
+Integration & Validierung). Es gibt bewusst weiterhin **keine Dashboard-Logik,
+keine Broker-API, keine automatische Orderausführung und keine
+Paper-Trading-Funktionen**. Offene fachliche Kalibrierung ist im
+`docs/VALIDATION_REPORT.md` dokumentiert.

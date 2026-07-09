@@ -404,3 +404,32 @@ das Projekt so aufgebaut ist, wie es ist.
   Registrierung + Parameter in `recommendation_rules.toml`; die Engine bleibt
   unverändert. Sie liefert ausschließlich `RecommendationResult` – **keine**
   Position, **keine** Order, **keine** Broker-Kommunikation.
+
+### ADR-029 – End-to-End-Integration: Runner, Konsistenz, Validierung
+
+- **Datum:** 2026-07-09 (Sprint 9.5)
+- **Kontext:** Die sieben Stufen existierten einzeln und einzeln getestet. Es
+  fehlte eine verdrahtete Gesamtkette samt automatischer Konsistenz- und
+  End-to-End-Validierung – ohne neue Fachlogik.
+- **Entscheidung:**
+  - Neues, **rein orchestrierendes** Paket `pipeline/` mit dem
+    `IntegrationRunner` (verkettet die bestehenden Engines) und
+    `verify_pipeline` (Referenz-/Eindeutigkeits-Konsistenz). Das
+    Ergebnisobjekt `PipelineResult` liegt als `frozen`-Modell in `models/`.
+  - Der Runner enthält **keine** neue Fachlogik: jede Engine erhält nur
+    vorgelagerte Ausgaben (Indikatoren/Muster sind gemeinsame Vorstufen, keine
+    Umgehung). Fehlende Daten ergeben ein leeres, aber konsistentes Ergebnis.
+  - Validierung über **echte** Szenarien (`tests/scenarios.py`, deterministisch,
+    kein Mock) und 180 Integrations-Tests; geprüft werden Konsistenz und die
+    Entscheidungs-Invarianten (No-Trade-Gates, „Score allein nie BUY", „hohes
+    Risiko deckelt").
+  - **Kalibrierungs-Auffälligkeiten** (Richtungs-Semantik der Stufe, Häufigkeit
+    von STRONG_BUY, Risiko-Schwellen) werden **dokumentiert** statt behoben –
+    Sprint 9.5 ändert bewusst keine Engine und kein Verhalten.
+- **Begründung:** Die Gesamtkette muss beweisbar konsistent und regelkonform
+  sein, bevor Feinschliff/Kalibrierung erfolgt. Trennung von Integration
+  (jetzt) und fachlicher Kalibrierung (später) hält die Änderung risikoarm.
+- **Konsequenzen:** `pipeline` ist im Qualitäts-Check und in `pyproject.toml`
+  registriert. Die dokumentierten Verbesserungen (u. a. Richtung in
+  `RecommendationResult`) sind eigenständige Folge-Sprints; keine Order-/Broker-/
+  Dashboard-Funktion entsteht.

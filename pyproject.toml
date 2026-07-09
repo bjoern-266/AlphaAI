@@ -49,6 +49,7 @@ packages = [
     "scores",
     "risk",
     "recommendation",
+    "pipeline",
     "dashboard",
     "database",
     "models",

@@ -105,6 +105,15 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
 - `RecommendationRegistry`, `RecommendationCache`, Regeln aus
   `knowledge/recommendation_rules.toml`. 89 neue Tests (502 gesamt).
 
+## Sprint 9.5 – End-to-End Integration & Validation ✅ (abgeschlossen)
+
+- `IntegrationRunner` verkettet die komplette Pipeline (Data → Indicator →
+  Pattern → Strategy → Score → Risk → Recommendation); keine neue Fachlogik.
+- `PipelineResult` (frozen) + `verify_pipeline` (Referenz-/Eindeutigkeits-
+  Konsistenz). 13 echte Szenarien, 180 Integrations-Tests, 0 Verstöße.
+- Reports `docs/PIPELINE.md` und `docs/VALIDATION_REPORT.md` (inkl.
+  Auffälligkeiten und Verbesserungsvorschlägen). 682 Tests gesamt.
+
 ## Sprint 6 – Dashboard (geplant)
 
 - Streamlit-Oberfläche in `dashboard/`.

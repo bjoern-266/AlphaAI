@@ -4,6 +4,57 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.9.5] – 2026-07-09 – Sprint 9.5: End-to-End Integration & Validation
+
+Reine Integration, Validierung und Qualitätssicherung der bestehenden
+Architektur. **Keine** neuen Features, **keine** neue Engine, **keine**
+Engine-Änderung, **keine** Order-/Broker-/Dashboard-Bausteine.
+
+### Hinzugefügt
+
+- **IntegrationRunner** (`pipeline/runner.py`): verbindet die komplette Kette
+  `MarketData → IndicatorEngine → PatternEngine → StrategyEngine → ScoreEngine
+  → RiskEngine → RecommendationEngine` End-to-End. Jede Engine erhält nur
+  vorgelagerte Ausgaben; keine Schicht wird umgangen. `from_config()`, `run`,
+  `run_all`, `run_frame`.
+- **PipelineResult** (`models/pipeline.py`, `frozen`): bündelt die Ausgaben
+  aller Stufen für ein Symbol.
+- **Konsistenzprüfungen** (`pipeline/consistency.py`): `verify_pipeline` stellt
+  sicher, dass jede Empfehlung genau einen RiskResult, jeder RiskResult genau
+  einen ScoreResult und jeder ScoreResult genau einen StrategyResult besitzt,
+  alle IDs eindeutig und alle Referenzen gültig sind.
+- **13 echte Marktszenarien** (`tests/scenarios.py`, deterministisch, kein Mock):
+  Trend auf/ab, Seitwärts, hohe/niedrige Volatilität, bullischer/bärischer
+  Ausbruch, niedrige/hohe Liquidität, Gaps, Choppy, schwache Datenqualität, zu
+  kurze/fehlende Historie.
+- **180 Integrations-Tests** (`tests/test_integration_pipeline.py`): echte
+  End-to-End-Durchläufe; prüfen Konsistenz, Stufen-/Handlungs-Validität,
+  Wertebereiche, Erklärbarkeit und die zentralen Invarianten (hohes Risiko
+  deckelt, Score allein nie BUY, No-Trade als normales Ergebnis).
+- **Reports:** `docs/PIPELINE.md` (vollständiger Datenfluss) und
+  `docs/VALIDATION_REPORT.md` (Szenarien, Ergebnisse, Statistiken, Auffälligkeiten,
+  Verbesserungsvorschläge).
+- Neues Paket `pipeline` in `pyproject.toml` und im Qualitäts-Check registriert.
+
+### Validierung (Kurzfassung)
+
+Über 180 Tests: **0** Konsistenzverstöße; alle Entscheidungs-Invarianten
+bestätigt. Als **Auffälligkeiten** dokumentiert (ohne Engine-Änderung): auf
+idealisierten Trends ist STRONG_BUY häufig; die Stufe misst Konviktion, nicht
+Richtung (ein bärisches Setup erhält „STRONG_BUY"); WAIT/AVOID traten nicht auf;
+Risiko blieb LOW. Priorisierte Verbesserungsvorschläge in
+`docs/VALIDATION_REPORT.md`.
+
+### Qualitätsprüfung
+
+Import-Zyklen: 0. Entities-Schicht `models/`: 0. Plugin-Unabhängigkeit/SOLID: 0.
+Immutability vollständig. `ruff`/`black` konform. 682 Tests grün (+180).
+
+### ADR
+
+ADR-029 (End-to-End-Integration: IntegrationRunner, Konsistenzprüfungen,
+Validierungsstrategie).
+
 ## [0.9.0] – 2026-07-09 – Sprint 9: Recommendation Engine
 
 Letzte fachliche Entscheidungsschicht auf dem konsolidierten Fundament. Die

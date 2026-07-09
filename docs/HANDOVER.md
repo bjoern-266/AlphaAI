@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-09
-- **Abgeschlossener Sprint:** Sprint 9 – Recommendation Engine
+- **Abgeschlossener Sprint:** Sprint 9.5 – End-to-End Integration & Validation
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,10 +18,10 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 502 Tests).
+5. Tests ausführen: `pytest` (aktuell 682 Tests, davon 180 Integrations-Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
-## Qualitätsprüfung Sprint 9 (Ergebnis)
+## Qualitätsprüfung Sprint 9.5 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -29,11 +29,30 @@ Vor dem Commit automatisch geprüft:
 |---|---|
 | Import-Zyklen | **0** |
 | Entities-Schicht `models/` (kein Import aus höheren Schichten) | **0 Verstöße** |
-| Plugin-Unabhängigkeit (inkl. Recommendation-Modelle) | **0 Verstöße** |
-| SOLID-Heuristik (inkl. Recommendation) | **0 Verstöße** |
+| Plugin-Unabhängigkeit | **0 Verstöße** |
+| SOLID-Heuristik | **0 Verstöße** |
+| Pipeline-Konsistenz (`verify_pipeline`) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **502 bestanden** |
+| pytest | **682 bestanden** |
+
+## Vollständige Pipeline – Einstieg
+
+```python
+from pipeline.runner import IntegrationRunner
+runner = IntegrationRunner.from_config()
+result = runner.run(market_result, symbol="AAPL")   # oder runner.run_frame(ohlcv_df, "AAPL")
+best = result.best()                                 # höchstbewertete Empfehlung (nur Anzeige)
+```
+
+`pipeline.consistency.verify_pipeline(result)` prüft die Referenz-Konsistenz
+(leer = ok). Datenfluss: `docs/PIPELINE.md`. Validierungsergebnisse und offene
+Kalibrierungspunkte: `docs/VALIDATION_REPORT.md`.
+
+**Nächster fachlicher Schritt (aus dem Validation Report):** Richtung in
+`RecommendationResult` aufnehmen und die Schwellen/Gewichte an realen Daten
+kalibrieren (BUY selten, STRONG_BUY außergewöhnlich). Das sind eigene Sprints
+und ändern bewusst Verhalten – daher nicht Teil von 9.5.
 
 ## Recommendation Engine – Kurzüberblick für die Weiterarbeit
 
