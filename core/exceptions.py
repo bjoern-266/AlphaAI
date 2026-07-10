@@ -73,6 +73,18 @@ class BacktestParameterError(ParameterError):
     """Ein Backtest-Parameter fehlt oder ist ungültig."""
 
 
+class PaperTradingParameterError(ParameterError):
+    """Ein Paper-Trading-Parameter fehlt oder ist ungültig."""
+
+
+class PaperTradingValidationError(AlphaAIError):
+    """Ein ungültiger Zustand im Paper-Portfolio.
+
+    Beispiele: doppelte Position derselben Empfehlung, negative Positionsgröße,
+    ungültige Preise/Zeitstempel oder ein unzulässiger Statuswechsel.
+    """
+
+
 # --------------------------------------------------------------------------- #
 # Registry-Fehler (Erweiterungsstelle für Plugins)                             #
 # --------------------------------------------------------------------------- #

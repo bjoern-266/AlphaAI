@@ -618,3 +618,112 @@ def make_simulated_trade(
         reasons=["Testgrund"],
         warnings=[],
     )
+
+
+# --------------------------------------------------------------------------- #
+# Paper-Trading-Helfer (Sprint 11)                                            #
+# --------------------------------------------------------------------------- #
+
+_PAPER_RULES_FAST = {
+    "meta": {"version": 1},
+    "runner": {
+        "warmup_bars": 30,
+        "step": 1,
+        "max_holding_days": 5,
+        "trailing_distance": 0.0,
+    },
+    "statistics_model": {"enabled": True},
+    "performance_model": {"enabled": True},
+}
+
+
+def make_paper_rules(**overrides):
+    """Baut PaperTradingRules mit kleinem Vorlauf (für schnelle Engine-Tests)."""
+    import copy
+
+    from engines.paper_trading_engine import load_paper_trading_rules_from_dict
+
+    data = copy.deepcopy(_PAPER_RULES_FAST)
+    for section, values in overrides.items():
+        if isinstance(values, dict):
+            data.setdefault(section, {}).update(values)
+        else:
+            data[section] = values
+    return load_paper_trading_rules_from_dict(data)
+
+
+def make_paper_position(
+    position_id: str = "pos:AAPL:1",
+    recommendation_id: str = "rec:1",
+    symbol: str = "AAPL",
+    direction=None,
+    strength=None,
+    status=None,
+    entry_price: float = 100.0,
+    current_price: float = 100.0,
+    stop_price: float = 96.0,
+    take_profit_price: float = 108.0,
+    shares: float = 10.0,
+    risk_amount: float = 40.0,
+    entry_time: datetime | None = None,
+):
+    """Baut eine offene PaperPosition (für Positions-/Portfolio-Tests)."""
+    from models.recommendation import Direction, RecommendationStrength
+    from paper_trading.position import open_position
+
+    direction = direction or Direction.LONG
+    strength = strength or RecommendationStrength.HIGH
+    pos = open_position(
+        position_id=position_id,
+        recommendation_id=recommendation_id,
+        symbol=symbol,
+        direction=direction,
+        recommendation_strength=strength,
+        entry_price=entry_price,
+        stop_price=stop_price,
+        take_profit_price=take_profit_price,
+        shares=shares,
+        risk_amount=risk_amount,
+        entry_time=entry_time or datetime(2023, 1, 1, tzinfo=UTC),
+        reasons=["Testgrund"],
+        warnings=[],
+        metadata={"entry_index": 0},
+    )
+    return pos
+
+
+def make_paper_trade(
+    trade_id: str = "pt-trade:1",
+    direction=None,
+    strength=None,
+    pnl: float = 50.0,
+    entry_price: float = 100.0,
+    exit_price: float = 105.0,
+    holding_days: float = 3.0,
+    close_reason=None,
+):
+    """Baut einen abgeschlossenen PaperTrade (für Statistik-Tests)."""
+    from datetime import timedelta
+
+    from models.paper_trading import CloseReason, PaperTrade
+    from models.recommendation import Direction, RecommendationStrength
+
+    direction = direction or Direction.LONG
+    strength = strength or RecommendationStrength.HIGH
+    return PaperTrade(
+        trade_id=trade_id,
+        position_id="pos:AAPL:1",
+        recommendation_id="rec:1",
+        symbol="AAPL",
+        direction=direction,
+        recommendation_strength=strength,
+        entry_price=entry_price,
+        exit_price=exit_price,
+        shares=10.0,
+        pnl=pnl,
+        pnl_pct=(pnl / (entry_price * 10.0) * 100.0),
+        holding_time=timedelta(days=holding_days),
+        close_reason=close_reason or CloseReason.TAKE_PROFIT,
+        reasons=["Testgrund"],
+        warnings=[],
+    )

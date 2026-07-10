@@ -196,14 +196,36 @@ Konto-/Risikowerte ausschließlich aus `config/settings.toml` (über die Risk
 Engine). Einstieg: `BacktestEngine.from_config()`. Jeder simulierte Trade ist
 vollständig nachvollziehbar. Datenfluss/Details: `docs/BACKTESTING.md`.
 
+## Paper-Trading-Framework (ab Sprint 11 verfügbar)
+
+**Rein bewertend**: die bestehende Pipeline erzeugt täglich Empfehlungen; ein
+**simuliertes** Portfolio eröffnet/bewertet/schließt daraus Positionen und misst
+Kapital, Drawdown, Exposure und Handelsstatistik. Es werden **niemals** echte
+Orders ausgeführt, es gibt **keine** Broker-API, **keine** neue Handelsregel und
+**keine** Änderung an Pipeline oder Backtesting. Kette: `Live-Marktdaten →
+bestehende Pipeline → PaperTradingEngine → PaperPortfolio → PaperTradingReport`.
+Subsystem `paper_trading/` (`paper_runner` – tagweise, kein Look-Ahead;
+`portfolio` – Validierung/Kapital/Drawdown/Exposure; `position` – Mark-to-Market,
+Stop/Take-Profit, Trailing Stop **vorbereitet**; `order` – OPEN/CLOSE/CANCEL/
+EXPIRE; `trade`; `journal`; `statistics`; `performance`; `base` + zwei Modelle).
+Ergebnistypen in `models/paper_trading.py` (re-exportiert über
+`engines/paper_trading_result.py`). Neue Modelle nur über die
+`PaperTradingRegistry`; Parameter ausschließlich aus
+`knowledge/paper_trading_rules.toml`, Konto-/Risikowerte ausschließlich aus
+`config/settings.toml` (über die Risk Engine). Einstieg:
+`PaperTradingEngine.from_config()`. **Ergebnis-/Snapshot-Typen sind `frozen`;
+Portfolio und Journal sind bewusst zustandsbehaftete Manager.** Jede Position ist
+vollständig nachvollziehbar. Datenfluss/Details: `docs/PAPER_TRADING.md`.
+
 ## Aktueller Stand
 
-Sprint 1–10 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–11 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
 Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung,
-Historical Backtesting Framework). Es gibt bewusst weiterhin **keine**
-Dashboard-Logik, **keine** Broker-API, **keine** automatische Orderausführung und
-**keine** Paper-Trading-Funktionen. Offene fachliche Kalibrierung (Schwellen an
-realen Daten, Annualisierung der vorbereiteten Backtest-Kennzahlen) ist im
-Validation Report festgehalten. Immer zuerst `PROJECT_STATUS.md` und
-`HANDOVER.md` lesen.
+Historical Backtesting Framework, Paper Trading Framework). Es gibt bewusst
+weiterhin **keine** Dashboard-Logik, **keine** Broker-API, **keine** automatische
+Orderausführung und **keine echten Orders** (Backtesting und Paper Trading
+simulieren ausschließlich). Offene fachliche Kalibrierung (Schwellen an realen
+Daten, Annualisierung der vorbereiteten Backtest-Kennzahlen, Aktivierung des
+vorbereiteten Trailing Stops) ist im Validation Report festgehalten. Immer zuerst
+`PROJECT_STATUS.md` und `HANDOVER.md` lesen.

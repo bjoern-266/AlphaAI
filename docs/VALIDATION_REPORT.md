@@ -1,8 +1,17 @@
-# Validation Report – End-to-End-Integration (Sprint 9.5, Update 9.6/10)
+# Validation Report – End-to-End-Integration (Sprint 9.5, Update 9.6/10/11)
 
 **Stand:** 2026-07-10 · **Umfang:** Integration und Validierung der bestehenden
 Architektur. **Keine** neuen Features, **keine** neue Engine, **keine**
 Orderausführung.
+
+> **➕ Update Sprint 11 – Paper Trading.** Das neue Paper-Trading-Framework
+> (`paper_trading/`, `engines/paper_trading_*`) bewertet **rein** die Entwicklung
+> der **bestehenden** Empfehlungen mit einem **simulierten** Portfolio; es führt
+> **niemals** echte Orders aus und ändert keine Engine. **Offene Punkte:** der
+> **Trailing Stop** ist vorbereitet (implementiert, per Default inaktiv über
+> `trailing_distance = 0.0`) und an realen Daten zu kalibrieren; ebenso bleibt die
+> Schwellen-/Gewichts-Kalibrierung der Empfehlung offen. Diese Schritte ändern
+> bewusst Verhalten und sind daher eigene Sprints.
 
 > **➕ Update Sprint 10 – Historical Backtesting.** Das neue Backtesting-Framework
 > (`backtesting/`, `engines/backtest_*`) bewertet **rein** die historische

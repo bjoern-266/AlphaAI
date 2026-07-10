@@ -31,6 +31,7 @@ SCORE_RULES_FILE: Path = KNOWLEDGE_DIR / "score_rules.toml"
 RISK_RULES_FILE: Path = KNOWLEDGE_DIR / "risk_rules.toml"
 RECOMMENDATION_RULES_FILE: Path = KNOWLEDGE_DIR / "recommendation_rules.toml"
 BACKTEST_RULES_FILE: Path = KNOWLEDGE_DIR / "backtest_rules.toml"
+PAPER_TRADING_RULES_FILE: Path = KNOWLEDGE_DIR / "paper_trading_rules.toml"
 LOG_FILE: Path = LOGS_DIR / "alpha_ai.log"
 
 

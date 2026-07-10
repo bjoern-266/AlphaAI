@@ -1,0 +1,40 @@
+# =============================================================================
+# Paper-Trading-Regeln (Sprint 11)
+# =============================================================================
+# Einzige Quelle aller Parameter des Paper-Trading-Frameworks. Im Code gibt es
+# keine hartcodierten Werte.
+#
+# Wichtig: Paper Trading fuehrt NIEMALS echte Orders aus und veraendert KEINE
+# bestehende Empfehlung. Es bewertet ausschliesslich, wie sich die vorhandenen
+# AlphaAI-Empfehlungen unter (simulierten) Live-Marktbedingungen mit einem
+# simulierten Portfolio entwickeln.
+#
+# Alle Konto-/Risikoeinstellungen (Depot, Fractional Shares, Risiko je Trade,
+# max. Positionen) stammen ausschliesslich aus config/settings.toml und fliessen
+# ueber die bestehende Risk Engine ein - nicht aus dieser Datei.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Parameter des Paper Runners und der Paper-Trading-Modelle (Sprint 11)."
+
+# --- Paper Runner -------------------------------------------------------------
+# Steuert, wie die bestehende Pipeline tagweise ueber die Historie laeuft.
+[runner]
+# Vorlauf in Kerzen, bevor Empfehlungen ausgewertet werden (genug fuer EMA200).
+warmup_bars = 200
+# Schrittweite in Kerzen zwischen zwei Empfehlungs-Auswertungen (1 = taeglich).
+step = 1
+# Maximale Haltedauer in Tagen bis zum Verfall (Expire) einer offenen Position.
+max_holding_days = 10
+# Trailing-Stop-Abstand (VORBEREITET). 0 = inaktiv; die Standardsimulation nutzt
+# keinen Trailing Stop.
+trailing_distance = 0.0
+
+# --- Modelle (jeweils eigenes Plugin in paper_trading/) -----------------------
+
+[statistics_model]
+enabled = true
+
+[performance_model]
+enabled = true

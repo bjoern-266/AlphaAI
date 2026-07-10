@@ -141,6 +141,24 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
   Validierung (Zeitraum/Daten/Preise/Kennzahlen). Kein Look-Ahead.
 - 155 neue Tests (868 gesamt). Doku: `docs/BACKTESTING.md`.
 
+## Sprint 11 – Paper Trading Framework ✅ (abgeschlossen)
+
+- Kette `Live-Marktdaten → bestehende Pipeline → PaperTradingEngine →
+  PaperPortfolio → PaperTradingReport`; **rein bewertend**, keine neue
+  Handelsregel, keine Änderung an einer Engine oder am Backtesting, **niemals**
+  echte Orders (nur Simulation), keine Broker-API.
+- Subsystem `paper_trading/` (`paper_runner`, `portfolio`, `position`, `order`,
+  `trade`, `journal`, `statistics`, `performance`, `base` + zwei Modelle) und
+  Engine-Anbindung (`paper_trading_engine`, `-registry`, `-cache`, `-result`).
+- `PaperTradingResult` mit allen geforderten Feldern (Status OPEN/CLOSED/
+  CANCELLED, Entry/Current/Exit, PnL €/%, Running/Max Drawdown, Current Equity,
+  Exposure, Direction, Recommendation Strength, Reasons/Warnings, …). Order-
+  Management (OPEN/CLOSE/CANCEL/EXPIRE), automatisches Journal, Statistik.
+- Fractional Shares; Konto-/Risikowerte ausschließlich aus `settings.toml`;
+  Parameter aus `knowledge/paper_trading_rules.toml`. Validierung (doppelte
+  Position, Größen, Preise, Zeitstempel, Statuswechsel). Trailing Stop vorbereitet.
+- 177 neue Tests (1045 gesamt). Doku: `docs/PAPER_TRADING.md`.
+
 ## Sprint 6 – Dashboard (geplant)
 
 - Streamlit-Oberfläche in `dashboard/`.

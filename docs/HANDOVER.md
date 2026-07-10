@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-10
-- **Abgeschlossener Sprint:** Sprint 10 – Historical Backtesting Framework
+- **Abgeschlossener Sprint:** Sprint 11 – Paper Trading Framework
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,7 +18,7 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 868 Tests).
+5. Tests ausführen: `pytest` (aktuell 1045 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
 > **Semantik (ab 9.6):** `RecommendationResult.direction` (LONG/SHORT/NEUTRAL)
@@ -26,7 +26,7 @@ dass Wissen nur im Chat existiert.
 > (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) sind getrennt. Die Stärke enthält **kein**
 > BUY/SELL/LONG/SHORT. Ein bärisches Setup ist SHORT mit ggf. hoher Stärke.
 
-## Qualitätsprüfung Sprint 10 (Ergebnis)
+## Qualitätsprüfung Sprint 11 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -39,7 +39,7 @@ Vor dem Commit automatisch geprüft:
 | Pipeline-Konsistenz (`verify_pipeline`) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **868 bestanden** |
+| pytest | **1045 bestanden** |
 
 ## Vollständige Pipeline – Einstieg
 
@@ -80,6 +80,32 @@ eigene Sprints und ändern bewusst Verhalten.
      muss dafür **nicht** geändert werden.
   4. Eigene Testdatei `tests/test_backtest_<name>.py` anlegen.
 - Details/Datenfluss: `docs/BACKTESTING.md`.
+
+## Paper-Trading-Framework – Kurzüberblick für die Weiterarbeit
+
+- Einstieg: `PaperTradingEngine.from_config()` lädt
+  `knowledge/paper_trading_rules.toml` und `config/settings.toml`, baut den
+  bestehenden `IntegrationRunner` und registriert alle Standard-Modelle.
+- Simulation: `engine.run_frame(ohlcv_df, symbol=...)` → `PaperTradingReport`
+  bzw. `engine.run(market_result)` → `PaperTradingReport` (ein gemeinsames Depot).
+- **Rein bewertend:** tägliche Simulation über die bestehende Pipeline,
+  **niemals** echte Orders, **keine** Broker-API, **keine** neue Handelsregel.
+  Kein Look-Ahead. Fractional Shares; Konto-/Risikowerte ausschließlich aus
+  `settings.toml`.
+- Jede `PaperPosition`/jedes `PaperTradingResult` ist vollständig nachvollziehbar
+  (Recommendation-ID/Direction/Strength/Reasons/Warnings). Order-Management
+  (OPEN/CLOSE/CANCEL/EXPIRE), automatisches Journal, Statistik/Performance.
+- **Portfolio/Journal sind Manager** (mutabel); **Ergebnis-/Snapshot-Typen sind
+  `frozen`** – Positionen werden über `dataclasses.replace` fortgeschrieben.
+- **Neues Paper-Trading-Modell hinzufügen** (einziger erlaubter Weg):
+  1. Datei in `paper_trading/` anlegen, `BasePaperTradingModel` implementieren
+     (`compute`), nur `context`/`params` nutzen.
+  2. In `engines/paper_trading_registry.py::build_default_registry` registrieren.
+  3. Abschnitt/Parameter in `knowledge/paper_trading_rules.toml` ergänzen. Die
+     Engine muss dafür **nicht** geändert werden.
+  4. Eigene Testdatei `tests/test_paper_<name>.py` anlegen.
+- **Vorbereitet:** Trailing Stop (`position.apply_trailing_stop`, inaktiv per
+  `trailing_distance = 0.0`). Details/Datenfluss: `docs/PAPER_TRADING.md`.
 
 ## Recommendation Engine – Kurzüberblick für die Weiterarbeit
 

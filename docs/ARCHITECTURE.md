@@ -565,12 +565,47 @@ BacktestEngine (+ BacktestRegistry/-Cache) → BacktestReport / BacktestResult
   annualisiert/kalibriert (`None` bei zu wenig Daten). Details:
   `docs/BACKTESTING.md`.
 
+## Paper Trading Framework (umgesetzt in Sprint 11)
+
+Das Paper-Trading-Subsystem (`paper_trading/`) hängt – wie das Backtesting –
+**nur hinten** an die bestehende Pipeline an und bewertet **rein**, wie sich die
+Empfehlungen unter (simulierten) Live-Bedingungen mit einem **simulierten**
+Portfolio entwickeln. Es führt **niemals** echte Orders aus, hat **keine**
+Broker-API und ändert **keine** Engine oder das Backtesting.
+
+```
+Live-Marktdaten
+        │
+IntegrationRunner (bestehende Pipeline, tagweise, kein Look-Ahead)
+        │
+PaperRunner → Empfehlung → PaperPortfolio (open/mark/close/expire)
+        │
+PaperTradingEngine (+ Registry/Cache) → PaperTradingReport / PaperTradingResult
+```
+
+- **Schicht-Einordnung:** `paper_trading/` ist ein Subsystem (wie `pipeline/`/
+  `backtesting/`), in `quality_check.py` nur der Zyklenprüfung unterworfen. Die
+  Kennzahlgruppen sind **Registry-Plugins** (`statistics_model`,
+  `performance_model`) – neue nur über `engines/paper_trading_registry.py`.
+- **Immutabilität:** Ergebnis-/Snapshot-Typen (`models/paper_trading.py`) sind
+  `frozen`; Positionen werden über `dataclasses.replace` fortgeschrieben. Das
+  **Portfolio** und das **Journal** sind bewusst zustandsbehaftete Manager
+  (analog zu Engines/Caches), keine „Ergebnisobjekte".
+- **Order-Management:** `OPEN/CLOSE/CANCEL/EXPIRE`; gültig nur auf einer offenen
+  Position. **Validierung:** keine doppelte Position derselben Empfehlung, keine
+  negative Größe, keine ungültigen Preise/Zeitstempel, keine ungültigen
+  Statuswechsel (`PaperTradingValidationError`).
+- **Risiko/Fractional Shares** kommen aus der Risk Engine bzw. `settings.toml`;
+  Parameter aus `knowledge/paper_trading_rules.toml`. Trailing Stop **vorbereitet**.
+  Details: `docs/PAPER_TRADING.md`.
+
 ## Aktueller Stand
 
-Sprint 1–10 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–11 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
-Integration & Validierung, Historical Backtesting Framework). Es gibt bewusst
-weiterhin **keine Dashboard-Logik, keine Broker-API, keine automatische
-Orderausführung und keine Paper-Trading-Funktionen**. Offene fachliche
-Kalibrierung ist im `docs/VALIDATION_REPORT.md` dokumentiert.
+Integration & Validierung, Historical Backtesting Framework, Paper Trading
+Framework). Es gibt bewusst weiterhin **keine Dashboard-Logik, keine Broker-API,
+keine automatische Orderausführung und keine echten Orders** (Backtesting und
+Paper Trading simulieren ausschließlich). Offene fachliche Kalibrierung ist im
+`docs/VALIDATION_REPORT.md` dokumentiert.

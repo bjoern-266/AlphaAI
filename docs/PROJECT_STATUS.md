@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-10
-- **Aktueller Sprint:** Sprint 10 – Historical Backtesting Framework
+- **Aktueller Sprint:** Sprint 11 – Paper Trading Framework
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -159,20 +159,44 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   leere Historie, Preise, Kennzahlen.
 - **Tests:** 868 gesamt (155 neue).
 
+### Paper Trading Framework (Sprint 11)
+
+- **Rein bewertend:** die bestehende Pipeline erzeugt täglich Empfehlungen; ein
+  **simuliertes** Portfolio eröffnet/bewertet/schließt daraus Positionen.
+  **Niemals** echte Orders, **keine** Broker-API, **keine** neue Handelsregel,
+  **keine** Änderung an Pipeline oder Backtesting.
+- **Subsystem `paper_trading/`:** `paper_runner` (tagweise, **kein** Look-Ahead),
+  `portfolio` (Validierung, Kapital/Drawdown/Exposure), `position`
+  (Mark-to-Market, Stop/Take-Profit, Trailing Stop **vorbereitet**), `order`
+  (OPEN/CLOSE/CANCEL/EXPIRE), `trade`, `journal`, `statistics`, `performance`,
+  `base` + zwei Modelle.
+- **Engine-Anbindung:** `PaperTradingEngine` (Input `MarketResult`/DataFrame →
+  `PaperTradingReport`), `PaperTradingRegistry` (einzige Erweiterungsstelle),
+  `PaperTradingCache` (FIFO), Re-Export `paper_trading_result`.
+- **PaperTradingResult:** ID, Recommendation-ID, Direction, Recommendation
+  Strength, Entry/Current/Exit, Position Size, (Fractional) Shares, Status
+  (OPEN/CLOSED/CANCELLED), Entry/Exit Time, PnL €/%, Running/Max Drawdown,
+  Current Equity, Portfolio Exposure, Reasons, Warnings, Metadata, Timestamp.
+- **Config:** Parameter aus `knowledge/paper_trading_rules.toml`; Konto-/Risiko-
+  werte ausschließlich aus `config/settings.toml`. **Validierung:** doppelte
+  Position, Größen, Preise, Zeitstempel, Statuswechsel.
+- **Tests:** 1045 gesamt (177 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung,
-  keine Paper-Trading-Funktionen.
-- Keine Positionseröffnung, keine Order. Die Recommendation Engine liefert
+  **keine echten Orders**.
+- Backtesting und Paper Trading **simulieren** ausschließlich; sie eröffnen
+  keine echte Position und senden keine Order. Die Recommendation Engine liefert
   ausschließlich `RecommendationResult`.
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 10)
+## Qualitätsnachweis (Sprint 11)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 868 Tests bestanden |
+| pytest | 1045 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |
@@ -183,8 +207,8 @@ Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
 ## Nächster Schritt
 
-Warten auf Freigabe für den nächsten Sprint. Aus dem Validation Report
-priorisiert: **Kalibrierung** an realen historischen Daten (Schwellen/Gewichte
-der Empfehlung, Annualisierung/Kalibrierung der vorbereiteten Backtest-Kennzahlen
-Sharpe/Sortino/Calmar) sowie perspektivisch **Dashboard** – weiterhin ohne
-automatische Orderausführung und ohne Broker-API.
+Warten auf Freigabe für den nächsten Sprint. Priorisiert: **Kalibrierung** an
+realen Daten (Schwellen/Gewichte der Empfehlung, Annualisierung der vorbereiteten
+Backtest-Kennzahlen, Aktivierung des vorbereiteten Trailing Stops) sowie
+perspektivisch **Dashboard** – weiterhin ohne automatische Orderausführung und
+ohne Broker-API.

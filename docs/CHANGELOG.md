@@ -4,6 +4,56 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.11.0] – 2026-07-10 – Sprint 11: Paper Trading Framework
+
+Neues, **rein bewertendes** Paper-Trading-Framework. Es nutzt ausschließlich die
+**bestehende** Pipeline, erzeugt **keine** neue Handelsregel, ändert **keine**
+Engine und **kein** Backtesting, führt **niemals** echte Orders aus (Trades
+werden ausschließlich simuliert) und hat **keine** Broker-API.
+
+### Hinzugefügt
+
+- **Entities:** `models/paper_trading.py` (alle unveränderlich, `frozen`):
+  `PaperOrder`, `PaperPosition`, `PaperTrade`, `JournalEntry`, `PaperEquityPoint`,
+  `PaperStatistics`, `PaperPerformance`, `PaperTradingContext`/`ModelOutput`,
+  `PaperTradingResult`, `PaperTradingReport` samt Enums `OrderAction`,
+  `PositionStatus`, `CloseReason`.
+- **Subsystem `paper_trading/`:** `paper_runner.py` (tägliche Simulation über die
+  bestehende Pipeline, **kein** Look-Ahead), `portfolio.py` (simuliertes
+  Portfolio mit Validierung), `position.py` (Mark-to-Market, Stop/Take-Profit,
+  Trailing Stop **vorbereitet**), `order.py` (Statuswechsel), `trade.py`,
+  `journal.py`, `statistics.py`, `performance.py`, `base.py`
+  (`BasePaperTradingModel`) sowie `statistics_model`/`performance_model`.
+- **Engine-Anbindung:** `engines/paper_trading_engine.py`,
+  `paper_trading_registry.py` (einzige Erweiterungsstelle),
+  `paper_trading_cache.py` (FIFO), `paper_trading_result.py` (Re-Export).
+- **Konfiguration:** `knowledge/paper_trading_rules.toml`; `core/paths.py` um
+  `PAPER_TRADING_RULES_FILE` ergänzt; neue Fehlerklassen
+  `PaperTradingParameterError` und `PaperTradingValidationError`.
+- **PaperTradingResult** enthält u. a.: Paper-Trading-ID, Recommendation-ID,
+  Direction, Recommendation Strength, Entry/Current/Exit Price, Position Size,
+  (Fractional) Shares, Status (OPEN/CLOSED/CANCELLED), Entry/Exit Time, PnL €/%,
+  Running/Maximum Drawdown, Current Equity, Portfolio Exposure, Reasons,
+  Warnings, Metadata, Timestamp.
+- **Order-Management** (OPEN/CLOSE/CANCEL/EXPIRE), **Journal** (automatische
+  Dokumentation je Eröffnung/Schließung), **Statistik** (Win/Loss Rate, Profit
+  Factor, Ø Winner/Loser, Ø Haltedauer, Kapital, Rendite, offene/geschlossene
+  Positionen).
+- **Validierung:** keine doppelte Position derselben Empfehlung, keine negative
+  Positionsgröße, keine ungültigen Preise/Zeitstempel, keine ungültigen
+  Statuswechsel.
+- **Tests:** 177 neue Tests (1045 gesamt) – Engine, Portfolio, Journal, Order-/
+  Position-Management, Registry, Cache, Performance, Statistik, Regeln,
+  Domänenmodelle und echte Szenarien (durch die reale Pipeline).
+- **Doku:** neue `docs/PAPER_TRADING.md`; übrige Doku aktualisiert.
+
+### Unverändert (bewusst)
+
+- Keine Dashboard-Logik, keine Broker-API, keine echten Orders, keine
+  automatische Orderausführung, keine neue Handelsregel, keine Änderung an der
+  bestehenden Analysepipeline. `settings.toml` bleibt die einzige Quelle der
+  Konto-/Risikoeinstellungen.
+
 ## [0.10.0] – 2026-07-10 – Sprint 10: Historical Backtesting Framework
 
 Neues, **rein bewertendes** Backtesting-Framework. Es nutzt ausschließlich die

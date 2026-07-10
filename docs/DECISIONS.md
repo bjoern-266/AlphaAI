@@ -495,3 +495,41 @@ das Projekt so aufgebaut ist, wie es ist.
   über `backtest_engine.py` das `pipeline`-Subsystem (kein Zyklus). Kalibrierung
   der vorbereiteten Kennzahlen ist im `VALIDATION_REPORT.md` als offener Schritt
   festgehalten.
+
+### ADR-032 – Paper Trading als simuliertes Portfolio hinter der Pipeline
+
+- **Datum:** 2026-07-10 (Sprint 11)
+- **Kontext:** Die bestehenden Empfehlungen sollten unter (simulierten)
+  Live-Bedingungen mit einem fortlaufenden Portfolio bewertbar werden – **ohne**
+  echte Orders, **ohne** Broker-Anbindung und **ohne** Eingriff in die Fachlogik.
+- **Entscheidung:**
+  - Wie das Backtesting hängt Paper Trading **nur hinten** an die bestehende
+    Pipeline: der `PaperRunner` ruft den unveränderten `IntegrationRunner`
+    tagweise auf (`frame.iloc[:i+1]`, kein Look-Ahead). Keine Engine wird
+    angefasst, keine Empfehlung verändert.
+  - `paper_trading/` ist ein **Subsystem** (wie `pipeline/`/`backtesting/`), in
+    `quality_check.py` nur der Zyklenprüfung unterworfen. Die Kennzahlgruppen
+    (Statistik, Performance) sind **Registry-Plugins**; neue kommen ausschließlich
+    über `paper_trading_registry.py` hinzu (Open/Closed).
+  - **Ergebnis-/Snapshot-Typen sind unveränderlich** (`frozen`); Positionen
+    werden über `dataclasses.replace` fortgeschrieben. Das **Portfolio** und das
+    **Journal** sind bewusst zustandsbehaftete Manager (analog zu Engines/Caches)
+    – sie sind keine „Ergebnisobjekte" und daher nicht `frozen`.
+  - **Order-Management** kennt `OPEN/CLOSE/CANCEL/EXPIRE`; gültig sind nur
+    Übergänge einer offenen Position. Validierung verhindert doppelte Positionen
+    derselben Empfehlung, negative Größen, ungültige Preise/Zeitstempel und
+    ungültige Statuswechsel (`PaperTradingValidationError`).
+  - **Trades werden nur simuliert.** Stop/Take-Profit/Stückzahl kommen aus der
+    Risk Engine; alle Konto-/Risikowerte stammen ausschließlich aus
+    `settings.toml`. Fractional Shares werden unterstützt (Abrunden nur bei
+    `fractional_shares = false`). Trifft ein Tag Stop **und** Take-Profit, gilt
+    konservativ der Stop.
+  - Der **Trailing Stop** ist **vorbereitet** (implementiert, aber per Default
+    inaktiv über `trailing_distance = 0.0`).
+- **Begründung:** Objektive, vollständig nachvollziehbare Bewertung der
+  bestehenden Entscheidungen unter Portfolio-Bedingungen; die Trennung „Signal
+  (bestehende Empfehlung) → Order/Position → Kennzahl" hält das Framework prüfbar
+  und erweiterbar.
+- **Konsequenzen:** Kein Dashboard, keine Broker-API, keine echten Orders, keine
+  automatische Orderausführung, keine neue Handelsregel. `engines/` importiert
+  über `paper_trading_engine.py` das `pipeline`-Subsystem (kein Zyklus).

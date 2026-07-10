@@ -51,6 +51,7 @@ packages = [
     "recommendation",
     "pipeline",
     "backtesting",
+    "paper_trading",
     "dashboard",
     "database",
     "models",
