@@ -459,3 +459,39 @@ das Projekt so aufgebaut ist, wie es ist.
   Handelsregeln. Öffentliches Feld `recommendation_level` heißt jetzt
   `recommendation_strength`; zusätzlich existiert `direction`. Downstream
   (Dashboard etc., später) nutzt beide Felder getrennt.
+
+### ADR-031 – Backtesting als rein bewertendes Subsystem hinter der Pipeline
+
+- **Datum:** 2026-07-10 (Sprint 10)
+- **Kontext:** Die Qualität der bestehenden AlphaAI-Empfehlungen sollte an
+  historischen Daten messbar werden, **ohne** die Fachlogik zu verändern und
+  **ohne** Auto-Trading einzuführen.
+- **Entscheidung:**
+  - Das Backtesting hängt **nur hinten** an die bestehende Pipeline an: der
+    `HistoricalRunner` ruft den unveränderten `IntegrationRunner` fensterweise
+    auf (`frame.iloc[:i+1]`), sodass an jedem Punkt **nur** vergangene Kerzen
+    sichtbar sind (kein Look-Ahead). Keine Engine wird angefasst.
+  - `backtesting/` ist ein **Subsystem** (wie `pipeline/`), keine Plugin-Familie
+    mit Unabhängigkeitsprüfung: die Hilfsmodule (`historical_runner`,
+    `trade_simulator`, `performance_metrics`, `equity_curve`, `statistics`,
+    `benchmark`) dürfen zusammenarbeiten. Es ist in `quality_check.py` nur der
+    Zyklenprüfung unterworfen (0 Zyklen).
+  - Die messbaren Kennzahlen sind als **Registry-Plugins** organisiert
+    (`performance_model`, `drawdown_model`, `ratio_model`, `benchmark_model`);
+    neue Kennzahlgruppen kommen ausschließlich über `backtest_registry.py` hinzu,
+    die Engine bleibt unverändert (Open/Closed).
+  - **Trades werden nur simuliert** (kein Broker, keine Order). Stop/Take-Profit/
+    Stückzahl kommen aus der Risk Engine; alle Konto-/Risikowerte stammen
+    ausschließlich aus `settings.toml`. Fractional Shares werden unterstützt.
+    Trifft eine Kerze Stop **und** Take-Profit, gilt konservativ der Stop.
+  - **Sharpe/Sortino/Calmar** sind **vorbereitet**: implementiert, aber nicht
+    annualisiert/kalibriert und `None` bei zu wenig Daten (analog zum
+    „News"-Risiko). Der Profit Factor ist ohne Verluste bewusst `inf`.
+- **Begründung:** Objektive, nachvollziehbare Bewertung ohne Eingriff in die
+  Entscheidungslogik; die Trennung „Signal (bestehende Empfehlung) →
+  Simulation → Kennzahl" hält das Framework prüfbar und erweiterbar.
+- **Konsequenzen:** Kein Dashboard, keine Broker-API, kein Paper-Trading, keine
+  automatische Orderausführung, keine neue Handelsregel. `engines/` importiert
+  über `backtest_engine.py` das `pipeline`-Subsystem (kein Zyklus). Kalibrierung
+  der vorbereiteten Kennzahlen ist im `VALIDATION_REPORT.md` als offener Schritt
+  festgehalten.

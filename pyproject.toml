@@ -50,6 +50,7 @@ packages = [
     "risk",
     "recommendation",
     "pipeline",
+    "backtesting",
     "dashboard",
     "database",
     "models",

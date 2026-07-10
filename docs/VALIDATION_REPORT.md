@@ -1,8 +1,19 @@
-# Validation Report – End-to-End-Integration (Sprint 9.5, Update 9.6)
+# Validation Report – End-to-End-Integration (Sprint 9.5, Update 9.6/10)
 
-**Stand:** 2026-07-09 · **Umfang:** Integration und Validierung der bestehenden
+**Stand:** 2026-07-10 · **Umfang:** Integration und Validierung der bestehenden
 Architektur. **Keine** neuen Features, **keine** neue Engine, **keine**
 Orderausführung.
+
+> **➕ Update Sprint 10 – Historical Backtesting.** Das neue Backtesting-Framework
+> (`backtesting/`, `engines/backtest_*`) bewertet **rein** die historische
+> Entwicklung der **bestehenden** Empfehlungen; es ändert keine Engine und
+> erzeugt keine Order. **Offener Kalibrierungspunkt:** die risikoadjustierten
+> Kennzahlen **Sharpe/Sortino/Calmar** sind bewusst **vorbereitet** (Formeln
+> implementiert, aber nicht annualisiert/kalibriert und `None` bei zu wenig
+> Daten). Sie sind an realen historischen Daten und einer belastbaren
+> Periodizität zu kalibrieren – ein eigener Schritt, kein Teil von Sprint 10.
+> Ebenso bleibt die **Schwellen-/Gewichts-Kalibrierung** der Empfehlung an
+> realen Daten offen.
 
 > **✅ Update Sprint 9.6 – Kernbefund behoben.** Der in 9.5 dokumentierte
 > Befund *„Strong bearish setup → STRONG_BUY"* ist **vollständig behoben**.

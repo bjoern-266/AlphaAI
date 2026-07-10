@@ -1,0 +1,60 @@
+# =============================================================================
+# Backtest-Regeln (Sprint 10)
+# =============================================================================
+# Einzige Quelle aller Parameter des Backtesting-Frameworks. Im Code gibt es
+# keine hartcodierten Werte.
+#
+# Wichtig: Das Framework erzeugt KEINE neuen Handelsregeln und verändert KEINE
+# bestehende Empfehlung. Es bewertet ausschließlich, wie sich die vorhandenen
+# AlphaAI-Empfehlungen historisch entwickelt hätten. Es werden KEINE echten
+# Orders ausgeführt; Trades werden ausschließlich rechnerisch simuliert.
+#
+# Alle Konto-/Risikoeinstellungen (Depot, Fractional Shares, Risiko je Trade,
+# max. Positionen) stammen ausschließlich aus config/settings.toml und fließen
+# über die bestehende Risk Engine ein – nicht aus dieser Datei.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Parameter des Historical Runners, der Simulation und der Backtest-Modelle (Sprint 10)."
+
+# --- Historical Runner --------------------------------------------------------
+# Steuert, wie die bestehende Pipeline über die Historie ausgeführt wird.
+[engine]
+# Vorlauf in Kerzen, bevor der erste Auswertungspunkt bewertet wird. Muss groß
+# genug für alle Indikatoren sein (z. B. EMA200 ⇒ mindestens ~200 Kerzen).
+warmup_bars = 200
+# Schrittweite in Kerzen zwischen zwei Auswertungspunkten (1 = jede Kerze).
+step = 5
+# Mindestlänge der Historie, damit überhaupt ausgewertet wird.
+min_history_bars = 210
+
+# --- Trade-Simulation ---------------------------------------------------------
+# Steuert, wie aus den Signalen simulierte Trades werden.
+[simulation]
+# Maximale Haltedauer in Kerzen bis zum Zeit-Ausstieg (falls weder Stop noch
+# Take-Profit getroffen werden).
+max_holding_bars = 20
+# Ob Kommission und Slippage (aus der Risk Engine) vom Ergebnis abgezogen werden.
+apply_costs = true
+# Betragsgrenze in Kontowährung, unter der ein Trade als BREAKEVEN gilt.
+breakeven_epsilon = 0.01
+
+# --- Modelle (jeweils eigenes Plugin in backtesting/) -------------------------
+
+[performance_model]
+enabled = true
+
+[drawdown_model]
+enabled = true
+
+[ratio_model]
+enabled = true
+# Risikofreier Zins je Periode (0 = neutral). Vorbereitet für die Kalibrierung.
+risk_free_rate = 0.0
+# Perioden pro Jahr zur (optionalen) Annualisierung. 0 = nicht annualisieren.
+# Vorbereitet: bis zur Kalibrierung bleiben die Ratios nicht annualisiert.
+periods_per_year = 0
+
+[benchmark_model]
+enabled = true

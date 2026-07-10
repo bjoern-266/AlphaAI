@@ -124,6 +124,23 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
 - Alle Recommendation-/Integrationstests umgestellt + neue LONG/SHORT/NEUTRAL-
   Tests. 713 Tests gesamt. `VALIDATION_REPORT.md` aktualisiert.
 
+## Sprint 10 – Historical Backtesting Framework ✅ (abgeschlossen)
+
+- Kette `Historische Marktdaten → bestehende Pipeline → BacktestEngine →
+  BacktestReport`; **rein bewertend**, keine neue Handelsregel, keine Änderung an
+  einer bestehenden Engine, keine echte Order (nur Simulation).
+- Subsystem `backtesting/` (`historical_runner`, `trade_simulator`,
+  `performance_metrics`, `equity_curve`, `statistics`, `benchmark`, `base` + vier
+  Modelle) und Engine-Anbindung (`backtest_engine`, `backtest_registry`,
+  `backtest_cache`, `backtest_result`).
+- `BacktestResult` mit allen geforderten Kennzahlen (Win/Loss Rate, Profit
+  Factor, Expectancy, Max Drawdown, Ø CRV/Haltedauer, Sharpe/Sortino/Calmar
+  vorbereitet, Equity Curve, Trade-Liste, Benchmark, Summary, Metadata).
+- Fractional Shares; Konto-/Risikowerte ausschließlich aus `settings.toml`;
+  Parameter aus `knowledge/backtest_rules.toml`. Buy-&-Hold-Benchmark.
+  Validierung (Zeitraum/Daten/Preise/Kennzahlen). Kein Look-Ahead.
+- 155 neue Tests (868 gesamt). Doku: `docs/BACKTESTING.md`.
+
 ## Sprint 6 – Dashboard (geplant)
 
 - Streamlit-Oberfläche in `dashboard/`.

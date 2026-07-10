@@ -69,6 +69,10 @@ class RecommendationParameterError(ParameterError):
     """Recommendation-Parameter/-Gewichte fehlen, sind ungültig oder ≠ 100 %."""
 
 
+class BacktestParameterError(ParameterError):
+    """Ein Backtest-Parameter fehlt oder ist ungültig."""
+
+
 # --------------------------------------------------------------------------- #
 # Registry-Fehler (Erweiterungsstelle für Plugins)                             #
 # --------------------------------------------------------------------------- #

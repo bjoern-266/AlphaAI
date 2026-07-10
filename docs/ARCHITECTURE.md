@@ -525,12 +525,52 @@ ein Risk → genau ein Score → genau eine Strategie; alle IDs eindeutig, alle
 Referenzen gültig. Validiert über 13 echte Szenarien und 180 Integrations-Tests
 (kein Mock). Details: `docs/PIPELINE.md`, `docs/VALIDATION_REPORT.md`.
 
+## Historical Backtesting Framework (umgesetzt in Sprint 10)
+
+Das Backtesting-Subsystem (`backtesting/`) hängt **nur hinten** an die
+bestehende Pipeline an und bewertet **rein**, wie sich die daraus entstehenden
+Empfehlungen historisch entwickelt hätten. Es erzeugt **keine** neue
+Handelsregel, ändert **keine** Engine und führt **keine** echte Order aus
+(Trades werden ausschließlich rechnerisch simuliert).
+
+```
+Historische Marktdaten
+        │
+IntegrationRunner (bestehende Pipeline, fensterweise, kein Look-Ahead)
+        │
+HistoricalRunner → HistoricalSignal(e)
+        │
+TradeSimulator → SimulatedTrade(s)   (Entry/Exit/Stop/Take-Profit, Fractional
+        │                             Shares, Kosten; Risiko aus settings.toml)
+BacktestEngine (+ BacktestRegistry/-Cache) → BacktestReport / BacktestResult
+```
+
+- **Schicht-Einordnung:** `backtesting/` ist – wie `pipeline/` – ein Subsystem,
+  keine Plugin-Familie mit Unabhängigkeitsprüfung; die Hilfsmodule
+  (`historical_runner`, `trade_simulator`, `performance_metrics`,
+  `equity_curve`, `statistics`, `benchmark`) arbeiten zusammen. In
+  `quality_check.py` unterliegt es der Zyklenprüfung (0 Zyklen). Die
+  Kennzahlgruppen sind **Registry-Plugins** (`performance_model`,
+  `drawdown_model`, `ratio_model`, `benchmark_model`) – neue nur über
+  `engines/backtest_registry.py`, die Engine bleibt unverändert (Open/Closed).
+- **Entities:** `models/backtest.py` (alle `frozen`), re-exportiert über
+  `engines/backtest_result.py`.
+- **Kein Look-Ahead:** an jedem Auswertungspunkt sieht die Pipeline nur die
+  Kerzen bis einschließlich dieses Punkts (`frame.iloc[:i+1]`).
+- **Validierung:** ungültige Zeiträume, fehlende Daten, leere Historie,
+  ungültige Preise und ungültige Kennzahlen (nicht-endlich; Profit Factor `inf`
+  ohne Verluste ist ein zulässiger Sonderfall).
+- **Benchmark:** optionaler Buy-&-Hold-Vergleich (Referenz, keine Empfehlung).
+- **Vorbereitet:** Sharpe/Sortino/Calmar sind implementiert, aber nicht
+  annualisiert/kalibriert (`None` bei zu wenig Daten). Details:
+  `docs/BACKTESTING.md`.
+
 ## Aktueller Stand
 
-Sprint 1–9.6 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–10 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
-Integration & Validierung). Es gibt bewusst weiterhin **keine Dashboard-Logik,
-keine Broker-API, keine automatische Orderausführung und keine
-Paper-Trading-Funktionen**. Offene fachliche Kalibrierung ist im
-`docs/VALIDATION_REPORT.md` dokumentiert.
+Integration & Validierung, Historical Backtesting Framework). Es gibt bewusst
+weiterhin **keine Dashboard-Logik, keine Broker-API, keine automatische
+Orderausführung und keine Paper-Trading-Funktionen**. Offene fachliche
+Kalibrierung ist im `docs/VALIDATION_REPORT.md` dokumentiert.

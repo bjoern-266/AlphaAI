@@ -2,8 +2,8 @@
 
 _Wird nach jedem Sprint automatisch aktualisiert._
 
-- **Datum:** 2026-07-09
-- **Aktueller Sprint:** Sprint 9.6 – Recommendation Semantics
+- **Datum:** 2026-07-10
+- **Aktueller Sprint:** Sprint 10 – Historical Backtesting Framework
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -135,6 +135,30 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   identisch), nur Semantik/Benennung.
 - **Tests:** 713 gesamt.
 
+### Historical Backtesting Framework (Sprint 10)
+
+- **Rein bewertend:** historische Marktdaten laufen durch die **bestehende**
+  Pipeline; das Framework misst, wie sich die daraus entstehenden Empfehlungen
+  entwickelt hätten. **Keine** neue Handelsregel, **keine** Änderung an einer
+  Engine, **keine** echte Order (nur Simulation).
+- **Subsystem `backtesting/`:** `historical_runner` (fensterweise, **kein**
+  Look-Ahead), `trade_simulator` (Entry/Exit/Stop/Take-Profit, Fractional Shares,
+  Kosten, eine Position zur Zeit, Stop hat bei Doppel-Treffer Vorrang),
+  `performance_metrics`, `equity_curve`, `statistics` (Sharpe/Sortino/Calmar
+  **vorbereitet**), `benchmark` (Buy & Hold), `base` + 4 Modelle.
+- **Engine-Anbindung:** `BacktestEngine` (Input `MarketResult`/DataFrame →
+  `BacktestReport`/`BacktestResult`), `BacktestRegistry` (einzige
+  Erweiterungsstelle), `BacktestCache` (FIFO), Re-Export `backtest_result`.
+- **BacktestResult:** ID, Symbol, Timeframe, Start/Ende, Anzahl Signale/Trades,
+  Win/Loss Rate, Profit Factor, Ø Gewinn/Verlust, Ø CRV, Ø Haltedauer, Max
+  Drawdown, Expectancy, Sharpe/Sortino/Calmar (vorbereitet), Equity Curve,
+  Trade-Liste, Benchmark, Summary, Metadata, Timestamp. Jeder Trade ist
+  vollständig nachvollziehbar.
+- **Config:** Parameter aus `knowledge/backtest_rules.toml`; Konto-/Risikowerte
+  ausschließlich aus `config/settings.toml`. **Validierung:** Zeitraum, Daten,
+  leere Historie, Preise, Kennzahlen.
+- **Tests:** 868 gesamt (155 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung,
@@ -144,11 +168,11 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 9.6)
+## Qualitätsnachweis (Sprint 10)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 713 Tests bestanden |
+| pytest | 868 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |
@@ -160,6 +184,7 @@ Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 ## Nächster Schritt
 
 Warten auf Freigabe für den nächsten Sprint. Aus dem Validation Report
-priorisiert: **Kalibrierung** (Richtung in `RecommendationResult`,
-Schwellen/Gewichte an realen Daten) sowie perspektivisch **Dashboard** –
-weiterhin ohne automatische Orderausführung und ohne Broker-API.
+priorisiert: **Kalibrierung** an realen historischen Daten (Schwellen/Gewichte
+der Empfehlung, Annualisierung/Kalibrierung der vorbereiteten Backtest-Kennzahlen
+Sharpe/Sortino/Calmar) sowie perspektivisch **Dashboard** – weiterhin ohne
+automatische Orderausführung und ohne Broker-API.

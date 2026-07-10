@@ -4,6 +4,54 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.10.0] – 2026-07-10 – Sprint 10: Historical Backtesting Framework
+
+Neues, **rein bewertendes** Backtesting-Framework. Es nutzt ausschließlich die
+**bestehende** Pipeline, erzeugt **keine** neue Handelsregel, ändert **keine**
+Empfehlung und **keine** Engine (Indicator/Pattern/Strategy/Score/Risk/
+Recommendation bleiben unverändert). Es werden **keine** echten Orders
+ausgeführt; Trades werden ausschließlich rechnerisch simuliert.
+
+### Hinzugefügt
+
+- **Entities:** `models/backtest.py` (alle unveränderlich, `frozen`):
+  `HistoricalSignal`, `SimulatedTrade` (mit `TradeOutcome`/`ExitReason`),
+  `EquityPoint`, `BenchmarkResult`, `BacktestModelOutput`, `BacktestContext`,
+  `BacktestResult`, `BacktestReport`.
+- **Subsystem `backtesting/`:** `historical_runner.py` (führt die Pipeline
+  fensterweise über die Historie aus – **kein** Look-Ahead), `trade_simulator.py`
+  (simuliert Trades mit Entry/Exit/Stop/Take-Profit, Fractional Shares, Kosten),
+  `performance_metrics.py`, `equity_curve.py`, `statistics.py` (Sharpe/Sortino/
+  Calmar – **vorbereitet**), `benchmark.py` (Buy & Hold), `base.py`
+  (`BaseBacktestModel`) sowie vier Modelle (`performance_model`,
+  `drawdown_model`, `ratio_model`, `benchmark_model`).
+- **Engine-Anbindung:** `engines/backtest_engine.py`, `backtest_registry.py`
+  (einzige Erweiterungsstelle), `backtest_cache.py` (FIFO), `backtest_result.py`
+  (Re-Export).
+- **Konfiguration:** `knowledge/backtest_rules.toml` (Historical-Runner-,
+  Simulations- und Modellparameter); `core/paths.py` um `BACKTEST_RULES_FILE`
+  ergänzt; neue Fehlerklasse `BacktestParameterError`.
+- **BacktestResult** enthält u. a.: Backtest-ID, Symbol, Timeframe, Start-/End-
+  datum, Anzahl Signale/Trades, Win/Loss Rate, Profit Factor, Ø Gewinn/Verlust,
+  Ø CRV, Ø Haltedauer, Max Drawdown, Expectancy, Sharpe/Sortino/Calmar
+  (vorbereitet), Equity Curve, Trade-Liste, Benchmark, Summary, Metadata,
+  Timestamp. Jeder Trade ist vollständig nachvollziehbar (Entry/Exit/Stop/
+  Take-Profit/Risk/Recommendation/Direction/Strength/Reasons/Warnings).
+- **Validierung:** ungültige Zeiträume, fehlende Daten, leere Historie,
+  ungültige Preise, ungültige Trades/Kennzahlen.
+- **Benchmark:** optionaler Vergleich gegen Buy & Hold (Referenz, keine
+  Empfehlung).
+- **Tests:** 155 neue Tests (868 gesamt) – Engine, Registry, Cache, Trade-
+  Simulator, Performance Metrics, Statistik, Benchmark, Regeln, Domänenmodelle
+  und echte historische Szenarien (durch die reale Pipeline).
+- **Doku:** neue `docs/BACKTESTING.md`; übrige Doku aktualisiert.
+
+### Unverändert (bewusst)
+
+- Keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung,
+  keine Paper-Trading-Funktionen, keine neue Handelsregel. `settings.toml` bleibt
+  die einzige Quelle der Konto-/Risikoeinstellungen.
+
 ## [0.9.6] – 2026-07-09 – Sprint 9.6: Recommendation Semantics
 
 Reiner Semantik-/Domänenmodell-Sprint. **Keine** neuen Features, **keine** neue

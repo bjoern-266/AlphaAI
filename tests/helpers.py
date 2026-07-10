@@ -475,3 +475,146 @@ def make_recommendation_context(
         symbol=symbol,
         timeframe="base",
     )
+
+
+# --------------------------------------------------------------------------- #
+# Backtesting-Helfer (Sprint 10)                                              #
+# --------------------------------------------------------------------------- #
+
+# Standard-Backtestregeln mit kleinem Vorlauf für schnelle Engine-Tests.
+_BACKTEST_RULES_FAST = {
+    "meta": {"version": 1},
+    "engine": {"warmup_bars": 30, "step": 5, "min_history_bars": 30},
+    "simulation": {"max_holding_bars": 10, "apply_costs": True, "breakeven_epsilon": 0.01},
+    "performance_model": {"enabled": True},
+    "drawdown_model": {"enabled": True},
+    "ratio_model": {"enabled": True, "risk_free_rate": 0.0, "periods_per_year": 0},
+    "benchmark_model": {"enabled": True},
+}
+
+
+def make_backtest_rules(**overrides):
+    """Baut BacktestRules mit kleinem Vorlauf (für schnelle Engine-Tests)."""
+    import copy
+
+    from engines.backtest_engine import load_backtest_rules_from_dict
+
+    data = copy.deepcopy(_BACKTEST_RULES_FAST)
+    for section, values in overrides.items():
+        if isinstance(values, dict):
+            data.setdefault(section, {}).update(values)
+        else:
+            data[section] = values
+    return load_backtest_rules_from_dict(data)
+
+
+def make_trend_frame(
+    n: int = 60, base: float = 100.0, slope: float = 0.5, start: str = "2023-01-01"
+):
+    """Baut einen kanonischen OHLCV-Aufwärtstrend mit DatetimeIndex."""
+    import numpy as np
+
+    closes = base + slope * np.arange(n)
+    return make_price_frame(list(closes), volume=[1_000_000.0] * n, start=start)
+
+
+def make_historical_signal(
+    bar_index: int = 5,
+    direction=None,
+    strength=None,
+    action=None,
+    entry_price: float = 100.0,
+    stop_distance: float = 2.0,
+    take_profit_distance: float = 4.0,
+    shares: float = 10.0,
+    risk_reward: float = 2.0,
+    commission: float = 1.0,
+    slippage: float = 0.5,
+    timestamp: datetime | None = None,
+):
+    """Baut ein HistoricalSignal (für Trade-Simulator-Tests)."""
+    from models.backtest import HistoricalSignal
+    from models.recommendation import Direction, RecommendationStrength, SuggestedAction
+
+    direction = direction or Direction.LONG
+    strength = strength or RecommendationStrength.VERY_HIGH
+    action = action or SuggestedAction.OPEN
+    return HistoricalSignal(
+        bar_index=bar_index,
+        timestamp=timestamp or datetime(2023, 1, 1, tzinfo=UTC),
+        entry_price=entry_price,
+        direction=direction,
+        recommendation_strength=strength,
+        suggested_action=action,
+        recommendation_id=f"rec:{bar_index}",
+        stop_distance=stop_distance,
+        take_profit_distance=take_profit_distance,
+        shares=shares,
+        risk_amount=shares * stop_distance,
+        risk_reward=risk_reward,
+        commission=commission,
+        slippage=slippage,
+        reasons=["Testgrund"],
+        warnings=[],
+    )
+
+
+def make_simulated_trade(
+    trade_id: str = "bt:AAPL:5",
+    symbol: str = "AAPL",
+    direction=None,
+    strength=None,
+    profit: float = 100.0,
+    risk_amount: float = 20.0,
+    risk_reward: float = 2.0,
+    holding_bars: int = 3,
+    position_value: float = 1000.0,
+    outcome=None,
+    exit_reason=None,
+    entry_time: datetime | None = None,
+    exit_time: datetime | None = None,
+):
+    """Baut ein SimulatedTrade (für Kennzahl-/Kurven-Tests)."""
+    from datetime import timedelta
+
+    from models.backtest import ExitReason, SimulatedTrade, TradeOutcome
+    from models.recommendation import Direction, RecommendationStrength
+
+    direction = direction or Direction.LONG
+    strength = strength or RecommendationStrength.HIGH
+    if outcome is None:
+        outcome = (
+            TradeOutcome.WIN
+            if profit > 0
+            else TradeOutcome.LOSS if profit < 0 else TradeOutcome.BREAKEVEN
+        )
+    entry_time = entry_time or datetime(2023, 1, 1, tzinfo=UTC)
+    exit_time = exit_time or (entry_time + timedelta(days=holding_bars))
+    return SimulatedTrade(
+        trade_id=trade_id,
+        symbol=symbol,
+        direction=direction,
+        recommendation_strength=strength,
+        recommendation_id="rec:x",
+        entry_time=entry_time,
+        entry_price=100.0,
+        exit_time=exit_time,
+        exit_price=100.0 + profit / 10.0,
+        stop_price=98.0,
+        take_profit_price=104.0,
+        shares=10.0,
+        risk_amount=risk_amount,
+        position_value=position_value,
+        profit=profit,
+        profit_pct=(profit / position_value * 100.0) if position_value else 0.0,
+        return_on_risk=(profit / risk_amount) if risk_amount else 0.0,
+        risk_reward=risk_reward,
+        holding_bars=holding_bars,
+        holding_time=exit_time - entry_time,
+        outcome=outcome,
+        exit_reason=exit_reason or ExitReason.TAKE_PROFIT,
+        commission=1.0,
+        slippage=0.5,
+        reasons=["Testgrund"],
+        warnings=[],
+    )

@@ -178,13 +178,32 @@ Score genau einen Strategy-Result hat (IDs eindeutig, Referenzen gültig).
 Datenfluss: `docs/PIPELINE.md`; Validierung/Auffälligkeiten:
 `docs/VALIDATION_REPORT.md`. Der Runner enthält **keine** neue Fachlogik.
 
+## Backtesting-Framework (ab Sprint 10 verfügbar)
+
+**Rein bewertend**: lässt historische Marktdaten durch die **bestehende**
+Pipeline laufen und misst, wie sich die daraus entstehenden Empfehlungen
+entwickelt hätten. **Keine** neue Handelsregel, **keine** Änderung an einer
+Engine, **keine** echte Order (Trades werden ausschließlich rechnerisch
+simuliert). Kette: `Historische Marktdaten → bestehende Pipeline →
+BacktestEngine → BacktestReport`. Subsystem `backtesting/`
+(`historical_runner` – kein Look-Ahead; `trade_simulator` – Entry/Exit/Stop/
+Take-Profit, Fractional Shares, Kosten; `performance_metrics`; `equity_curve`;
+`statistics` – Sharpe/Sortino/Calmar **vorbereitet**; `benchmark` – Buy & Hold;
+`base` + vier Modelle). Ergebnistypen in `models/backtest.py` (re-exportiert
+über `engines/backtest_result.py`). Neue Backtest-Modelle nur über die
+`BacktestRegistry`; Parameter ausschließlich aus `knowledge/backtest_rules.toml`,
+Konto-/Risikowerte ausschließlich aus `config/settings.toml` (über die Risk
+Engine). Einstieg: `BacktestEngine.from_config()`. Jeder simulierte Trade ist
+vollständig nachvollziehbar. Datenfluss/Details: `docs/BACKTESTING.md`.
+
 ## Aktueller Stand
 
-Sprint 1–9.6 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–10 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
-Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung). Es
-gibt bewusst weiterhin **keine** Dashboard-Logik, **keine** Broker-API, **keine**
-automatische Orderausführung und **keine** Paper-Trading-Funktionen. Offene
-fachliche Kalibrierung (Richtung in der Empfehlung, Schwellen an realen Daten)
-ist im Validation Report festgehalten. Immer zuerst `PROJECT_STATUS.md` und
+Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung,
+Historical Backtesting Framework). Es gibt bewusst weiterhin **keine**
+Dashboard-Logik, **keine** Broker-API, **keine** automatische Orderausführung und
+**keine** Paper-Trading-Funktionen. Offene fachliche Kalibrierung (Schwellen an
+realen Daten, Annualisierung der vorbereiteten Backtest-Kennzahlen) ist im
+Validation Report festgehalten. Immer zuerst `PROJECT_STATUS.md` und
 `HANDOVER.md` lesen.

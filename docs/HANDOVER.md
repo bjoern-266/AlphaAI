@@ -6,8 +6,8 @@ dass Wissen nur im Chat existiert.
 
 ## Stand der Übergabe
 
-- **Datum:** 2026-07-09
-- **Abgeschlossener Sprint:** Sprint 9.6 – Recommendation Semantics
+- **Datum:** 2026-07-10
+- **Abgeschlossener Sprint:** Sprint 10 – Historical Backtesting Framework
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,7 +18,7 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 713 Tests, davon 180 Integrations-Tests).
+5. Tests ausführen: `pytest` (aktuell 868 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
 > **Semantik (ab 9.6):** `RecommendationResult.direction` (LONG/SHORT/NEUTRAL)
@@ -26,7 +26,7 @@ dass Wissen nur im Chat existiert.
 > (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) sind getrennt. Die Stärke enthält **kein**
 > BUY/SELL/LONG/SHORT. Ein bärisches Setup ist SHORT mit ggf. hoher Stärke.
 
-## Qualitätsprüfung Sprint 9.6 (Ergebnis)
+## Qualitätsprüfung Sprint 10 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -39,7 +39,7 @@ Vor dem Commit automatisch geprüft:
 | Pipeline-Konsistenz (`verify_pipeline`) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **713 bestanden** |
+| pytest | **868 bestanden** |
 
 ## Vollständige Pipeline – Einstieg
 
@@ -54,10 +54,32 @@ best = result.best()                                 # höchstbewertete Empfehlu
 (leer = ok). Datenfluss: `docs/PIPELINE.md`. Validierungsergebnisse und offene
 Kalibrierungspunkte: `docs/VALIDATION_REPORT.md`.
 
-**Nächster fachlicher Schritt (aus dem Validation Report):** Richtung in
-`RecommendationResult` aufnehmen und die Schwellen/Gewichte an realen Daten
-kalibrieren (BUY selten, STRONG_BUY außergewöhnlich). Das sind eigene Sprints
-und ändern bewusst Verhalten – daher nicht Teil von 9.5.
+**Nächster fachlicher Schritt (aus dem Validation Report):** Schwellen/Gewichte
+der Empfehlung an realen historischen Daten kalibrieren und die vorbereiteten
+Backtest-Kennzahlen (Sharpe/Sortino/Calmar) annualisieren/kalibrieren. Das sind
+eigene Sprints und ändern bewusst Verhalten.
+
+## Backtesting-Framework – Kurzüberblick für die Weiterarbeit
+
+- Einstieg: `BacktestEngine.from_config()` lädt `knowledge/backtest_rules.toml`
+  und `config/settings.toml`, baut den bestehenden `IntegrationRunner` und
+  registriert alle Standard-Backtest-Modelle.
+- Backtest: `engine.run_frame(ohlcv_df, symbol=...)` → `BacktestResult` bzw.
+  `engine.run(market_result)` → `BacktestReport` (eines je Symbol).
+- **Rein bewertend:** nutzt ausschließlich die bestehende Pipeline, erzeugt
+  **keine** neue Handelsregel, ändert **keine** Empfehlung, führt **keine** echte
+  Order aus (nur Simulation). Kein Look-Ahead (fensterweise `frame.iloc[:i+1]`).
+  Fractional Shares; Konto-/Risikowerte ausschließlich aus `settings.toml`.
+- Jeder `SimulatedTrade` ist vollständig nachvollziehbar (Entry/Exit/Stop/
+  Take-Profit/Risk/Recommendation/Direction/Strength/Reasons/Warnings).
+- **Neues Backtest-Modell hinzufügen** (einziger erlaubter Weg):
+  1. Datei in `backtesting/` anlegen, `BaseBacktestModel` implementieren
+     (`compute`), nur `context`/`params` nutzen.
+  2. In `engines/backtest_registry.py::build_default_registry` registrieren.
+  3. Abschnitt/Parameter in `knowledge/backtest_rules.toml` ergänzen. Die Engine
+     muss dafür **nicht** geändert werden.
+  4. Eigene Testdatei `tests/test_backtest_<name>.py` anlegen.
+- Details/Datenfluss: `docs/BACKTESTING.md`.
 
 ## Recommendation Engine – Kurzüberblick für die Weiterarbeit
 
@@ -149,5 +171,8 @@ und ändern bewusst Verhalten – daher nicht Teil von 9.5.
 
 ## Nächster geplanter Schritt
 
-**Sprint 8 – Risk Engine:** Ableitung von Risiko und Positionsgröße aus den
-Scores. Details in `ROADMAP.md`.
+**Kalibrierung & Dashboard (geplant):** Schwellen/Gewichte der Empfehlung an
+realen historischen Daten kalibrieren und die vorbereiteten Backtest-Kennzahlen
+(Sharpe/Sortino/Calmar) annualisieren; danach die Streamlit-Oberfläche –
+weiterhin ohne automatische Orderausführung und ohne Broker-API. Details in
+`ROADMAP.md`.
