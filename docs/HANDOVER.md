@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-09
-- **Abgeschlossener Sprint:** Sprint 9.5 – End-to-End Integration & Validation
+- **Abgeschlossener Sprint:** Sprint 9.6 – Recommendation Semantics
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,10 +18,15 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 682 Tests, davon 180 Integrations-Tests).
+5. Tests ausführen: `pytest` (aktuell 713 Tests, davon 180 Integrations-Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
-## Qualitätsprüfung Sprint 9.5 (Ergebnis)
+> **Semantik (ab 9.6):** `RecommendationResult.direction` (LONG/SHORT/NEUTRAL)
+> und `RecommendationResult.recommendation_strength`
+> (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) sind getrennt. Die Stärke enthält **kein**
+> BUY/SELL/LONG/SHORT. Ein bärisches Setup ist SHORT mit ggf. hoher Stärke.
+
+## Qualitätsprüfung Sprint 9.6 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -34,7 +39,7 @@ Vor dem Commit automatisch geprüft:
 | Pipeline-Konsistenz (`verify_pipeline`) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **682 bestanden** |
+| pytest | **713 bestanden** |
 
 ## Vollständige Pipeline – Einstieg
 

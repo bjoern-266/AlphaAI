@@ -7,11 +7,12 @@ import dataclasses
 import pytest
 
 from models.recommendation import (
+    Direction,
     RecommendationFactor,
-    RecommendationLevel,
     RecommendationModelOutput,
     RecommendationReport,
     RecommendationResult,
+    RecommendationStrength,
     SuggestedAction,
 )
 
@@ -23,7 +24,8 @@ FROZEN_SAMPLES = [
         risk_id="risk:x",
         score_id="score:x",
         hypothesis_id="h",
-        recommendation_level=RecommendationLevel.WAIT,
+        direction=Direction.LONG,
+        recommendation_strength=RecommendationStrength.LOW,
         confidence=0.5,
         overall_rating=40.0,
         suggested_action=SuggestedAction.WAIT,

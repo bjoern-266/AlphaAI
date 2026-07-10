@@ -29,7 +29,7 @@ class SummaryModel(BaseRecommendationModel):
         """Baut den Zusammenfassungs-Text (ohne die finale Stufe)."""
         symbol = context.symbol or "Symbol"
         body = (
-            f"{symbol} {context.direction.value}, Rating "
+            f"{symbol} Richtung {context.trade_direction.value.upper()}, Rating "
             f"{context.overall_rating:.0f}/100, Risiko "
             f"{context.risk_result.risk_level.value}, Konsens "
             f"{context.factors['consensus'].value:.0f}/100, Confidence "

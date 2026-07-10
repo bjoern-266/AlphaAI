@@ -9,19 +9,21 @@ from __future__ import annotations
 
 from models.recommendation import (
     RECOMMENDATION_FACTOR_NAMES,
+    Direction,
     RecommendationContext,
     RecommendationFactor,
-    RecommendationLevel,
     RecommendationModelOutput,
     RecommendationReport,
     RecommendationResult,
+    RecommendationStrength,
     SuggestedAction,
 )
 
 __all__ = [
     "RecommendationResult",
     "RecommendationReport",
-    "RecommendationLevel",
+    "Direction",
+    "RecommendationStrength",
     "SuggestedAction",
     "RecommendationFactor",
     "RecommendationModelOutput",

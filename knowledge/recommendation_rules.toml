@@ -10,8 +10,8 @@
 # Empfehlungen ("Kein Trade ist besser als ein schlechter Trade").
 #
 # Eine Empfehlung stützt sich nie ausschließlich auf den Score: Ein hoher Score
-# allein kann wegen der Faktorgewichte und der No-Trade-Gates NIE zu BUY/
-# STRONG_BUY führen.
+# allein kann wegen der Faktorgewichte und der No-Trade-Gates NIE zu hoher
+# Stärke (HIGH/VERY_HIGH) führen. Richtung (Direction) und Stärke sind getrennt.
 # =============================================================================
 
 [meta]
@@ -48,17 +48,18 @@ enabled = true
 
 [recommendation_model]
 enabled = true
-# Rating-Schwellen für die Stufen (vor den Gates).
-strong_buy_min = 80.0
-buy_min = 65.0
-watch_min = 45.0
-wait_min = 25.0
-# No-Trade-Gates: BUY/STRONG_BUY nur, wenn zusätzlich erfüllt.
-# Höchstes Gesamtrisiko (0..100), bis zu dem BUY erlaubt ist.
-max_overall_risk_for_buy = 66.0
-# Mindestkonsens (0..100), damit mehr als WATCH möglich ist.
-min_consensus_for_buy = 60.0
-# Mindest-Datenqualität (0..100), damit mehr als WAIT möglich ist.
+# Rating-Schwellen für die Stärke (vor den Gates). Werte unverändert ggü. 9.5,
+# nur fachlich korrekt benannt (Stärke statt BUY-Stufe).
+very_high_min = 80.0
+high_min = 65.0
+medium_min = 45.0
+low_min = 25.0
+# No-Trade-Gates: HIGH/VERY_HIGH nur, wenn zusätzlich erfüllt.
+# Höchstes Gesamtrisiko (0..100), bis zu dem HIGH erlaubt ist.
+max_overall_risk_for_high = 66.0
+# Mindestkonsens (0..100), damit mehr als MEDIUM möglich ist.
+min_consensus_for_high = 60.0
+# Mindest-Datenqualität (0..100), damit mehr als LOW möglich ist.
 min_data_quality = 60.0
 
 [confidence_model]

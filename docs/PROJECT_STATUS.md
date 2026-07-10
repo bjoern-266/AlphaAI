@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-09
-- **Aktueller Sprint:** Sprint 9.5 – End-to-End Integration & Validation
+- **Aktueller Sprint:** Sprint 9.6 – Recommendation Semantics
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -96,8 +96,9 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   `decision_model`, `recommendation_model`, `confidence_model`, `summary_model`,
   `explanation_model`. Gemeinsame Logik in `recommendation/base.py`.
 - **6 Entscheidungsfaktoren** (Strategie, Score, Risiko, Konsens, Marktqualität,
-  Datenqualität) → Gesamtrating 0-100 → Stufe (STRONG_BUY/BUY/WATCH/WAIT/AVOID)
-  + Handlung (OPEN/WAIT/MONITOR/SKIP).
+  Datenqualität) → Gesamtrating 0-100 → **Stärke** (VERY_HIGH/HIGH/MEDIUM/LOW/
+  REJECT) + **Richtung** (LONG/SHORT/NEUTRAL, getrennt seit 9.6) + Handlung
+  (OPEN/WAIT/MONITOR/SKIP).
 - **No-Trade-Philosophie:** Der Score-Anteil ist begrenzt, Konsens belohnt
   Breite, und Gates deckeln bei Risiko/geringem Konsens/schwacher Datenqualität
   – ein hoher Score allein führt nie zu BUY. `WAIT`/`AVOID` sind vollwertig.
@@ -124,6 +125,16 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   Auffälligkeiten und Verbesserungsvorschlägen; keine Engine geändert).
 - **Tests:** 682 gesamt (180 neue).
 
+### Recommendation Semantics (Sprint 9.6)
+
+- **Richtung und Qualität getrennt:** `RecommendationResult` trägt `direction`
+  (LONG/SHORT/NEUTRAL) **und** `recommendation_strength` (VERY_HIGH … REJECT).
+  Die Stärke impliziert nie mehr BUY/SELL/LONG/SHORT.
+- Der 9.5-Befund „bärisches Setup → STRONG_BUY" ist **behoben**
+  (`trend_down` → SHORT/VERY_HIGH). Bewertungslogik unverändert (Ratings
+  identisch), nur Semantik/Benennung.
+- **Tests:** 713 gesamt.
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung,
@@ -133,11 +144,11 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 9.5)
+## Qualitätsnachweis (Sprint 9.6)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 682 Tests bestanden (180 Integrations-Tests) |
+| pytest | 713 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |

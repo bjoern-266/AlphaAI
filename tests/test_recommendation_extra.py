@@ -7,9 +7,9 @@ import pytest
 from engines.recommendation_engine import RecommendationEngine, load_recommendation_rules
 from engines.strategy_result import StrategyReport
 from models.recommendation import (
-    RecommendationLevel,
     RecommendationReport,
     RecommendationResult,
+    RecommendationStrength,
     SuggestedAction,
 )
 from models.risk import RiskLevel
@@ -17,7 +17,7 @@ from models.score import ScoreReport
 from recommendation.base import (
     clamp_rating,
     compute_overall_rating,
-    level_from_rating,
+    strength_from_rating,
     weighted_sum,
 )
 from tests.helpers import (
@@ -29,7 +29,7 @@ from tests.helpers import (
     make_strategy_result,
 )
 
-THRESHOLDS = {"strong_buy_min": 80.0, "buy_min": 65.0, "watch_min": 45.0, "wait_min": 25.0}
+THRESHOLDS = {"very_high_min": 80.0, "high_min": 65.0, "medium_min": 45.0, "low_min": 25.0}
 
 
 def _engine() -> RecommendationEngine:
@@ -67,10 +67,16 @@ def _report(**kw) -> RecommendationReport:
     return _engine().recommend(*_reports(**kw))
 
 
-def test_report_by_level() -> None:
+def test_report_by_strength() -> None:
     report = _report(n=2, total=95, market=80)
-    level = report.results[0].recommendation_level
-    assert report.by_level(level)
+    strength = report.results[0].recommendation_strength
+    assert report.by_strength(strength)
+
+
+def test_report_by_direction() -> None:
+    report = _report(n=2, total=95, market=80)
+    direction = report.results[0].direction
+    assert report.by_direction(direction)
 
 
 def test_report_by_action() -> None:
@@ -135,54 +141,57 @@ def test_overall_rating_matches_manual() -> None:
 @pytest.mark.parametrize(
     "rating,expected",
     [
-        (80.0, RecommendationLevel.STRONG_BUY),
-        (79.9, RecommendationLevel.BUY),
-        (65.0, RecommendationLevel.BUY),
-        (64.9, RecommendationLevel.WATCH),
-        (45.0, RecommendationLevel.WATCH),
-        (44.9, RecommendationLevel.WAIT),
-        (25.0, RecommendationLevel.WAIT),
-        (24.9, RecommendationLevel.AVOID),
+        (80.0, RecommendationStrength.VERY_HIGH),
+        (79.9, RecommendationStrength.HIGH),
+        (65.0, RecommendationStrength.HIGH),
+        (64.9, RecommendationStrength.MEDIUM),
+        (45.0, RecommendationStrength.MEDIUM),
+        (44.9, RecommendationStrength.LOW),
+        (25.0, RecommendationStrength.LOW),
+        (24.9, RecommendationStrength.REJECT),
     ],
 )
-def test_level_thresholds_boundaries(rating: float, expected: RecommendationLevel) -> None:
-    assert level_from_rating(rating, THRESHOLDS) is expected
+def test_strength_thresholds_boundaries(rating: float, expected: RecommendationStrength) -> None:
+    assert strength_from_rating(rating, THRESHOLDS) is expected
 
 
 # --- Handlungs-Zuordnung im Ergebnis -----------------------------------------
 
 
-def test_action_open_for_buy_levels() -> None:
+def test_action_open_for_high_strengths() -> None:
     r = _report(n=2, total=95, market=80).results[0]
-    if r.recommendation_level in (RecommendationLevel.STRONG_BUY, RecommendationLevel.BUY):
+    if r.recommendation_strength in (
+        RecommendationStrength.VERY_HIGH,
+        RecommendationStrength.HIGH,
+    ):
         assert r.suggested_action is SuggestedAction.OPEN
 
 
-def test_action_monitor_for_watch() -> None:
-    # Einzelne Strategie -> WATCH -> MONITOR.
+def test_action_monitor_for_medium() -> None:
+    # Einzelne Strategie -> MEDIUM -> MONITOR.
     r = _report(n=1, total=95, market=90).results[0]
-    assert r.recommendation_level is RecommendationLevel.WATCH
+    assert r.recommendation_strength is RecommendationStrength.MEDIUM
     assert r.suggested_action is SuggestedAction.MONITOR
 
 
-def test_avoid_maps_to_skip() -> None:
+def test_reject_maps_to_skip() -> None:
     r = _report(n=1, total=5, market=5, risk_overall=95, risk_level=RiskLevel.HIGH, dq=10).results[
         0
     ]
-    if r.recommendation_level is RecommendationLevel.AVOID:
+    if r.recommendation_strength is RecommendationStrength.REJECT:
         assert r.suggested_action is SuggestedAction.SKIP
 
 
 # --- No-Trade-Philosophie ist vollwertig -------------------------------------
 
 
-def test_wait_is_a_valid_recommendation() -> None:
+def test_low_strength_is_a_valid_recommendation() -> None:
     r = _report(n=1, total=40, market=30).results[0]
     assert isinstance(r, RecommendationResult)
-    assert r.recommendation_level in (
-        RecommendationLevel.WATCH,
-        RecommendationLevel.WAIT,
-        RecommendationLevel.AVOID,
+    assert r.recommendation_strength in (
+        RecommendationStrength.MEDIUM,
+        RecommendationStrength.LOW,
+        RecommendationStrength.REJECT,
     )
     # Auch ohne Trade ist die Empfehlung vollständig erklärbar.
     assert r.reasons

@@ -14,7 +14,7 @@ import pytest
 
 import tests.scenarios as scenarios
 from models.pipeline import PipelineResult
-from models.recommendation import RecommendationLevel, SuggestedAction
+from models.recommendation import Direction, RecommendationStrength, SuggestedAction
 from models.risk import RISK_COMPONENT_NAMES
 from pipeline.consistency import verify_pipeline
 from pipeline.runner import IntegrationRunner
@@ -22,10 +22,11 @@ from pipeline.runner import IntegrationRunner
 SCENARIO_NAMES = sorted(scenarios.SCENARIOS)
 
 # Gate-Schwellen (spiegeln knowledge/recommendation_rules.toml) für Invarianten.
-MIN_CONSENSUS_FOR_BUY = 60.0
+MIN_CONSENSUS_FOR_HIGH = 60.0
 MIN_DATA_QUALITY = 60.0
-MAX_RISK_FOR_BUY = 66.0
-BUY_LEVELS = (RecommendationLevel.STRONG_BUY, RecommendationLevel.BUY)
+MAX_RISK_FOR_HIGH = 66.0
+# Hohe Empfehlungsstärke (entspricht früher BUY/STRONG_BUY, ohne Richtungsbezug).
+HIGH_STRENGTHS = (RecommendationStrength.VERY_HIGH, RecommendationStrength.HIGH)
 
 
 @pytest.fixture(scope="module")
@@ -82,9 +83,10 @@ def test_stage_counts_aligned(results, name: str) -> None:
 
 
 @pytest.mark.parametrize("name", SCENARIO_NAMES)
-def test_recommendation_levels_and_actions_valid(results, name: str) -> None:
+def test_recommendation_strength_direction_and_actions_valid(results, name: str) -> None:
     for rec in results[name].recommendations.results:
-        assert rec.recommendation_level in RecommendationLevel
+        assert rec.recommendation_strength in RecommendationStrength
+        assert rec.direction in Direction
         assert rec.suggested_action in SuggestedAction
 
 
@@ -124,7 +126,7 @@ def test_recommendations_are_explainable(results, name: str) -> None:
     for rec in results[name].recommendations.results:
         assert rec.reasons, "Empfehlung ohne Reasons (Blackbox unzulässig)."
         assert rec.summary
-        assert rec.summary.startswith(rec.recommendation_level.value.upper())
+        assert rec.summary.startswith(rec.direction.value.upper())
 
 
 @pytest.mark.parametrize("name", SCENARIO_NAMES)
@@ -141,17 +143,42 @@ def test_pipeline_result_is_frozen(results, name: str) -> None:
 
 
 @pytest.mark.parametrize("name", SCENARIO_NAMES)
-def test_no_action_without_recommendation(results, name: str) -> None:
-    # Struktur-Invariante: Handlung folgt immer aus der Stufe.
+def test_action_follows_strength(results, name: str) -> None:
+    # Struktur-Invariante: Handlung folgt immer aus der Stärke.
     for rec in results[name].recommendations.results:
-        if rec.recommendation_level in BUY_LEVELS:
+        if rec.recommendation_strength in HIGH_STRENGTHS:
             assert rec.suggested_action is SuggestedAction.OPEN
-        elif rec.recommendation_level is RecommendationLevel.WATCH:
+        elif rec.recommendation_strength is RecommendationStrength.MEDIUM:
             assert rec.suggested_action is SuggestedAction.MONITOR
-        elif rec.recommendation_level is RecommendationLevel.WAIT:
+        elif rec.recommendation_strength is RecommendationStrength.LOW:
             assert rec.suggested_action is SuggestedAction.WAIT
         else:
             assert rec.suggested_action is SuggestedAction.SKIP
+
+
+@pytest.mark.parametrize("name", SCENARIO_NAMES)
+def test_direction_matches_strategy(results, name: str) -> None:
+    # Fachliche Trennung: die Richtung folgt der Strategie-Hypothese.
+    from models.strategy import StrategyDirection
+
+    mapping = {
+        StrategyDirection.BULLISH: Direction.LONG,
+        StrategyDirection.BEARISH: Direction.SHORT,
+        StrategyDirection.NEUTRAL: Direction.NEUTRAL,
+    }
+    r = results[name]
+    strat_by_hyp = {s.hypothesis_id: s for s in r.strategies.results}
+    for rec in r.recommendations.results:
+        strat = strat_by_hyp[rec.hypothesis_id]
+        assert rec.direction is mapping[strat.direction]
+
+
+@pytest.mark.parametrize("name", SCENARIO_NAMES)
+def test_strength_never_contains_direction_terms(results, name: str) -> None:
+    # Die Stärke darf niemals BUY/SELL/LONG/SHORT implizieren.
+    forbidden = {"buy", "sell", "long", "short", "strong_buy"}
+    for rec in results[name].recommendations.results:
+        assert rec.recommendation_strength.value not in forbidden
 
 
 # --------------------------------------------------------------------------- #
@@ -167,44 +194,61 @@ def _all_recs(results):
             yield name, rec, risk_by_hyp.get(rec.hypothesis_id)
 
 
-def test_high_risk_never_buy(results) -> None:
-    """Hohes Risiko deckelt die Empfehlung – nie BUY/STRONG_BUY bei Risiko > Cap."""
+def test_high_risk_never_high_strength(results) -> None:
+    """Hohes Risiko deckelt – nie HIGH/VERY_HIGH bei Risiko > Cap."""
     for name, rec, risk in _all_recs(results):
-        if risk is not None and risk.overall_risk > MAX_RISK_FOR_BUY:
-            assert rec.recommendation_level not in BUY_LEVELS, name
+        if risk is not None and risk.overall_risk > MAX_RISK_FOR_HIGH:
+            assert rec.recommendation_strength not in HIGH_STRENGTHS, name
 
 
-def test_buy_requires_all_gates(results) -> None:
-    """BUY/STRONG_BUY nur, wenn Konsens, Datenqualität und Risiko die Gates erfüllen."""
+def test_high_strength_requires_all_gates(results) -> None:
+    """HIGH/VERY_HIGH nur, wenn Konsens, Datenqualität und Risiko die Gates erfüllen."""
     for name, rec, risk in _all_recs(results):
-        if rec.recommendation_level in BUY_LEVELS:
+        if rec.recommendation_strength in HIGH_STRENGTHS:
             factors = rec.metadata["factors"]
-            assert factors["consensus"] >= MIN_CONSENSUS_FOR_BUY, name
+            assert factors["consensus"] >= MIN_CONSENSUS_FOR_HIGH, name
             assert factors["data_quality"] >= MIN_DATA_QUALITY, name
-            assert risk is not None and risk.overall_risk <= MAX_RISK_FOR_BUY, name
+            assert risk is not None and risk.overall_risk <= MAX_RISK_FOR_HIGH, name
 
 
-def test_score_alone_never_buy(results) -> None:
-    """Ein hoher Score allein (ohne Konsens) erzeugt nie BUY."""
+def test_score_alone_never_high_strength(results) -> None:
+    """Ein hoher Score allein (ohne Konsens) erzeugt nie HIGH/VERY_HIGH."""
     for name, rec, _ in _all_recs(results):
         score = rec.metadata["factors"]["score"]
         consensus = rec.metadata["factors"]["consensus"]
-        if score >= 80.0 and consensus < MIN_CONSENSUS_FOR_BUY:
-            assert rec.recommendation_level not in BUY_LEVELS, name
+        if score >= 80.0 and consensus < MIN_CONSENSUS_FOR_HIGH:
+            assert rec.recommendation_strength not in HIGH_STRENGTHS, name
+
+
+def test_bearish_scenarios_are_short_not_buy(results) -> None:
+    """Der 9.5-Befund ist behoben: bärische Setups sind SHORT, nie „BUY"."""
+    forbidden = {"buy", "sell", "long", "short", "strong_buy"}
+    saw_short = False
+    for _name, rec, _risk in _all_recs(results):
+        if rec.direction is Direction.SHORT:
+            saw_short = True
+            # Ein bärisches Setup wird nie als Kauf dargestellt.
+            assert rec.recommendation_strength.value not in forbidden
+    # Mindestens ein bärisches Setup trat auf (trend_down/breakout_down).
+    assert saw_short
 
 
 def test_no_trade_is_a_normal_outcome(results) -> None:
-    """WAIT/AVOID kommen als vollwertige Empfehlungen vor."""
-    levels = [rec.recommendation_level for _, rec, _ in _all_recs(results)]
-    no_trade = {RecommendationLevel.WAIT, RecommendationLevel.AVOID, RecommendationLevel.WATCH}
-    assert any(level in no_trade for level in levels)
+    """MEDIUM/LOW/REJECT kommen als vollwertige Empfehlungen vor."""
+    strengths = [rec.recommendation_strength for _, rec, _ in _all_recs(results)]
+    no_trade = {
+        RecommendationStrength.MEDIUM,
+        RecommendationStrength.LOW,
+        RecommendationStrength.REJECT,
+    }
+    assert any(strength in no_trade for strength in strengths)
 
 
-def test_strong_buy_is_not_universal(results) -> None:
-    """STRONG_BUY ist außergewöhnlich – nicht jedes Szenario liefert es."""
-    levels = [rec.recommendation_level for _, rec, _ in _all_recs(results)]
-    strong = sum(1 for level in levels if level is RecommendationLevel.STRONG_BUY)
-    assert strong < len(levels) if levels else True
+def test_very_high_is_not_universal(results) -> None:
+    """VERY_HIGH ist außergewöhnlich – nicht jede Empfehlung erreicht es."""
+    strengths = [rec.recommendation_strength for _, rec, _ in _all_recs(results)]
+    very_high = sum(1 for s in strengths if s is RecommendationStrength.VERY_HIGH)
+    assert very_high < len(strengths) if strengths else True
 
 
 # --------------------------------------------------------------------------- #
@@ -221,11 +265,11 @@ def test_missing_data_produces_no_recommendations(runner: IntegrationRunner) -> 
     assert result.metadata["all_stages_valid"] is False
 
 
-def test_short_history_no_buy(runner: IntegrationRunner) -> None:
+def test_short_history_no_high_strength(runner: IntegrationRunner) -> None:
     result = runner.run_frame(scenarios.short_history(), symbol="SHORT")
     assert verify_pipeline(result) == []
     for rec in result.recommendations.results:
-        assert rec.recommendation_level not in BUY_LEVELS
+        assert rec.recommendation_strength not in HIGH_STRENGTHS
 
 
 def test_low_liquidity_raises_risk_vs_high(runner: IntegrationRunner) -> None:

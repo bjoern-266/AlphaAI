@@ -12,7 +12,9 @@ die **No-Trade-Gates**. Sie sind kein eigenes Modell, damit kein Modell von
 einem anderen abhängt.
 
 Grundsatz (No-Trade-Philosophie): „Kein Trade ist besser als ein schlechter
-Trade." Ein hoher Score allein führt **nie** automatisch zu BUY/STRONG_BUY.
+Trade." Ein hoher Score allein führt **nie** automatisch zu hoher Stärke
+(HIGH/VERY_HIGH). Richtung und Stärke sind getrennt (``Direction`` bzw.
+``RecommendationStrength``).
 """
 
 from __future__ import annotations
@@ -24,10 +26,11 @@ from typing import Any
 from core.exceptions import RecommendationParameterError
 from models.recommendation import (
     RECOMMENDATION_FACTOR_NAMES,
+    Direction,
     RecommendationContext,
     RecommendationFactor,
-    RecommendationLevel,
     RecommendationModelOutput,
+    RecommendationStrength,
     SuggestedAction,
 )
 from models.risk import RiskResult
@@ -36,7 +39,8 @@ from models.strategy import StrategyDirection, StrategyResult
 
 __all__ = [
     "RecommendationParameterError",
-    "RecommendationLevel",
+    "RecommendationStrength",
+    "Direction",
     "SuggestedAction",
     "RecommendationFactor",
     "RecommendationModelOutput",
@@ -52,10 +56,10 @@ __all__ = [
     "compute_factors",
     "compute_overall_rating",
     "compute_confidence",
-    "level_from_rating",
-    "action_for_level",
-    "cap_level",
-    "level_severity",
+    "strength_from_rating",
+    "action_for_strength",
+    "cap_strength",
+    "strength_severity",
     "is_neutral",
     "CONFIDENCE_WEIGHT_KEYS",
 ]
@@ -68,21 +72,21 @@ CONFIDENCE_WEIGHT_KEYS: tuple[str, ...] = (
     "data_quality",
 )
 
-# Schwere-Ordnung der Empfehlungsstufen (für Deckelung durch Gates).
-_LEVEL_ORDER: tuple[RecommendationLevel, ...] = (
-    RecommendationLevel.AVOID,
-    RecommendationLevel.WAIT,
-    RecommendationLevel.WATCH,
-    RecommendationLevel.BUY,
-    RecommendationLevel.STRONG_BUY,
+# Schwere-Ordnung der Empfehlungsstärke (für Deckelung durch Gates).
+_STRENGTH_ORDER: tuple[RecommendationStrength, ...] = (
+    RecommendationStrength.REJECT,
+    RecommendationStrength.LOW,
+    RecommendationStrength.MEDIUM,
+    RecommendationStrength.HIGH,
+    RecommendationStrength.VERY_HIGH,
 )
 
-_LEVEL_ACTION: dict[RecommendationLevel, SuggestedAction] = {
-    RecommendationLevel.STRONG_BUY: SuggestedAction.OPEN,
-    RecommendationLevel.BUY: SuggestedAction.OPEN,
-    RecommendationLevel.WATCH: SuggestedAction.MONITOR,
-    RecommendationLevel.WAIT: SuggestedAction.WAIT,
-    RecommendationLevel.AVOID: SuggestedAction.SKIP,
+_STRENGTH_ACTION: dict[RecommendationStrength, SuggestedAction] = {
+    RecommendationStrength.VERY_HIGH: SuggestedAction.OPEN,
+    RecommendationStrength.HIGH: SuggestedAction.OPEN,
+    RecommendationStrength.MEDIUM: SuggestedAction.MONITOR,
+    RecommendationStrength.LOW: SuggestedAction.WAIT,
+    RecommendationStrength.REJECT: SuggestedAction.SKIP,
 }
 
 
@@ -277,36 +281,38 @@ def compute_confidence(
 
 
 # --------------------------------------------------------------------------- #
-# Stufen- und Handlungs-Zuordnung + Gates                                      #
+# Stärke- und Handlungs-Zuordnung + Gates                                      #
 # --------------------------------------------------------------------------- #
 
 
-def level_severity(level: RecommendationLevel) -> int:
-    """Ordnungszahl einer Stufe (AVOID=0 … STRONG_BUY=4)."""
-    return _LEVEL_ORDER.index(level)
+def strength_severity(strength: RecommendationStrength) -> int:
+    """Ordnungszahl einer Stärke (REJECT=0 … VERY_HIGH=4)."""
+    return _STRENGTH_ORDER.index(strength)
 
 
-def cap_level(level: RecommendationLevel, cap: RecommendationLevel) -> RecommendationLevel:
-    """Deckelt eine Stufe auf höchstens ``cap`` (No-Trade-Gate)."""
-    return level if level_severity(level) <= level_severity(cap) else cap
+def cap_strength(
+    strength: RecommendationStrength, cap: RecommendationStrength
+) -> RecommendationStrength:
+    """Deckelt eine Stärke auf höchstens ``cap`` (No-Trade-Gate)."""
+    return strength if strength_severity(strength) <= strength_severity(cap) else cap
 
 
-def level_from_rating(rating: float, thresholds: Mapping[str, float]) -> RecommendationLevel:
-    """Bildet ein Rating anhand der Schwellen auf eine Stufe ab."""
-    if rating >= thresholds["strong_buy_min"]:
-        return RecommendationLevel.STRONG_BUY
-    if rating >= thresholds["buy_min"]:
-        return RecommendationLevel.BUY
-    if rating >= thresholds["watch_min"]:
-        return RecommendationLevel.WATCH
-    if rating >= thresholds["wait_min"]:
-        return RecommendationLevel.WAIT
-    return RecommendationLevel.AVOID
+def strength_from_rating(rating: float, thresholds: Mapping[str, float]) -> RecommendationStrength:
+    """Bildet ein Rating anhand der Schwellen auf eine Stärke ab (unverändert)."""
+    if rating >= thresholds["very_high_min"]:
+        return RecommendationStrength.VERY_HIGH
+    if rating >= thresholds["high_min"]:
+        return RecommendationStrength.HIGH
+    if rating >= thresholds["medium_min"]:
+        return RecommendationStrength.MEDIUM
+    if rating >= thresholds["low_min"]:
+        return RecommendationStrength.LOW
+    return RecommendationStrength.REJECT
 
 
-def action_for_level(level: RecommendationLevel) -> SuggestedAction:
-    """Ordnet einer Stufe die vorgeschlagene Handlung zu (keine Ausführung)."""
-    return _LEVEL_ACTION[level]
+def action_for_strength(strength: RecommendationStrength) -> SuggestedAction:
+    """Ordnet einer Stärke die vorgeschlagene Handlung zu (keine Ausführung)."""
+    return _STRENGTH_ACTION[strength]
 
 
 def is_neutral(direction: StrategyDirection) -> bool:

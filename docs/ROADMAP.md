@@ -114,6 +114,16 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
 - Reports `docs/PIPELINE.md` und `docs/VALIDATION_REPORT.md` (inkl.
   Auffälligkeiten und Verbesserungsvorschlägen). 682 Tests gesamt.
 
+## Sprint 9.6 – Recommendation Semantics ✅ (abgeschlossen)
+
+- Reiner Semantik-Sprint: Trennung von **Richtung** (`Direction`
+  LONG/SHORT/NEUTRAL) und **Stärke** (`RecommendationStrength`
+  VERY_HIGH … REJECT) in `RecommendationResult`. Keine neue Logik/Regel.
+- 9.5-Befund „bärisches Setup → STRONG_BUY" behoben; die Stärke enthält nie
+  mehr BUY/SELL/LONG/SHORT. Bewertungslogik/Ratings unverändert.
+- Alle Recommendation-/Integrationstests umgestellt + neue LONG/SHORT/NEUTRAL-
+  Tests. 713 Tests gesamt. `VALIDATION_REPORT.md` aktualisiert.
+
 ## Sprint 6 – Dashboard (geplant)
 
 - Streamlit-Oberfläche in `dashboard/`.

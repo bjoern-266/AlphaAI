@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from models.recommendation import RecommendationLevel, SuggestedAction
+from models.recommendation import RecommendationStrength, SuggestedAction
 from models.risk import RiskLevel
 from models.strategy import StrategyDirection
 from recommendation.base import RecommendationParameterError
@@ -21,12 +21,12 @@ from tests.helpers import (
 )
 
 REC_PARAMS = {
-    "strong_buy_min": 80.0,
-    "buy_min": 65.0,
-    "watch_min": 45.0,
-    "wait_min": 25.0,
-    "max_overall_risk_for_buy": 66.0,
-    "min_consensus_for_buy": 60.0,
+    "very_high_min": 80.0,
+    "high_min": 65.0,
+    "medium_min": 45.0,
+    "low_min": 25.0,
+    "max_overall_risk_for_high": 66.0,
+    "min_consensus_for_high": 60.0,
     "min_data_quality": 60.0,
 }
 EXPL_PARAMS = {
@@ -54,13 +54,16 @@ def test_decision_model_exposes_rating() -> None:
     assert out.details["factors"]
 
 
-# --- Recommendation (Stufe + Gates) ------------------------------------------
+# --- Recommendation (Stärke + Gates) -----------------------------------------
 
 
 def test_recommendation_two_confirm_strong() -> None:
     ctx = _two_confirm_context(total_score=95, market_score=80)
     out = RecommendationModel().compute(ctx, REC_PARAMS)
-    assert out.details["level"] in (RecommendationLevel.STRONG_BUY, RecommendationLevel.BUY)
+    assert out.details["strength"] in (
+        RecommendationStrength.VERY_HIGH,
+        RecommendationStrength.HIGH,
+    )
     assert out.details["action"] is SuggestedAction.OPEN
 
 
@@ -69,8 +72,8 @@ def test_recommendation_single_strategy_capped() -> None:
         score_result=make_score_result(total_score=95, market_score=90)
     )
     out = RecommendationModel().compute(ctx, REC_PARAMS)
-    # Konsens 50 < 60 -> höchstens WATCH (Score allein reicht nicht).
-    assert out.details["level"] is RecommendationLevel.WATCH
+    # Konsens 50 < 60 -> höchstens MEDIUM (Score allein reicht nicht).
+    assert out.details["strength"] is RecommendationStrength.MEDIUM
 
 
 def test_recommendation_high_risk_capped() -> None:
@@ -84,26 +87,26 @@ def test_recommendation_high_risk_capped() -> None:
         score_result=make_score_result(hypothesis_id="h1", total_score=95),
     )
     out = RecommendationModel().compute(ctx, REC_PARAMS)
-    assert out.details["level"] is RecommendationLevel.WATCH
+    assert out.details["strength"] is RecommendationStrength.MEDIUM
 
 
-def test_recommendation_neutral_capped_to_wait() -> None:
+def test_recommendation_neutral_capped_to_low() -> None:
     strat = make_strategy_result(direction=StrategyDirection.NEUTRAL)
     ctx = make_recommendation_context(strategy_result=strat, strategies=[strat])
     out = RecommendationModel().compute(ctx, REC_PARAMS)
-    assert out.details["level"] in (RecommendationLevel.WAIT, RecommendationLevel.AVOID)
+    assert out.details["strength"] in (RecommendationStrength.LOW, RecommendationStrength.REJECT)
 
 
 def test_recommendation_low_data_quality_capped() -> None:
     ctx = _two_confirm_context(total_score=95, market_score=80, data_quality=30)
     out = RecommendationModel().compute(ctx, REC_PARAMS)
-    assert out.details["level"] in (RecommendationLevel.WAIT, RecommendationLevel.AVOID)
+    assert out.details["strength"] in (RecommendationStrength.LOW, RecommendationStrength.REJECT)
 
 
 def test_recommendation_missing_param_raises() -> None:
     ctx = make_recommendation_context()
     with pytest.raises(RecommendationParameterError):
-        RecommendationModel().compute(ctx, {"strong_buy_min": 80.0})
+        RecommendationModel().compute(ctx, {"very_high_min": 80.0})
 
 
 # --- Confidence --------------------------------------------------------------

@@ -4,6 +4,49 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.9.6] – 2026-07-09 – Sprint 9.6: Recommendation Semantics
+
+Reiner Semantik-/Domänenmodell-Sprint. **Keine** neuen Features, **keine** neue
+Engine, **keine** geänderten Handelsregeln, **keine** neue Bewertungslogik. Der
+in 9.5 dokumentierte Befund *„Strong bearish setup → STRONG_BUY"* ist behoben.
+
+### Geändert (Semantik)
+
+- **Richtung und Qualität vollständig getrennt** in `RecommendationResult`:
+  - neu `direction: Direction` (LONG/SHORT/NEUTRAL) – ausschließlich die
+    Handelsrichtung, abgeleitet aus der Strategie-Hypothese.
+  - `recommendation_level` → `recommendation_strength: RecommendationStrength`
+    (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) – ausschließlich die Qualität; enthält
+    **kein** BUY/SELL/LONG/SHORT mehr.
+- **Mappings/Benennung** angepasst (Werte unverändert): `strength_from_rating`,
+  `cap_strength`, `action_for_strength`, `strength_severity`; Schwellen in
+  `recommendation_rules.toml` (`very_high_min`/`high_min`/`medium_min`/`low_min`)
+  und Gate-Parameter (`max_overall_risk_for_high`, `min_consensus_for_high`).
+- **Validierung** ergänzt: Richtung und Stärke werden geprüft; die Stärke kann
+  strukturell nie eine Richtung darstellen (`RecommendationReport.by_strength`/
+  `by_direction`).
+- **Zusammenfassung** nennt Richtung und Stärke getrennt (z. B.
+  „SHORT / VERY_HIGH — …").
+- Die **Bewertungslogik ist unverändert**: Rating-Werte sind identisch zu 9.5
+  (`trend_up` → LONG/VERY_HIGH, `trend_down` → SHORT/VERY_HIGH, `sideways` →
+  MEDIUM).
+
+### Tests
+
+- Alle Recommendation-/Integrationstests auf `direction`/`strength` umgestellt;
+  neue Tests für LONG/SHORT/NEUTRAL und die Garantie, dass ein bärisches Setup
+  nie als „BUY" erscheint. Gesamt 713 (unverändert grün).
+
+### Qualitätsprüfung
+
+Import-Zyklen: 0. Plugin-Unabhängigkeit/SOLID: 0. Immutability vollständig.
+`ruff`/`black` konform. 713 Tests grün. `VALIDATION_REPORT.md` aktualisiert
+(Befund behoben).
+
+### ADR
+
+ADR-030 (Trennung von Direction und RecommendationStrength).
+
 ## [0.9.5] – 2026-07-09 – Sprint 9.5: End-to-End Integration & Validation
 
 Reine Integration, Validierung und Qualitätssicherung der bestehenden

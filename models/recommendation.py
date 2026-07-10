@@ -1,12 +1,13 @@
 """Domänenmodell: Empfehlung – die letzte fachliche Entscheidungsschicht.
 
-Enthält die unveränderlichen Datentypen der Recommendation Engine: die Stufe
-:class:`RecommendationLevel`, die Handlung :class:`SuggestedAction`, den
-Entscheidungsfaktor :class:`RecommendationFactor`, die Modellausgabe
-:class:`RecommendationModelOutput`, den Eingabe-Kontext
+Enthält die unveränderlichen Datentypen der Recommendation Engine. **Richtung**
+und **Qualität** sind vollständig getrennt: die Handelsrichtung
+:class:`Direction` (LONG/SHORT/NEUTRAL) und die Empfehlungsstärke
+:class:`RecommendationStrength` (VERY_HIGH … REJECT). Dazu die Handlung
+:class:`SuggestedAction`, der Entscheidungsfaktor :class:`RecommendationFactor`,
+die Modellausgabe :class:`RecommendationModelOutput`, der Eingabe-Kontext
 :class:`RecommendationContext`, die Einzelempfehlung
-:class:`RecommendationResult` und den Lauf-Report
-:class:`RecommendationReport`.
+:class:`RecommendationResult` und der Lauf-Report :class:`RecommendationReport`.
 
 Teil der Entities-Schicht (``models/``). Abhängigkeiten zeigen nur auf andere
 Modelle und ``core`` – **kein** Import aus ``engines`` o. Ä. Die
@@ -14,8 +15,10 @@ Entscheidungs-*Logik* liegt in ``recommendation.base``.
 
 AlphaAI trifft **keine** automatischen Handelsentscheidungen: Die
 Recommendation Engine eröffnet **keine** Position, sendet **keine** Order und
-kommuniziert **nicht** mit Brokern. ``WAIT`` und ``AVOID`` sind vollwertige
-Empfehlungen („Kein Trade ist besser als ein schlechter Trade.").
+kommuniziert **nicht** mit Brokern. ``LOW`` und ``REJECT`` sind vollwertige
+Empfehlungen („Kein Trade ist besser als ein schlechter Trade."). Die Stärke
+impliziert **niemals** eine Richtung – ein bärisches Setup ist ``SHORT`` mit
+ggf. hoher Stärke, nie „BUY".
 """
 
 from __future__ import annotations
@@ -42,23 +45,47 @@ RECOMMENDATION_FACTOR_NAMES: tuple[str, ...] = (
 )
 
 
-class RecommendationLevel(Enum):
-    """Empfehlungsstufe (STRONG_BUY … AVOID)."""
+class Direction(Enum):
+    """Handelsrichtung einer Empfehlung – **ausschließlich** die Richtung.
 
-    STRONG_BUY = "strong_buy"
-    BUY = "buy"
-    WATCH = "watch"
-    WAIT = "wait"
-    AVOID = "avoid"
+    Getrennt von der :class:`RecommendationStrength` (Qualität). Ein starkes
+    bärisches Setup ist damit ``SHORT`` mit hoher Stärke – niemals „BUY".
+    """
+
+    LONG = "long"
+    SHORT = "short"
+    NEUTRAL = "neutral"
+
+
+class RecommendationStrength(Enum):
+    """Qualität/Stärke einer Empfehlung – **ausschließlich** die Güte.
+
+    Beschreibt **nicht** die Richtung (die steht in :class:`Direction`) und
+    impliziert bewusst kein BUY/SELL/LONG/SHORT.
+    """
+
+    VERY_HIGH = "very_high"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    REJECT = "reject"
 
 
 class SuggestedAction(Enum):
-    """Vorgeschlagene Handlung (keine automatische Ausführung)."""
+    """Vorgeschlagene Handlung (keine automatische Ausführung, keine Richtung)."""
 
     OPEN = "open"
     WAIT = "wait"
     MONITOR = "monitor"
     SKIP = "skip"
+
+
+# Reine Abbildung der Strategie-Richtung auf die Handelsrichtung – keine Logik.
+_DIRECTION_MAP: dict[StrategyDirection, Direction] = {
+    StrategyDirection.BULLISH: Direction.LONG,
+    StrategyDirection.BEARISH: Direction.SHORT,
+    StrategyDirection.NEUTRAL: Direction.NEUTRAL,
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,8 +154,13 @@ class RecommendationContext:
 
     @property
     def direction(self) -> StrategyDirection:
-        """Richtung der Hypothese."""
+        """Interne Richtung der Hypothese (Strategie-Enum, für die Gate-Logik)."""
         return self.strategy_result.direction
+
+    @property
+    def trade_direction(self) -> Direction:
+        """Handelsrichtung als :class:`Direction` (LONG/SHORT/NEUTRAL)."""
+        return _DIRECTION_MAP[self.strategy_result.direction]
 
     @property
     def risk_level(self) -> RiskLevel:
@@ -140,12 +172,18 @@ class RecommendationContext:
 class RecommendationResult:
     """Objektive Handlungsempfehlung einer Hypothese (unveränderlich).
 
+    ``direction`` (Handelsrichtung) und ``recommendation_strength`` (Qualität)
+    sind **vollständig getrennt**: Die Stärke impliziert nie eine Richtung; ein
+    bärisches Setup ist ``SHORT`` mit ggf. hoher Stärke – niemals „BUY".
+
     Attributes:
         recommendation_id: Stabiler Bezeichner der Empfehlung.
         risk_id: Bezeichner der zugrunde liegenden Risikobewertung.
         score_id: Bezeichner der zugrunde liegenden Score-Bewertung.
         hypothesis_id: Bezeichner der bewerteten Hypothese.
-        recommendation_level: Stufe (STRONG_BUY … AVOID).
+        direction: Handelsrichtung (LONG/SHORT/NEUTRAL) – ausschließlich Richtung.
+        recommendation_strength: Qualität/Stärke (VERY_HIGH … REJECT) –
+            ausschließlich Güte, keine Richtung.
         confidence: Vertrauen 0..1 in die Empfehlung.
         overall_rating: Gesamtbewertung 0..100.
         suggested_action: Vorgeschlagene Handlung (keine Ausführung).
@@ -160,7 +198,8 @@ class RecommendationResult:
     risk_id: str
     score_id: str
     hypothesis_id: str
-    recommendation_level: RecommendationLevel
+    direction: Direction
+    recommendation_strength: RecommendationStrength
     confidence: float
     overall_rating: float
     suggested_action: SuggestedAction
@@ -189,9 +228,13 @@ class RecommendationReport:
     warnings: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
-    def by_level(self, level: RecommendationLevel) -> list[RecommendationResult]:
-        """Gibt alle Empfehlungen einer Stufe zurück."""
-        return [r for r in self.results if r.recommendation_level is level]
+    def by_strength(self, strength: RecommendationStrength) -> list[RecommendationResult]:
+        """Gibt alle Empfehlungen einer Stärke zurück."""
+        return [r for r in self.results if r.recommendation_strength is strength]
+
+    def by_direction(self, direction: Direction) -> list[RecommendationResult]:
+        """Gibt alle Empfehlungen einer Handelsrichtung zurück."""
+        return [r for r in self.results if r.direction is direction]
 
     def by_action(self, action: SuggestedAction) -> list[RecommendationResult]:
         """Gibt alle Empfehlungen einer vorgeschlagenen Handlung zurück."""

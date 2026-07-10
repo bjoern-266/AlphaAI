@@ -11,7 +11,12 @@ from engines.recommendation_engine import (
     load_recommendation_rules,
 )
 from engines.strategy_result import StrategyReport
-from models.recommendation import RecommendationLevel, RecommendationReport, SuggestedAction
+from models.recommendation import (
+    Direction,
+    RecommendationReport,
+    RecommendationStrength,
+    SuggestedAction,
+)
 from models.risk import RiskLevel
 from models.score import ScoreReport
 from tests.helpers import (
@@ -77,7 +82,8 @@ def test_recommend_one_result_per_score() -> None:
 def test_result_fields_populated() -> None:
     sr, sc, rk = _reports(n=2)
     r = _engine().recommend(sr, sc, rk, symbol="AAPL").results[0]
-    assert r.recommendation_level in RecommendationLevel
+    assert r.recommendation_strength in RecommendationStrength
+    assert r.direction in Direction
     assert r.suggested_action in SuggestedAction
     assert 0.0 <= r.confidence <= 1.0
     assert 0.0 <= r.overall_rating <= 100.0
@@ -92,30 +98,35 @@ def test_result_fields_populated() -> None:
 # --- Entscheidungslogik ------------------------------------------------------
 
 
-def test_two_confirming_strong_or_buy() -> None:
+HIGH_STRENGTHS = (RecommendationStrength.VERY_HIGH, RecommendationStrength.HIGH)
+NO_TRADE_STRENGTHS = (RecommendationStrength.LOW, RecommendationStrength.REJECT)
+
+
+def test_two_confirming_strong_strength() -> None:
     sr, sc, rk = _reports(n=2, total=95, market=80)
     r = _engine().recommend(sr, sc, rk).results[0]
-    assert r.recommendation_level in (RecommendationLevel.STRONG_BUY, RecommendationLevel.BUY)
+    assert r.recommendation_strength in HIGH_STRENGTHS
+    assert r.direction is Direction.LONG
     assert r.suggested_action is SuggestedAction.OPEN
 
 
-def test_single_strategy_high_score_not_buy() -> None:
+def test_single_strategy_high_score_not_high_strength() -> None:
     sr, sc, rk = _reports(n=1, total=99, market=95)
     r = _engine().recommend(sr, sc, rk).results[0]
-    # Hoher Score allein -> nie BUY/STRONG_BUY.
-    assert r.recommendation_level not in (RecommendationLevel.STRONG_BUY, RecommendationLevel.BUY)
+    # Hoher Score allein -> nie HIGH/VERY_HIGH.
+    assert r.recommendation_strength not in HIGH_STRENGTHS
 
 
 def test_high_risk_caps_recommendation() -> None:
     sr, sc, rk = _reports(n=2, total=95, market=80, risk_overall=85, risk_level=RiskLevel.HIGH)
     r = _engine().recommend(sr, sc, rk).results[0]
-    assert r.recommendation_level not in (RecommendationLevel.STRONG_BUY, RecommendationLevel.BUY)
+    assert r.recommendation_strength not in HIGH_STRENGTHS
 
 
 def test_low_data_quality_reduces() -> None:
     sr, sc, rk = _reports(n=2, total=95, market=80, data_quality=20)
     r = _engine().recommend(sr, sc, rk).results[0]
-    assert r.recommendation_level in (RecommendationLevel.WAIT, RecommendationLevel.AVOID)
+    assert r.recommendation_strength in NO_TRADE_STRENGTHS
 
 
 def test_weak_setup_yields_no_trade() -> None:
@@ -123,17 +134,37 @@ def test_weak_setup_yields_no_trade() -> None:
         n=1, total=10, market=10, risk_overall=90, risk_level=RiskLevel.HIGH, data_quality=20
     )
     r = _engine().recommend(sr, sc, rk).results[0]
-    assert r.recommendation_level in (RecommendationLevel.WAIT, RecommendationLevel.AVOID)
+    assert r.recommendation_strength in NO_TRADE_STRENGTHS
     assert r.suggested_action in (SuggestedAction.WAIT, SuggestedAction.SKIP)
 
 
 # --- Transparenz -------------------------------------------------------------
 
 
-def test_summary_starts_with_level() -> None:
+def test_summary_states_direction_and_strength() -> None:
     sr, sc, rk = _reports(n=2, total=95, market=80)
     r = _engine().recommend(sr, sc, rk).results[0]
-    assert r.summary.startswith(r.recommendation_level.value.upper())
+    # Zusammenfassung nennt Richtung UND Stärke getrennt.
+    assert r.summary.startswith(r.direction.value.upper())
+    assert r.recommendation_strength.value.upper() in r.summary
+
+
+def test_bearish_setup_is_short_never_buy() -> None:
+    from models.strategy import StrategyDirection
+
+    sr, sc, rk = _reports(n=2, total=95, market=80, direction=StrategyDirection.BEARISH)
+    r = _engine().recommend(sr, sc, rk).results[0]
+    assert r.direction is Direction.SHORT
+    # Die Stärke enthält niemals BUY/SELL/LONG/SHORT.
+    assert r.recommendation_strength.value not in {"buy", "sell", "long", "short", "strong_buy"}
+
+
+def test_neutral_direction_maps_to_neutral() -> None:
+    from models.strategy import StrategyDirection
+
+    sr, sc, rk = _reports(n=1, direction=StrategyDirection.NEUTRAL)
+    r = _engine().recommend(sr, sc, rk).results[0]
+    assert r.direction is Direction.NEUTRAL
 
 
 def test_reasons_include_gate_explanation() -> None:
@@ -205,7 +236,7 @@ def test_cache_returns_same_report() -> None:
 # --- Registry / Config -------------------------------------------------------
 
 
-def test_disabled_recommendation_model_falls_back_to_wait(tmp_path) -> None:
+def test_disabled_recommendation_model_falls_back_to_low(tmp_path) -> None:
     rules_text = (
         "[meta]\nversion=9\n\n"
         "[weights]\nstrategy=0.15\nscore=0.25\nrisk=0.20\nconsensus=0.20\n"
@@ -220,7 +251,7 @@ def test_disabled_recommendation_model_falls_back_to_wait(tmp_path) -> None:
     engine = RecommendationEngine(rules=load_recommendation_rules(path))
     sr, sc, rk = _reports(n=2, total=95, market=80)
     r = engine.recommend(sr, sc, rk).results[0]
-    assert r.recommendation_level is RecommendationLevel.WAIT
+    assert r.recommendation_strength is RecommendationStrength.LOW
 
 
 def test_load_rules_rejects_bad_weights(tmp_path) -> None:

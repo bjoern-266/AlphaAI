@@ -8,11 +8,11 @@ from models.risk import RiskLevel
 from models.strategy import StrategyDirection
 from recommendation.base import (
     RECOMMENDATION_FACTOR_NAMES,
-    RecommendationLevel,
     RecommendationParameterError,
+    RecommendationStrength,
     SuggestedAction,
-    action_for_level,
-    cap_level,
+    action_for_strength,
+    cap_strength,
     clamp_confidence,
     clamp_rating,
     compute_confidence,
@@ -20,9 +20,9 @@ from recommendation.base import (
     compute_overall_rating,
     consensus_fraction,
     is_neutral,
-    level_from_rating,
-    level_severity,
     require_float,
+    strength_from_rating,
+    strength_severity,
     validate_weights,
 )
 from tests.helpers import (
@@ -33,7 +33,7 @@ from tests.helpers import (
     make_strategy_result,
 )
 
-THRESHOLDS = {"strong_buy_min": 80.0, "buy_min": 65.0, "watch_min": 45.0, "wait_min": 25.0}
+THRESHOLDS = {"very_high_min": 80.0, "high_min": 65.0, "medium_min": 45.0, "low_min": 25.0}
 
 
 def _factors(**kw):
@@ -111,43 +111,52 @@ def test_consensus_fraction_helper() -> None:
     assert consensus_fraction(s1, []) == 0.0
 
 
-# --- Stufen / Handlungen -----------------------------------------------------
+# --- Stärke / Handlungen -----------------------------------------------------
 
 
-def test_level_from_rating() -> None:
-    assert level_from_rating(85, THRESHOLDS) is RecommendationLevel.STRONG_BUY
-    assert level_from_rating(70, THRESHOLDS) is RecommendationLevel.BUY
-    assert level_from_rating(50, THRESHOLDS) is RecommendationLevel.WATCH
-    assert level_from_rating(30, THRESHOLDS) is RecommendationLevel.WAIT
-    assert level_from_rating(10, THRESHOLDS) is RecommendationLevel.AVOID
+def test_strength_from_rating() -> None:
+    assert strength_from_rating(85, THRESHOLDS) is RecommendationStrength.VERY_HIGH
+    assert strength_from_rating(70, THRESHOLDS) is RecommendationStrength.HIGH
+    assert strength_from_rating(50, THRESHOLDS) is RecommendationStrength.MEDIUM
+    assert strength_from_rating(30, THRESHOLDS) is RecommendationStrength.LOW
+    assert strength_from_rating(10, THRESHOLDS) is RecommendationStrength.REJECT
 
 
-def test_cap_level() -> None:
-    assert cap_level(RecommendationLevel.STRONG_BUY, RecommendationLevel.WATCH) is (
-        RecommendationLevel.WATCH
+def test_cap_strength() -> None:
+    assert (
+        cap_strength(RecommendationStrength.VERY_HIGH, RecommendationStrength.MEDIUM)
+        is RecommendationStrength.MEDIUM
     )
     assert (
-        cap_level(RecommendationLevel.WAIT, RecommendationLevel.WATCH) is RecommendationLevel.WAIT
+        cap_strength(RecommendationStrength.LOW, RecommendationStrength.MEDIUM)
+        is RecommendationStrength.LOW
     )
 
 
-def test_level_severity_order() -> None:
-    assert level_severity(RecommendationLevel.AVOID) < level_severity(
-        RecommendationLevel.STRONG_BUY
+def test_strength_severity_order() -> None:
+    assert strength_severity(RecommendationStrength.REJECT) < strength_severity(
+        RecommendationStrength.VERY_HIGH
     )
 
 
-def test_action_for_level() -> None:
-    assert action_for_level(RecommendationLevel.STRONG_BUY) is SuggestedAction.OPEN
-    assert action_for_level(RecommendationLevel.BUY) is SuggestedAction.OPEN
-    assert action_for_level(RecommendationLevel.WATCH) is SuggestedAction.MONITOR
-    assert action_for_level(RecommendationLevel.WAIT) is SuggestedAction.WAIT
-    assert action_for_level(RecommendationLevel.AVOID) is SuggestedAction.SKIP
+def test_action_for_strength() -> None:
+    assert action_for_strength(RecommendationStrength.VERY_HIGH) is SuggestedAction.OPEN
+    assert action_for_strength(RecommendationStrength.HIGH) is SuggestedAction.OPEN
+    assert action_for_strength(RecommendationStrength.MEDIUM) is SuggestedAction.MONITOR
+    assert action_for_strength(RecommendationStrength.LOW) is SuggestedAction.WAIT
+    assert action_for_strength(RecommendationStrength.REJECT) is SuggestedAction.SKIP
 
 
 def test_is_neutral() -> None:
     assert is_neutral(StrategyDirection.NEUTRAL)
     assert not is_neutral(StrategyDirection.BULLISH)
+
+
+def test_strength_enum_has_no_direction_terms() -> None:
+    # Fachliche Trennung: die Stärke darf nie BUY/SELL/LONG/SHORT enthalten.
+    values = {s.value for s in RecommendationStrength}
+    forbidden = {"buy", "sell", "long", "short", "strong_buy"}
+    assert values.isdisjoint(forbidden)
 
 
 # --- Parameter / Gewichte ----------------------------------------------------

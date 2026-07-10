@@ -7,9 +7,10 @@ Die :class:`RecommendationEngine` kombiniert
 vollständig erklärbaren :class:`~engines.recommendation_result.RecommendationResult`.
 
 Sie eröffnet **keine** Position, sendet **keine** Order und kommuniziert
-**nicht** mit Brokern. ``WAIT`` und ``AVOID`` sind vollwertige Empfehlungen. Ein
+**nicht** mit Brokern. ``LOW`` und ``REJECT`` sind vollwertige Empfehlungen. Ein
 hoher Score allein führt wegen der Faktorgewichte und der No-Trade-Gates **nie**
-zu BUY/STRONG_BUY.
+zu hoher Stärke (HIGH/VERY_HIGH). Richtung (``Direction``) und Stärke
+(``RecommendationStrength``) sind vollständig getrennt.
 
 Parameter stammen ausschließlich aus ``knowledge/recommendation_rules.toml``.
 Neue Recommendation-Modelle werden nur über die ``RecommendationRegistry``
@@ -31,9 +32,10 @@ from core.paths import RECOMMENDATION_RULES_FILE
 from engines.recommendation_cache import RecommendationCache
 from engines.recommendation_registry import RecommendationRegistry, build_default_registry
 from engines.recommendation_result import (
-    RecommendationLevel,
+    Direction,
     RecommendationReport,
     RecommendationResult,
+    RecommendationStrength,
     SuggestedAction,
 )
 from engines.risk_result import RiskReport, RiskResult
@@ -43,7 +45,7 @@ from models.recommendation import RECOMMENDATION_FACTOR_NAMES, RecommendationCon
 from recommendation.base import (
     CONFIDENCE_WEIGHT_KEYS,
     RecommendationParameterError,
-    action_for_level,
+    action_for_strength,
     clamp_confidence,
     clamp_rating,
     compute_confidence,
@@ -299,18 +301,22 @@ class RecommendationEngine:
             outputs["confidence_model"].value if "confidence_model" in outputs else base_confidence
         )
 
-        level, action, gate_reasons = self._resolve_level(outputs, warnings)
-        rating, confidence, valid = self._validate_outputs(rating, confidence, warnings, valid)
+        strength, action, gate_reasons = self._resolve_strength(outputs, warnings)
+        direction = context.trade_direction
+        rating, confidence, valid = self._validate_outputs(
+            rating, confidence, direction, strength, warnings, valid
+        )
 
         reasons = self._collect_reasons(outputs, factors, gate_reasons)
-        summary = self._build_summary(outputs, context, level)
+        summary = self._build_summary(outputs, context, direction, strength)
 
         result = RecommendationResult(
             recommendation_id=f"rec:{score_result.score_id}",
             risk_id=risk_result.risk_id,
             score_id=score_result.score_id,
             hypothesis_id=score_result.hypothesis_id,
-            recommendation_level=level,
+            direction=direction,
+            recommendation_strength=strength,
             confidence=confidence,
             overall_rating=rating,
             suggested_action=action,
@@ -326,29 +332,34 @@ class RecommendationEngine:
         return result, valid
 
     @staticmethod
-    def _resolve_level(
+    def _resolve_strength(
         outputs: dict[str, Any], warnings: list[str]
-    ) -> tuple[RecommendationLevel, SuggestedAction, list[str]]:
-        """Ermittelt Stufe/Handlung aus dem Recommendation-Modell (mit Fallback)."""
+    ) -> tuple[RecommendationStrength, SuggestedAction, list[str]]:
+        """Ermittelt Stärke/Handlung aus dem Recommendation-Modell (mit Fallback)."""
         if "recommendation_model" not in outputs:
-            warnings.append("Kein Recommendation-Modell aktiv – konservativ WAIT.")
-            return RecommendationLevel.WAIT, SuggestedAction.WAIT, []
+            warnings.append("Kein Recommendation-Modell aktiv – konservativ LOW.")
+            return RecommendationStrength.LOW, SuggestedAction.WAIT, []
         details = outputs["recommendation_model"].details
-        level = details.get("level")
+        strength = details.get("strength")
         action = details.get("action")
         gate_reasons = list(outputs["recommendation_model"].reasons)
-        if not isinstance(level, RecommendationLevel):
-            warnings.append("Ungültige Empfehlungsstufe – konservativ WAIT.")
-            return RecommendationLevel.WAIT, SuggestedAction.WAIT, gate_reasons
+        if not isinstance(strength, RecommendationStrength):
+            warnings.append("Ungültige Empfehlungsstärke – konservativ LOW.")
+            return RecommendationStrength.LOW, SuggestedAction.WAIT, gate_reasons
         if not isinstance(action, SuggestedAction):
-            action = action_for_level(level)
-        return level, action, gate_reasons
+            action = action_for_strength(strength)
+        return strength, action, gate_reasons
 
     @staticmethod
     def _validate_outputs(
-        rating: float, confidence: float, warnings: list[str], valid: bool
+        rating: float,
+        confidence: float,
+        direction: Direction,
+        strength: RecommendationStrength,
+        warnings: list[str],
+        valid: bool,
     ) -> tuple[float, float, bool]:
-        """Prüft Rating (0..100) und Confidence (0..1) und korrigiert notfalls."""
+        """Prüft Rating (0..100), Confidence (0..1), Richtung und Stärke."""
         if not 0.0 <= rating <= 100.0:
             warnings.append(f"Ungültiges Rating {rating} – begrenzt auf 0..100.")
             rating = clamp_rating(rating)
@@ -356,6 +367,12 @@ class RecommendationEngine:
         if not 0.0 <= confidence <= 1.0:
             warnings.append(f"Ungültige Confidence {confidence} – begrenzt auf 0..1.")
             confidence = clamp_confidence(confidence)
+            valid = False
+        if not isinstance(direction, Direction):
+            warnings.append("Ungültige Richtung.")
+            valid = False
+        if not isinstance(strength, RecommendationStrength):
+            warnings.append("Ungültige Empfehlungsstärke.")
             valid = False
         return rating, confidence, valid
 
@@ -373,17 +390,20 @@ class RecommendationEngine:
 
     @staticmethod
     def _build_summary(
-        outputs: dict[str, Any], context: RecommendationContext, level: RecommendationLevel
+        outputs: dict[str, Any],
+        context: RecommendationContext,
+        direction: Direction,
+        strength: RecommendationStrength,
     ) -> str:
-        """Baut die Zusammenfassung mit vorangestellter finaler Stufe."""
+        """Baut die Zusammenfassung: Richtung und Stärke getrennt vorangestellt."""
         if "summary_model" in outputs:
             body = outputs["summary_model"].details.get("summary", "")
         else:
             body = (
-                f"{context.symbol or 'Symbol'} {context.direction.value}, "
+                f"{context.symbol or 'Symbol'} Richtung {direction.value.upper()}, "
                 f"Rating {context.overall_rating:.0f}/100."
             )
-        return f"{level.value.upper()} — {body}"
+        return f"{direction.value.upper()} / {strength.value.upper()} — {body}"
 
     def _cache_key(
         self,

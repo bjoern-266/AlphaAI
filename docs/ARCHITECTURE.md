@@ -469,15 +469,18 @@ StrategyReport + ScoreReport + RiskReport → RecommendationEngine → Recommend
 
 **Sechs Entscheidungsfaktoren** (in `recommendation/base.py` berechnet):
 Strategie, Score, Risiko, Konsens, Marktqualität, Datenqualität. Das
-Gesamtrating (0-100) ist ihre gewichtete Summe; daraus folgt die Stufe
-STRONG_BUY/BUY/WATCH/WAIT/AVOID und die Handlung OPEN/WAIT/MONITOR/SKIP.
+Gesamtrating (0-100) ist ihre gewichtete Summe; daraus folgt die **Stärke**
+VERY_HIGH/HIGH/MEDIUM/LOW/REJECT und die Handlung OPEN/WAIT/MONITOR/SKIP. Die
+**Richtung** (LONG/SHORT/NEUTRAL) wird getrennt geführt (seit Sprint 9.6) und
+folgt der Strategie-Hypothese – die Stärke impliziert nie eine Richtung.
 
 **No-Trade-Philosophie** („Kein Trade ist besser als ein schlechter Trade."):
 Der Score-Anteil ist bewusst begrenzt, der Konsens belohnt **Breite** (mehrere
 unabhängige, gleichgerichtete Strategien), und **Gates** deckeln bei erhöhtem
 Risiko, geringem Konsens, schwacher Datenqualität oder neutraler Richtung. Ein
-hoher Score allein führt daher **nie** zu BUY/STRONG_BUY; `WAIT`/`AVOID` sind
-vollwertige Empfehlungen.
+hoher Score allein führt daher **nie** zu hoher Stärke (HIGH/VERY_HIGH);
+`LOW`/`REJECT` sind vollwertige Empfehlungen. Ein bärisches Setup ist **SHORT**
+mit ggf. hoher Stärke – nie „BUY".
 
 **Fünf Modelle** (je eigene Datei, unabhängig): `decision_model` (Rating +
 Faktor-Transparenz), `recommendation_model` (Stufe/Handlung + Gates),
@@ -493,7 +496,7 @@ Blackbox. Parameter ausschließlich aus `knowledge/recommendation_rules.toml`.
 |--------------------------|-----------------------------------------|----------------------------------|
 | `BaseRecommendationModel`| `recommendation/base.py`                | Schnittstelle, Faktoren, Gates   |
 | 5 Modelle                | `recommendation/<name>.py`              | je ein Aspekt der Empfehlung     |
-| `RecommendationResult`   | `models/recommendation.py`              | Empfehlung einer Hypothese (Level, Action, Confidence, Rating, Reasons, Warnings, Summary, Metadata, Timestamp) |
+| `RecommendationResult`   | `models/recommendation.py`              | Empfehlung einer Hypothese (Direction, Strength, Action, Confidence, Rating, Reasons, Warnings, Summary, Metadata, Timestamp) |
 | `RecommendationReport`   | `models/recommendation.py`              | Aggregat + Lauf-Metadaten        |
 | `RecommendationRegistry` | `engines/recommendation_registry.py`    | Registrierung/Auflösung          |
 | `RecommendationCache`    | `engines/recommendation_cache.py`       | Cache (FIFO)                     |
@@ -524,7 +527,7 @@ Referenzen gültig. Validiert über 13 echte Szenarien und 180 Integrations-Test
 
 ## Aktueller Stand
 
-Sprint 1–9.5 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–9.6 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
 Integration & Validierung). Es gibt bewusst weiterhin **keine Dashboard-Logik,

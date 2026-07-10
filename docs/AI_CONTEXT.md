@@ -152,11 +152,14 @@ erklärbaren Empfehlung. Kette: `Strategy+Score+Risk → RecommendationEngine �
 RecommendationReport`. Fünf unabhängige Modelle in `recommendation/<name>.py`
 (decision, recommendation, confidence, summary, explanation); sechs
 Entscheidungsfaktoren (Strategie, Score, Risiko, Konsens, Marktqualität,
-Datenqualität). Stufen STRONG_BUY/BUY/WATCH/WAIT/AVOID und Handlungen
-OPEN/WAIT/MONITOR/SKIP. **No-Trade-Philosophie:** Score-Anteil begrenzt, Konsens
-belohnt Breite, Gates deckeln bei Risiko/geringem Konsens/schwacher
-Datenqualität – ein hoher Score allein führt nie zu BUY; `WAIT`/`AVOID` sind
-vollwertig. Ergebnistypen in `models/recommendation.py` (re-exportiert über
+Datenqualität). **Richtung und Stärke sind getrennt (ab 9.6):** `direction`
+(LONG/SHORT/NEUTRAL) und `recommendation_strength` (VERY_HIGH/HIGH/MEDIUM/LOW/
+REJECT); dazu Handlungen OPEN/WAIT/MONITOR/SKIP. Die Stärke impliziert nie eine
+Richtung – ein bärisches Setup ist SHORT, nie „BUY". **No-Trade-Philosophie:**
+Score-Anteil begrenzt, Konsens belohnt Breite, Gates deckeln bei Risiko/geringem
+Konsens/schwacher Datenqualität – ein hoher Score allein führt nie zu hoher
+Stärke; `LOW`/`REJECT` sind vollwertig. Ergebnistypen in
+`models/recommendation.py` (re-exportiert über
 `engines/recommendation_result.py`), Logik/Helfer in `recommendation/base.py`.
 Neue Modelle nur über die `RecommendationRegistry`; Regeln ausschließlich aus
 `knowledge/recommendation_rules.toml`. Einstieg:
@@ -177,7 +180,7 @@ Datenfluss: `docs/PIPELINE.md`; Validierung/Auffälligkeiten:
 
 ## Aktueller Stand
 
-Sprint 1–9.5 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–9.6 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
 Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung). Es
 gibt bewusst weiterhin **keine** Dashboard-Logik, **keine** Broker-API, **keine**

@@ -433,3 +433,29 @@ das Projekt so aufgebaut ist, wie es ist.
   registriert. Die dokumentierten Verbesserungen (u. a. Richtung in
   `RecommendationResult`) sind eigenständige Folge-Sprints; keine Order-/Broker-/
   Dashboard-Funktion entsteht.
+
+### ADR-030 – Trennung von Direction und RecommendationStrength
+
+- **Datum:** 2026-07-09 (Sprint 9.6)
+- **Kontext:** Der Validierungssprint 9.5 zeigte, dass die Empfehlungsstufe
+  (STRONG_BUY/BUY/…) **Richtung und Stärke vermischte**: ein starkes bärisches
+  Setup wurde als „STRONG_BUY" dargestellt. „BUY" beschreibt zugleich Richtung
+  **und** Güte – fachlich falsch.
+- **Entscheidung:**
+  - `RecommendationResult` trägt **zwei unabhängige** Informationen:
+    `direction` (:class:`Direction` – LONG/SHORT/NEUTRAL, ausschließlich die
+    Richtung, abgeleitet aus der Strategie-Hypothese) und
+    `recommendation_strength` (:class:`RecommendationStrength` –
+    VERY_HIGH/HIGH/MEDIUM/LOW/REJECT, ausschließlich die Qualität).
+  - Die Stärke enthält **kein** BUY/SELL/LONG/SHORT mehr; das ist per Test
+    abgesichert. Ein bärisches Setup ist ``SHORT`` mit ggf. hoher Stärke.
+  - Es wurden **ausschließlich** Domänenmodelle, Mappings (level→strength),
+    Validierungen, Config-Schlüssel und Dokumentation angepasst. Die
+    **Bewertungslogik** (Faktoren, Rating, Gates, Schwellenwerte) ist
+    **unverändert** – die Rating-Werte sind identisch zu 9.5.
+- **Begründung:** Fachlich korrekte, missverständnisfreie Empfehlung; die
+  Richtung ist nun explizit und die Güte richtungsneutral.
+- **Konsequenzen:** Keine neue Engine, keine neue Logik, keine neuen
+  Handelsregeln. Öffentliches Feld `recommendation_level` heißt jetzt
+  `recommendation_strength`; zusätzlich existiert `direction`. Downstream
+  (Dashboard etc., später) nutzt beide Felder getrennt.
