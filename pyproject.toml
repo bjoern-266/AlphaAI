@@ -54,6 +54,7 @@ packages = [
     "paper_trading",
     "analytics",
     "dashboard",
+    "dashboard.widgets",
     "database",
     "models",
 ]

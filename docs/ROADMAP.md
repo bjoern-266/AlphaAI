@@ -178,11 +178,20 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
   fehlende Trades, ungültige Parameter). Kennzahlen dashboard-fertig.
 - 184 neue Tests (1229 gesamt). Doku: `docs/ANALYTICS.md`.
 
-## Sprint 6 – Dashboard (geplant)
+## Sprint 13 – AlphaAI Command Center (Dashboard) ✅ (abgeschlossen)
 
-- Streamlit-Oberfläche in `dashboard/`.
-- Charts mit Plotly.
-- Anzeige der Empfehlungen mit Begründung.
+- Kette `Reports → DashboardEngine → DashboardViewModel → Widgets → DashboardView
+  → Streamlit`; **rein darstellend**: keine Berechnung, keine Geschäftslogik,
+  keine neuen Kennzahlen. Alle Werte stammen einzig aus den bestehenden Reports.
+- Entities `models/dashboard.py` (`WidgetSpec`, `DashboardView`, … alle `frozen`).
+- Paket `dashboard/`: `theme` (einzige Quelle des Aussehens, Dark Carbon),
+  `state` (Snapshot/Restore), `format`, `charts`, `status`, `settings`
+  (+`settings.toml`, nur Anzeige), `viewmodels`, `responsive`, `feedback`,
+  `engine` (unverändert für neue Widgets/Seiten), `render`/`app` (einzige
+  Streamlit-Schicht). 26 Widgets, `widget_registry`, `router` (9 Seiten).
+- Lade-/Fehlerzustände, Responsive (Desktop/Tablet/UltraWide/4K), Auto-Refresh
+  (lädt nur Reports). Keine Exceptions im Frontend, keine Handelsparameter.
+- 259 neue Tests (1488 gesamt). Doku: `docs/DASHBOARD.md`.
 
 ## Sprint 7 – Persistenz & Lernfähigkeit (geplant)
 

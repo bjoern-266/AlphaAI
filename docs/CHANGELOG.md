@@ -4,6 +4,55 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.13.0] – 2026-07-11 – Sprint 13: AlphaAI Command Center
+
+Neues, **rein darstellendes** Dashboard („AlphaAI Command Center"). Es ist
+**ausschließlich** die Presentation Layer: es **berechnet niemals** Daten,
+enthält **keinerlei** Geschäftslogik und erzeugt **keine** Scores, Risiken,
+Empfehlungen, Analysen, Kennzahlen oder Statistiken. Alle angezeigten Werte
+stammen **einzig** aus den bereits vorhandenen Reports (`AnalyticsReport`,
+`PaperTradingReport`, `BacktestReport`, `RecommendationReport`, `RiskReport`,
+`ScoreReport`, `StrategyReport`, `PatternReport`, `IndicatorResult`). Fehlt ein
+Wert, wird er lediglich als Platzhalter angezeigt – **keine** Ersatzberechnung.
+Keine Änderung an einer bestehenden Engine, am Backtesting, am Paper Trading
+oder am Analytics-Framework.
+
+### Hinzugefügt
+
+- **Entities:** `models/dashboard.py` (alle unveränderlich, `frozen`):
+  `MetricCard`, `StatusItem`, `ChartSeries`, `ChartSpec`, `TableSpec`,
+  `WidgetSpec`, `DashboardView` (reine Anzeige-Beschreibungen, keine Logik).
+- **Paket `dashboard/`:** `theme.py` (die **einzige** Quelle des Aussehens –
+  Dark-Carbon-Palette, Typografie, Abstände, Rahmen, Animationen, Icons,
+  Materialien, Chart-Palette; keine Hardcodes im übrigen Code), `state.py`
+  (`DashboardState` mit Snapshot/Restore – der Zustand geht nie verloren),
+  `format.py` (reine Anzeige-Formatierung), `charts.py` (Chart-Specs),
+  `status.py` (Modul-Status aus Vorhandensein), `settings.py` +
+  `settings.toml` (nur Anzeigeoptionen – **keine** Handelsparameter),
+  `viewmodels.py` (lesen Reports ab, berechnen nichts), `responsive.py`
+  (Desktop/Tablet/UltraWide/4K), `feedback.py` (Lade-/Fehlerzustände – keine
+  Exceptions im Frontend).
+- **Widget-System:** `dashboard/widgets/` mit 26 unabhängigen Widgets (jedes
+  liest nur das View Model und formatiert), `widget_registry.py` (die
+  **einzige** Stelle zum Registrieren neuer Widgets), `router.py` (9 Seiten:
+  Overview, Live Analysis, Paper Portfolio, Backtesting, Analytics,
+  Performance, Trade Journal, Recommendations, Settings; Tastenkürzel), sowie
+  `engine.py` (`DashboardEngine` – setzt Ansichten zusammen und bleibt für
+  neue Widgets/Seiten **unverändert**, Open/Closed).
+- **Streamlit-Schicht:** `render.py` und `app.py` sind die **einzigen** Stellen
+  mit Streamlit-Import (lazy, `# pragma: no cover`); die gesamte übrige Logik
+  ist Streamlit-frei und vollständig testbar.
+- **Tests:** 259 neue Tests (1488 gesamt) – Modelle, Theme, State, Format,
+  Charts, Status, Settings, View Models, alle Widgets, Registry, Router,
+  Responsive, Feedback und die Engine (inkl. Lade-/Fehler-/Isolationsfälle).
+- **Doku:** neue `docs/DASHBOARD.md`; übrige Doku aktualisiert.
+
+### Unverändert (bewusst)
+
+- Keine Berechnung, keine Geschäftslogik, keine Broker-API, keine
+  Handelsparameter, keine ML-Komponenten. Auto-Refresh lädt ausschließlich neue
+  Reports und startet **niemals** eine Berechnung. Kein Smartphone-Ziel.
+
 ## [0.12.0] – 2026-07-11 – Sprint 12: Trading Intelligence & Analytics Framework
 
 Neues, **rein auswertendes** Analytics-Framework. Es analysiert **ausschließlich**

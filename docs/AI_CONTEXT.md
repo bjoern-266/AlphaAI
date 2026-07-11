@@ -238,16 +238,37 @@ ausschließlich aus `knowledge/analytics_rules.toml`. Einstieg:
 `AnalyticsResult` (dashboard-fertig – ein Dashboard darf nur visualisieren).
 Datenfluss/Details: `docs/ANALYTICS.md`.
 
+## Dashboard / Command Center (ab Sprint 13 verfügbar)
+
+**Rein darstellend**: ausschließlich Presentation Layer. Es **berechnet niemals**
+Daten, enthält **keinerlei** Geschäftslogik und erzeugt **keine** Scores/Risiken/
+Empfehlungen/Analysen/Kennzahlen. Alle Werte stammen einzig aus den bestehenden
+Reports; fehlt ein Wert, wird nur ein Platzhalter (`—`) angezeigt (keine
+Ersatzberechnung). Kette: `Reports → DashboardEngine → DashboardViewModel →
+Widgets → DashboardView → Streamlit`. Paket `dashboard/`: `theme` (die **einzige**
+Quelle des Aussehens, „Dark Carbon", keine Hardcodes), `state` (Snapshot/Restore –
+der Zustand geht nie verloren), `format`/`charts`/`status`, `settings`
+(+`settings.toml`, **nur** Anzeigeoptionen, keine Handelsparameter), `viewmodels`
+(lesen Reports ab), `responsive` (Desktop/Tablet/UltraWide/4K), `feedback`
+(Lade-/Fehlerzustände, keine Exceptions im Frontend). 26 unabhängige Widgets,
+`widget_registry` (einzige Registrierungsstelle), `router` (9 Seiten +
+Tastenkürzel), `engine` (bleibt für neue Widgets/Seiten **unverändert**);
+`render`/`app` sind die **einzige** Streamlit-Schicht (lazy Import), die übrige
+Logik ist Streamlit-frei und testbar. Neues Widget nur über die `WidgetRegistry`,
+neue Seite nur über den Router, Aussehen nur über `theme.py`. Einstieg:
+`DashboardEngine.from_config()`. Datenfluss/Details: `docs/DASHBOARD.md`.
+
 ## Aktueller Stand
 
-Sprint 1–12 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–13 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
 Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung,
 Historical Backtesting Framework, Paper Trading Framework, Trading Intelligence &
-Analytics Framework). Es gibt bewusst weiterhin **keine** Dashboard-Logik,
-**keine** Broker-API, **keine** automatische Orderausführung und **keine echten
-Orders** (Backtesting und Paper Trading simulieren ausschließlich; Analytics wertet
-nur aus). Offene fachliche Kalibrierung (Schwellen an realen Daten, Annualisierung
-der vorbereiteten Backtest-Kennzahlen, Aktivierung des vorbereiteten Trailing
-Stops) ist im Validation Report festgehalten. Immer zuerst `PROJECT_STATUS.md` und
-`HANDOVER.md` lesen.
+Analytics Framework, AlphaAI Command Center / Dashboard). Das Dashboard ist **rein
+darstellend** und **berechnet nichts**. Es gibt bewusst weiterhin **keine**
+Broker-API, **keine** automatische Orderausführung und **keine echten Orders**
+(Backtesting und Paper Trading simulieren ausschließlich; Analytics wertet nur aus,
+das Dashboard zeigt nur an). Offene fachliche Kalibrierung (Schwellen an realen
+Daten, Annualisierung der vorbereiteten Backtest-Kennzahlen, Aktivierung des
+vorbereiteten Trailing Stops) ist im Validation Report festgehalten. Immer zuerst
+`PROJECT_STATUS.md` und `HANDOVER.md` lesen.

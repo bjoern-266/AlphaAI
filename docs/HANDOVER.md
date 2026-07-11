@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-11
-- **Abgeschlossener Sprint:** Sprint 12 – Trading Intelligence & Analytics Framework
+- **Abgeschlossener Sprint:** Sprint 13 – AlphaAI Command Center (Dashboard)
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,7 +18,7 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 1229 Tests).
+5. Tests ausführen: `pytest` (aktuell 1488 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
 > **Semantik (ab 9.6):** `RecommendationResult.direction` (LONG/SHORT/NEUTRAL)
@@ -26,7 +26,7 @@ dass Wissen nur im Chat existiert.
 > (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) sind getrennt. Die Stärke enthält **kein**
 > BUY/SELL/LONG/SHORT. Ein bärisches Setup ist SHORT mit ggf. hoher Stärke.
 
-## Qualitätsprüfung Sprint 12 (Ergebnis)
+## Qualitätsprüfung Sprint 13 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -39,7 +39,7 @@ Vor dem Commit automatisch geprüft:
 | Pipeline-Konsistenz (`verify_pipeline`) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **1229 bestanden** |
+| pytest | **1488 bestanden** |
 
 ## Vollständige Pipeline – Einstieg
 
@@ -130,6 +130,27 @@ eigene Sprints und ändern bewusst Verhalten.
   4. Eigene Testdatei `tests/test_analytics_<name>.py` anlegen.
 - Pattern-/Markt-Labels sind erweiterbar über die Trade-Metadata (ohne
   Engine-Änderung). Details/Datenfluss: `docs/ANALYTICS.md`.
+
+## Dashboard / Command Center – Kurzüberblick für die Weiterarbeit
+
+- Einstieg: `DashboardEngine.from_config()` lädt `dashboard/settings.toml`
+  (nur Anzeigeoptionen), das Standard-Theme und alle 26 Standard-Widgets.
+- Ansicht: `engine.build_view(state, bundle)` → `DashboardView`. `state` ist ein
+  `DashboardState` (Seite/Filter/…), `bundle` ein `ReportBundle` der bestehenden
+  Reports. Rendern nur über `dashboard/render.py` bzw. Start über
+  `streamlit run dashboard/app.py`.
+- **Rein darstellend:** liest ausschließlich Reports, **berechnet nichts**,
+  enthält **keine** Geschäftslogik, erzeugt **keine** Kennzahlen. Fehlt ein Wert,
+  wird nur ein Platzhalter (`—`) angezeigt. Auto-Refresh lädt **nur** Reports.
+- **Neues Widget hinzufügen** (einziger erlaubter Weg):
+  1. Klasse von `BaseWidget` ableiten (`build(context)` → `WidgetSpec`), nur das
+     View Model lesen, kein anderes Widget importieren.
+  2. In `dashboard/widget_registry.py::_DEFAULT_WIDGETS` registrieren. Die
+     **Engine bleibt unverändert** (Open/Closed).
+  3. Im `dashboard/router.py` einer Seite/Region zuordnen.
+  4. Eigene Testdatei/Testfälle in `tests/test_dashboard_widgets.py` ergänzen.
+- **Neue Seite** nur über `dashboard/router.py`; **Aussehen** nur über
+  `dashboard/theme.py`. Details/Datenfluss: `docs/DASHBOARD.md`.
 
 ## Recommendation Engine – Kurzüberblick für die Weiterarbeit
 

@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-11
-- **Aktueller Sprint:** Sprint 12 – Trading Intelligence & Analytics Framework
+- **Aktueller Sprint:** Sprint 13 – AlphaAI Command Center (Dashboard)
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -206,21 +206,41 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   leere Reports, fehlende Trades, ungültige Parameter/Kennzahlen.
 - **Tests:** 1229 gesamt (184 neue).
 
+### AlphaAI Command Center / Dashboard (Sprint 13)
+
+- **Rein darstellend:** ausschließlich Presentation Layer. **Berechnet niemals**
+  Daten, enthält **keinerlei** Geschäftslogik und erzeugt **keine** Scores/
+  Risiken/Empfehlungen/Analysen/Kennzahlen. Alle Werte stammen einzig aus den
+  bestehenden Reports; fehlt ein Wert, wird nur ein Platzhalter angezeigt.
+- **Entities:** `models/dashboard.py` (`MetricCard`, `StatusItem`, `ChartSeries`,
+  `ChartSpec`, `TableSpec`, `WidgetSpec`, `DashboardView`, alle `frozen`).
+- **Paket `dashboard/`:** `theme` (einzige Quelle des Aussehens, Dark Carbon),
+  `state` (Snapshot/Restore – Zustand geht nie verloren), `format`, `charts`,
+  `status`, `settings`(+`settings.toml`, nur Anzeigeoptionen), `viewmodels`
+  (lesen Reports ab), `responsive`, `feedback`, `engine` (bleibt für neue
+  Widgets/Seiten unverändert), `render`/`app` (einzige Streamlit-Schicht).
+- **Widget-System:** 26 unabhängige Widgets, `widget_registry` (einzige
+  Registrierungsstelle), `router` (9 Seiten + Tastenkürzel).
+- **Zustände:** Ladezustände (Skeleton/Progress/Fade), Fehlerzustände (offline/
+  no_data/…), Responsive (Desktop/Tablet/UltraWide/4K), Auto-Refresh (lädt nur
+  Reports). Keine Exceptions im Frontend.
+- **Tests:** 1488 gesamt (259 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
-- Keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung,
-  **keine echten Orders**.
+- Keine Dashboard-**Berechnung** (das Dashboard zeigt nur an), keine Broker-API,
+  keine automatische Orderausführung, **keine echten Orders**.
 - Backtesting und Paper Trading **simulieren** ausschließlich; sie eröffnen
   keine echte Position und senden keine Order. Die Recommendation Engine liefert
   ausschließlich `RecommendationResult`.
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 12)
+## Qualitätsnachweis (Sprint 13)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 1229 Tests bestanden |
+| pytest | 1488 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |

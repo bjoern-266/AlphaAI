@@ -1,0 +1,43 @@
+# =============================================================================
+# Dashboard-Einstellungen (Sprint 13) – NUR Anzeigeoptionen
+# =============================================================================
+# Diese Datei enthaelt ausschliesslich Anzeige-/Darstellungsoptionen des
+# AlphaAI Command Center. Es gibt hier KEINE Handelsparameter, KEINE
+# Risikoeinstellungen und KEINE Fachlogik. Das Dashboard ist reine
+# Presentation Layer und berechnet niemals Daten.
+# =============================================================================
+
+[display]
+# Startseite (Slug einer der neun Seiten).
+default_page = "overview"
+# Dark Mode ist das feste Designziel (Dark Carbon).
+dark_mode = true
+# Start-Geraeteklasse (desktop/tablet/ultrawide/uhd_4k).
+default_device = "desktop"
+# Sidebar zu Beginn eingeklappt?
+sidebar_collapsed = false
+
+[refresh]
+# Standard-Refresh in Sekunden (0 = manuell). Refresh laedt nur neue Reports.
+default_seconds = 0
+# Auswaehlbare Auto-Refresh-Raten in Sekunden.
+options_seconds = [1, 5, 15, 30, 60]
+
+[charts]
+# Standard-Charttyp (line/area/bar/donut/heatmap).
+default_type = "line"
+show_grid = true
+animate = true
+
+[tables]
+# Zeilen pro Tabellenseite (Anzeige).
+page_size = 25
+
+[filters]
+# Standard-Anzeigefilter (all = keine Einschraenkung).
+default_direction = "all"
+default_strength = "all"
+
+[export]
+# Angebotene Export-Formate (nur Anzeige/Download bestehender Daten).
+formats = ["csv", "excel", "pdf", "png"]

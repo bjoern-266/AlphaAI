@@ -571,3 +571,50 @@ das Projekt so aufgebaut ist, wie es ist.
   Handelslogik, keine neuen Empfehlungen, keine ML-Komponenten. `engines/`
   importiert über `analytics_engine.py` das `analytics`-Subsystem und liest die
   Modelle `models.backtest`/`models.paper_trading` (kein Zyklus).
+
+### ADR-034 – Dashboard als reine Presentation Layer (keine Berechnung)
+
+- **Datum:** 2026-07-11 (Sprint 13)
+- **Kontext:** AlphaAI brauchte eine Oberfläche („Command Center"), die die
+  bereits vorhandenen Ergebnisse sichtbar macht – **ohne** die Gefahr, dass in
+  der UI heimlich Fachlogik entsteht (Scores/Risiken/Empfehlungen/Kennzahlen neu
+  berechnet werden). Zusätzlich ist Streamlit in der Umgebung **nicht**
+  installiert, die Logik muss aber vollständig testbar bleiben.
+- **Entscheidung:**
+  - Das Dashboard ist **ausschließlich** Presentation Layer: es **liest** die
+    bestehenden Reports (`ReportBundle`) und **zeigt** sie an. Es **berechnet
+    niemals** Daten und enthält **keinerlei** Geschäftslogik. Fehlt ein Wert im
+    Report, bleibt er `None` und wird als Platzhalter (`—`) angezeigt – **keine**
+    Ersatzberechnung. Auto-Refresh lädt **nur** neue Reports und startet nie eine
+    Berechnung.
+  - Architektur `Reports → DashboardEngine → DashboardViewModel → Widgets →
+    DashboardView → Streamlit`. `dashboard/` ist ein **Subsystem** (wie
+    `analytics/`), in `quality_check.py` nur der Zyklenprüfung unterworfen;
+    `models/dashboard.py` gehört zur Entities-Schicht (importiert nur
+    `models.analytics`).
+  - **Open/Closed:** die 26 Widgets sind **Registry-Plugins** und **unabhängig**
+    (kein Widget importiert ein anderes; gemeinsame Bausteine in
+    `widgets/common.py`). Neue Widgets kommen ausschließlich über
+    `widget_registry.py`, neue Seiten ausschließlich über `router.py`, das
+    Aussehen ausschließlich über `theme.py` – die `DashboardEngine` wird dafür
+    **nie** geändert.
+  - **Aussehen zentralisiert:** sämtliche Farben/Schriften/Abstände/Rahmen/
+    Animationen/Icons/Materialien liegen im `theme.py` („Dark Carbon"); im
+    übrigen Code gibt es **keine** hartcodierten Gestaltungswerte. Anzeige-
+    einstellungen (`settings.toml`) enthalten **keine** Handelsparameter.
+  - **Testbarkeit:** der Streamlit-Import ist auf `render.py`/`app.py` beschränkt
+    und **lazy** (in den Funktionen, `# pragma: no cover`). Die gesamte übrige
+    Logik ist Streamlit-frei und wird ohne installiertes Streamlit getestet.
+  - **Robustheit:** Anzeigetypen sind `frozen`; der veränderliche
+    `DashboardState` sichert sich per `snapshot()`/`restore()` (Zustand geht nie
+    verloren). Lade-/Fehlerzustände werden angezeigt; ein Fehler eines einzelnen
+    Widgets wird isoliert als Platzhalter dargestellt – **keine Exceptions im
+    Frontend**.
+- **Begründung:** Die strikte Trennung „Reports (Fakten) → View Model (Ablesen)
+  → Widget (Formatieren) → Streamlit (Zeichnen)" macht es strukturell unmöglich,
+  in der UI zu rechnen, hält das Dashboard prüfbar und beliebig erweiterbar und
+  entkoppelt es vollständig von Streamlit.
+- **Konsequenzen:** Keine Broker-API, keine Handelslogik, keine neuen Kennzahlen,
+  keine ML-Komponenten im Dashboard. `dashboard/` liest die bestehenden
+  `models.*`-Reports und die Ergebnistypen; es entsteht kein Import-Zyklus, und
+  keine bestehende Engine wird verändert.

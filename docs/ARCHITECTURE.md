@@ -631,14 +631,49 @@ AnalyticsReport (AnalyticsResult, dashboard-fertig)
   label-basiert (Trade-Metadata) und ohne Engine-Änderung erweiterbar.
   Details: `docs/ANALYTICS.md`.
 
+## AlphaAI Command Center / Dashboard (umgesetzt in Sprint 13)
+
+Das Dashboard-Subsystem (`dashboard/`) ist **ausschließlich** die Presentation
+Layer. Es **liest** die bestehenden Reports und **zeigt** sie an; es **berechnet
+niemals** Daten, enthält **keinerlei** Geschäftslogik und erzeugt **keine**
+Kennzahlen. Fehlt ein Wert, wird nur ein Platzhalter angezeigt.
+
+```
+Reports (ReportBundle)
+        │
+DashboardEngine → build_view_model()  (liest Reports ab, rechnet nichts)
+        │
+Widgets (Registry) → WidgetSpec  +  Router (Seiten) + Responsive (Gerät)
+        │
+DashboardView → render.py / app.py (einzige Streamlit-Schicht)
+```
+
+- **Schicht-Einordnung:** `dashboard/` ist ein Subsystem (wie `analytics/`), in
+  `quality_check.py` nur der Zyklenprüfung unterworfen; `models/dashboard.py`
+  gehört zur Entities-Schicht und importiert nur `models.analytics`. Die
+  Streamlit-Schicht (`render.py`/`app.py`) ist die **einzige** Stelle mit
+  Streamlit-Import (lazy) – die gesamte übrige Logik ist Streamlit-frei/testbar.
+- **Open/Closed:** die 26 Widgets sind **Registry-Plugins** und **unabhängig**
+  voneinander (kein Widget importiert ein anderes; gemeinsame Bausteine in
+  `widgets/common.py`). Neue Widgets nur über `widget_registry.py`, neue Seiten
+  nur über `router.py`, das Aussehen nur über `theme.py`. Die
+  **`DashboardEngine` bleibt dafür unverändert**.
+- **Immutabilität:** alle Anzeigetypen (`models/dashboard.py`) sind `frozen`; der
+  veränderliche `DashboardState` sichert sich per `snapshot()`/`restore()`.
+- **Robustheit:** Lade-/Fehlerzustände werden als Anzeige dargestellt; ein Fehler
+  eines einzelnen Widgets wird isoliert (Platzhalter) – **keine Exceptions im
+  Frontend**. **Keine Handelsparameter**, keine Broker-API. Details:
+  `docs/DASHBOARD.md`.
+
 ## Aktueller Stand
 
-Sprint 1–12 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–13 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
 Integration & Validierung, Historical Backtesting Framework, Paper Trading
-Framework, Trading Intelligence & Analytics Framework). Es gibt bewusst weiterhin
-**keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung und
+Framework, Trading Intelligence & Analytics Framework, AlphaAI Command Center /
+Dashboard). Das Dashboard ist **rein darstellend** und **berechnet nichts**. Es
+gibt bewusst weiterhin **keine Broker-API, keine automatische Orderausführung und
 keine echten Orders** (Backtesting und Paper Trading simulieren ausschließlich;
-Analytics wertet nur aus). Offene fachliche Kalibrierung ist im
-`docs/VALIDATION_REPORT.md` dokumentiert.
+Analytics wertet nur aus, das Dashboard zeigt nur an). Offene fachliche
+Kalibrierung ist im `docs/VALIDATION_REPORT.md` dokumentiert.
