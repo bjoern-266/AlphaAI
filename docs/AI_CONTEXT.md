@@ -217,15 +217,37 @@ Ergebnistypen in `models/paper_trading.py` (re-exportiert über
 Portfolio und Journal sind bewusst zustandsbehaftete Manager.** Jede Position ist
 vollständig nachvollziehbar. Datenfluss/Details: `docs/PAPER_TRADING.md`.
 
+## Analytics-Framework (ab Sprint 12 verfügbar)
+
+**Rein auswertend**: analysiert **ausschließlich** bestehende Backtest-/Paper-
+Trading-Ergebnisse und erzeugt daraus objektive, reproduzierbare Statistiken. Es
+**bewertet keine** Trades, trifft **keine** Handelsentscheidung, verändert
+**keine** bestehenden Ergebnisse, erzeugt **keine** neuen Empfehlungen und enthält
+**keine** ML-Komponenten. Kette: `BacktestReport + PaperTradingReport →
+AnalyticsEngine → AnalyticsReport`. Subsystem `analytics/` (`aggregation` –
+Kennzahl-Bausteine; `labeling` – Ableitung Strategie/Risiko/Score aus
+`recommendation_id`/`reasons`; `normalization` – Trades → `AnalyticsTrade`; zehn
+unabhängige Modelle: `trade_statistics`, `performance_analyzer`,
+`pattern_analysis`, `strategy_analysis`, `recommendation_analysis`,
+`risk_analysis`, `market_analysis`, `time_analysis`, `journal_analysis`,
+`summary_analysis`; `base`). Ergebnistypen in `models/analytics.py` (re-exportiert
+über `engines/analytics_result.py`). Neue Modelle nur über die
+`AnalyticsRegistry` – die Engine bleibt dafür **unverändert**; Parameter
+ausschließlich aus `knowledge/analytics_rules.toml`. Einstieg:
+`AnalyticsEngine.from_config()`. Alle Kennzahlen liegen fertig im
+`AnalyticsResult` (dashboard-fertig – ein Dashboard darf nur visualisieren).
+Datenfluss/Details: `docs/ANALYTICS.md`.
+
 ## Aktueller Stand
 
-Sprint 1–11 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–12 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
 Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung,
-Historical Backtesting Framework, Paper Trading Framework). Es gibt bewusst
-weiterhin **keine** Dashboard-Logik, **keine** Broker-API, **keine** automatische
-Orderausführung und **keine echten Orders** (Backtesting und Paper Trading
-simulieren ausschließlich). Offene fachliche Kalibrierung (Schwellen an realen
-Daten, Annualisierung der vorbereiteten Backtest-Kennzahlen, Aktivierung des
-vorbereiteten Trailing Stops) ist im Validation Report festgehalten. Immer zuerst
-`PROJECT_STATUS.md` und `HANDOVER.md` lesen.
+Historical Backtesting Framework, Paper Trading Framework, Trading Intelligence &
+Analytics Framework). Es gibt bewusst weiterhin **keine** Dashboard-Logik,
+**keine** Broker-API, **keine** automatische Orderausführung und **keine echten
+Orders** (Backtesting und Paper Trading simulieren ausschließlich; Analytics wertet
+nur aus). Offene fachliche Kalibrierung (Schwellen an realen Daten, Annualisierung
+der vorbereiteten Backtest-Kennzahlen, Aktivierung des vorbereiteten Trailing
+Stops) ist im Validation Report festgehalten. Immer zuerst `PROJECT_STATUS.md` und
+`HANDOVER.md` lesen.

@@ -77,6 +77,10 @@ class PaperTradingParameterError(ParameterError):
     """Ein Paper-Trading-Parameter fehlt oder ist ungültig."""
 
 
+class AnalyticsParameterError(ParameterError):
+    """Ein Analytics-Parameter fehlt oder ist ungültig."""
+
+
 class PaperTradingValidationError(AlphaAIError):
     """Ein ungültiger Zustand im Paper-Portfolio.
 

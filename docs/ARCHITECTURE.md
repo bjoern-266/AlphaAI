@@ -599,13 +599,46 @@ PaperTradingEngine (+ Registry/Cache) → PaperTradingReport / PaperTradingResul
   Parameter aus `knowledge/paper_trading_rules.toml`. Trailing Stop **vorbereitet**.
   Details: `docs/PAPER_TRADING.md`.
 
+## Trading Intelligence & Analytics Framework (umgesetzt in Sprint 12)
+
+Das Analytics-Subsystem (`analytics/`) **liest** ausschließlich bestehende
+`BacktestReport`/`PaperTradingReport` und erzeugt daraus objektive,
+reproduzierbare Statistiken. Es **bewertet keine** Trades, verändert **keine**
+Ergebnisse, erzeugt **keine** Empfehlungen und enthält **keine** ML.
+
+```
+BacktestReport + PaperTradingReport
+        │
+Normalisierung (Trades → AnalyticsTrade; Dimensionen aus recommendation_id/reasons)
+        │
+AnalyticsEngine (+ Registry/Cache) → zehn unabhängige Analysemodelle
+        │
+AnalyticsReport (AnalyticsResult, dashboard-fertig)
+```
+
+- **Schicht-Einordnung:** `analytics/` ist ein Subsystem (wie `pipeline/`/
+  `backtesting/`/`paper_trading/`), in `quality_check.py` nur der Zyklenprüfung
+  unterworfen. Die zehn Analysen sind **Registry-Plugins** und **unabhängig**
+  voneinander (kein Modell importiert ein anderes; gemeinsame Bausteine in
+  `aggregation.py`). Neue Modelle nur über `engines/analytics_registry.py`; die
+  Engine bleibt **unverändert** (Open/Closed).
+- **Immutabilität:** alle Ergebnistypen (`models/analytics.py`) sind `frozen`.
+- **Transparenz:** jede Kennzahl entsteht aus `aggregation.py` (eine Quelle der
+  Definitionen); abgeleitete Dimensionen (Strategie/Risiko/Score) sind aus
+  `recommendation_id`/`reasons` nachvollziehbar; keine Blackbox, reproduzierbar.
+- **Validierung:** leere Reports, fehlende Trades, nicht registrierte Modelle,
+  ungültige Parameter. **Erweiterbarkeit:** Pattern-/Markt-Dimensionen sind
+  label-basiert (Trade-Metadata) und ohne Engine-Änderung erweiterbar.
+  Details: `docs/ANALYTICS.md`.
+
 ## Aktueller Stand
 
-Sprint 1–11 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–12 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
 Integration & Validierung, Historical Backtesting Framework, Paper Trading
-Framework). Es gibt bewusst weiterhin **keine Dashboard-Logik, keine Broker-API,
-keine automatische Orderausführung und keine echten Orders** (Backtesting und
-Paper Trading simulieren ausschließlich). Offene fachliche Kalibrierung ist im
+Framework, Trading Intelligence & Analytics Framework). Es gibt bewusst weiterhin
+**keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung und
+keine echten Orders** (Backtesting und Paper Trading simulieren ausschließlich;
+Analytics wertet nur aus). Offene fachliche Kalibrierung ist im
 `docs/VALIDATION_REPORT.md` dokumentiert.

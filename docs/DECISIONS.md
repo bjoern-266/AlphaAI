@@ -533,3 +533,41 @@ das Projekt so aufgebaut ist, wie es ist.
 - **Konsequenzen:** Kein Dashboard, keine Broker-API, keine echten Orders, keine
   automatische Orderausführung, keine neue Handelsregel. `engines/` importiert
   über `paper_trading_engine.py` das `pipeline`-Subsystem (kein Zyklus).
+
+### ADR-033 – Analytics als rein auswertendes Subsystem über den Ergebnissen
+
+- **Datum:** 2026-07-11 (Sprint 12)
+- **Kontext:** AlphaAI sollte beginnen, seine eigenen Entscheidungen automatisch
+  auszuwerten – **objektiv**, **reproduzierbar** und **ohne** Eingriff in die
+  Fachlogik, ohne neue Empfehlungen und ohne Machine Learning.
+- **Entscheidung:**
+  - Das Analytics-Framework **liest** ausschließlich bestehende
+    `BacktestReport`/`PaperTradingReport` und schreibt nichts zurück. Es bewertet
+    keine Trades und trifft keine Handelsentscheidung – es erzeugt nur Statistiken.
+  - `analytics/` ist ein **Subsystem** (wie `pipeline/`/`backtesting/`/
+    `paper_trading/`), in `quality_check.py` nur der Zyklenprüfung unterworfen.
+    Die zehn Analysen sind **Registry-Plugins**; neue kommen ausschließlich über
+    `analytics_registry.py` hinzu – die Engine wird dafür **nie** geändert
+    (Open/Closed). Die Modelle sind **unabhängig** voneinander (kein Modell
+    importiert ein anderes; gemeinsame Bausteine liegen in `aggregation.py`).
+  - **Normalisierung:** Backtest- und Paper-Trades werden in einen einheitlichen
+    `AnalyticsTrade` überführt. Analyse-Dimensionen werden **nachvollziehbar** aus
+    den vorhandenen Daten abgeleitet: Strategie aus der `recommendation_id`,
+    Risiko-Level und Score aus den `reasons`. Fehlt eine Information, gilt
+    ``"unbekannt"``/``None`` – es werden **keine** Daten erfunden. Pattern-/
+    Markt-Dimensionen sind label-basiert und damit erweiterbar, sobald künftige
+    Trades entsprechende Labels tragen (ohne Engine-Änderung).
+  - **Reproduzierbarkeit:** alle Kennzahlen stammen aus `aggregation.py` (eine
+    Quelle der Definitionen); der Drawdown wird auf einer Kapitalkurve
+    ``base_capital + kumulierter PnL`` gemessen (``base_capital`` aus der Regel-
+    datei). Keine Blackbox.
+  - **Ergebnis-Typen sind unveränderlich** (`frozen`); alle Kennzahlen liegen im
+    `AnalyticsResult` fertig berechnet vor, sodass ein späteres Dashboard nur
+    visualisieren muss (keine Geschäftslogik im Dashboard).
+- **Begründung:** Objektive, vollständig nachvollziehbare Selbstauswertung der
+  bestehenden Entscheidungen; die klare Trennung „Ergebnisse → Normalisierung →
+  Kennzahl" hält das Framework prüfbar und beliebig erweiterbar.
+- **Konsequenzen:** Keine Dashboard-Komponenten, keine Broker-API, keine
+  Handelslogik, keine neuen Empfehlungen, keine ML-Komponenten. `engines/`
+  importiert über `analytics_engine.py` das `analytics`-Subsystem und liest die
+  Modelle `models.backtest`/`models.paper_trading` (kein Zyklus).

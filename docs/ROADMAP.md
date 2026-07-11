@@ -159,6 +159,25 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
   Position, Größen, Preise, Zeitstempel, Statuswechsel). Trailing Stop vorbereitet.
 - 177 neue Tests (1045 gesamt). Doku: `docs/PAPER_TRADING.md`.
 
+## Sprint 12 – Trading Intelligence & Analytics Framework ✅ (abgeschlossen)
+
+- Kette `BacktestReport + PaperTradingReport → AnalyticsEngine → AnalyticsReport`;
+  **rein auswertend**, keine Bewertung, keine neue Empfehlung, keine ML, keine
+  Änderung an einer Engine, am Backtesting oder am Paper Trading.
+- Subsystem `analytics/` (`aggregation`, `labeling`, `normalization`, `base` +
+  zehn unabhängige Analysemodelle: `trade_statistics`, `performance_analyzer`,
+  `pattern_analysis`, `strategy_analysis`, `recommendation_analysis`,
+  `risk_analysis`, `market_analysis`, `time_analysis`, `journal_analysis`,
+  `summary_analysis`) und Engine-Anbindung (`analytics_engine`, `-registry`,
+  `-cache`, `-result`).
+- `AnalyticsResult` mit allen geforderten Feldern (Win/Loss Rate, Profit Factor,
+  Expectancy, Max Drawdown, Long/Short/Strategy/Pattern/Recommendation/Risk/
+  Market/Time/Journal Statistics, Summary, Metadata). Dimensionen
+  (Strategie/Risiko/Score) reproduzierbar aus `recommendation_id`/`reasons`.
+- Regeln aus `knowledge/analytics_rules.toml`; Validierung (leere Reports,
+  fehlende Trades, ungültige Parameter). Kennzahlen dashboard-fertig.
+- 184 neue Tests (1229 gesamt). Doku: `docs/ANALYTICS.md`.
+
 ## Sprint 6 – Dashboard (geplant)
 
 - Streamlit-Oberfläche in `dashboard/`.

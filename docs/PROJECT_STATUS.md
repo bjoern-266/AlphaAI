@@ -2,8 +2,8 @@
 
 _Wird nach jedem Sprint automatisch aktualisiert._
 
-- **Datum:** 2026-07-10
-- **Aktueller Sprint:** Sprint 11 – Paper Trading Framework
+- **Datum:** 2026-07-11
+- **Aktueller Sprint:** Sprint 12 – Trading Intelligence & Analytics Framework
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -182,6 +182,30 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   Position, Größen, Preise, Zeitstempel, Statuswechsel.
 - **Tests:** 1045 gesamt (177 neue).
 
+### Trading Intelligence & Analytics Framework (Sprint 12)
+
+- **Rein auswertend:** analysiert **ausschließlich** bestehende Backtest-/Paper-
+  Trading-Ergebnisse und erzeugt objektive, reproduzierbare Statistiken.
+  **Keine** Bewertung von Trades, **keine** Handelsentscheidung, **keine**
+  Änderung bestehender Ergebnisse, **keine** neuen Empfehlungen, **keine** ML.
+- **Subsystem `analytics/`:** `aggregation` (Kennzahl-Bausteine), `labeling`
+  (Strategie/Risiko/Score aus `recommendation_id`/`reasons`), `normalization`
+  (Trades → `AnalyticsTrade`), zehn unabhängige Modelle (`trade_statistics`,
+  `performance_analyzer`, `pattern_analysis`, `strategy_analysis`,
+  `recommendation_analysis`, `risk_analysis`, `market_analysis`, `time_analysis`,
+  `journal_analysis`, `summary_analysis`), `base`.
+- **Engine-Anbindung:** `AnalyticsEngine` (Input `BacktestReport` +
+  `PaperTradingReport` → `AnalyticsReport`), `AnalyticsRegistry` (einzige
+  Erweiterungsstelle; die Engine bleibt für neue Modelle unverändert),
+  `AnalyticsCache` (FIFO), Re-Export `analytics_result`.
+- **AnalyticsResult:** Analytics-/Backtest-/PaperTrading-ID, Trade Count, Win/
+  Loss Rate, Profit Factor, Expectancy, Ø Winner/Loser, Max Drawdown, Ø Haltedauer,
+  Ø CRV, Long/Short/Strategy/Pattern/Recommendation/Risk/Market/Time/Journal
+  Statistics, Performance, Summary, Warnings, Metadata, Timestamp – dashboard-fertig.
+- **Config:** Parameter aus `knowledge/analytics_rules.toml`. **Validierung:**
+  leere Reports, fehlende Trades, ungültige Parameter/Kennzahlen.
+- **Tests:** 1229 gesamt (184 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Dashboard-Logik, keine Broker-API, keine automatische Orderausführung,
@@ -192,11 +216,11 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 11)
+## Qualitätsnachweis (Sprint 12)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 1045 Tests bestanden |
+| pytest | 1229 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |
@@ -207,8 +231,9 @@ Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
 ## Nächster Schritt
 
-Warten auf Freigabe für den nächsten Sprint. Priorisiert: **Kalibrierung** an
-realen Daten (Schwellen/Gewichte der Empfehlung, Annualisierung der vorbereiteten
-Backtest-Kennzahlen, Aktivierung des vorbereiteten Trailing Stops) sowie
-perspektivisch **Dashboard** – weiterhin ohne automatische Orderausführung und
-ohne Broker-API.
+Warten auf Freigabe für den nächsten Sprint. Priorisiert: perspektivisch das
+**Dashboard**, das die fertigen Kennzahlen aus dem `AnalyticsResult` **nur
+visualisiert** (keine Geschäftslogik); daneben **Kalibrierung** an realen Daten
+(Schwellen/Gewichte der Empfehlung, Annualisierung der vorbereiteten
+Backtest-Kennzahlen, Aktivierung des vorbereiteten Trailing Stops). Weiterhin
+ohne automatische Orderausführung und ohne Broker-API.

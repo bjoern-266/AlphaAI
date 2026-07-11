@@ -6,8 +6,8 @@ dass Wissen nur im Chat existiert.
 
 ## Stand der Übergabe
 
-- **Datum:** 2026-07-10
-- **Abgeschlossener Sprint:** Sprint 11 – Paper Trading Framework
+- **Datum:** 2026-07-11
+- **Abgeschlossener Sprint:** Sprint 12 – Trading Intelligence & Analytics Framework
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,7 +18,7 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 1045 Tests).
+5. Tests ausführen: `pytest` (aktuell 1229 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
 > **Semantik (ab 9.6):** `RecommendationResult.direction` (LONG/SHORT/NEUTRAL)
@@ -26,7 +26,7 @@ dass Wissen nur im Chat existiert.
 > (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) sind getrennt. Die Stärke enthält **kein**
 > BUY/SELL/LONG/SHORT. Ein bärisches Setup ist SHORT mit ggf. hoher Stärke.
 
-## Qualitätsprüfung Sprint 11 (Ergebnis)
+## Qualitätsprüfung Sprint 12 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -39,7 +39,7 @@ Vor dem Commit automatisch geprüft:
 | Pipeline-Konsistenz (`verify_pipeline`) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **1045 bestanden** |
+| pytest | **1229 bestanden** |
 
 ## Vollständige Pipeline – Einstieg
 
@@ -106,6 +106,30 @@ eigene Sprints und ändern bewusst Verhalten.
   4. Eigene Testdatei `tests/test_paper_<name>.py` anlegen.
 - **Vorbereitet:** Trailing Stop (`position.apply_trailing_stop`, inaktiv per
   `trailing_distance = 0.0`). Details/Datenfluss: `docs/PAPER_TRADING.md`.
+
+## Analytics-Framework – Kurzüberblick für die Weiterarbeit
+
+- Einstieg: `AnalyticsEngine.from_config()` lädt `knowledge/analytics_rules.toml`
+  und registriert alle zehn Standard-Analysemodelle.
+- Auswertung: `engine.analyze(backtest_report, paper_report, symbol=...)` →
+  `AnalyticsReport` (`.result` ist das `AnalyticsResult` mit allen Kennzahlen).
+  Eine Quelle genügt (`analyze(backtest_report)` oder
+  `analyze(paper_report=paper_report)`).
+- **Rein auswertend:** liest ausschließlich bestehende Reports, **bewertet keine**
+  Trades, verändert **nichts**, erzeugt **keine** Empfehlung, **kein** ML.
+  Dimensionen (Strategie/Risiko/Score) werden reproduzierbar aus
+  `recommendation_id`/`reasons` abgeleitet; fehlende Angaben ⇒ ``"unbekannt"``.
+- **Ergebnistypen sind `frozen`**; alle Kennzahlen liegen fertig im
+  `AnalyticsResult` (dashboard-fertig – ein Dashboard darf nur visualisieren).
+- **Neues Analysemodell hinzufügen** (einziger erlaubter Weg):
+  1. Datei in `analytics/` anlegen, `BaseAnalyticsModel` implementieren
+     (`compute`), nur `context`/`params` nutzen – unabhängig von anderen Modellen.
+  2. In `engines/analytics_registry.py::build_default_registry` registrieren. Die
+     **Engine bleibt unverändert** (Open/Closed).
+  3. Abschnitt/Parameter in `knowledge/analytics_rules.toml` ergänzen.
+  4. Eigene Testdatei `tests/test_analytics_<name>.py` anlegen.
+- Pattern-/Markt-Labels sind erweiterbar über die Trade-Metadata (ohne
+  Engine-Änderung). Details/Datenfluss: `docs/ANALYTICS.md`.
 
 ## Recommendation Engine – Kurzüberblick für die Weiterarbeit
 
@@ -197,8 +221,8 @@ eigene Sprints und ändern bewusst Verhalten.
 
 ## Nächster geplanter Schritt
 
-**Kalibrierung & Dashboard (geplant):** Schwellen/Gewichte der Empfehlung an
-realen historischen Daten kalibrieren und die vorbereiteten Backtest-Kennzahlen
-(Sharpe/Sortino/Calmar) annualisieren; danach die Streamlit-Oberfläche –
-weiterhin ohne automatische Orderausführung und ohne Broker-API. Details in
-`ROADMAP.md`.
+**Dashboard & Kalibrierung (geplant):** die Streamlit-Oberfläche, die die
+fertigen Kennzahlen aus dem `AnalyticsResult` **nur visualisiert** (keine
+Geschäftslogik); daneben Schwellen/Gewichte der Empfehlung an realen Daten
+kalibrieren und die vorbereiteten Backtest-Kennzahlen annualisieren – weiterhin
+ohne automatische Orderausführung und ohne Broker-API. Details in `ROADMAP.md`.

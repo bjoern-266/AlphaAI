@@ -41,6 +41,7 @@ PACKAGES = [
     "pipeline",
     "backtesting",
     "paper_trading",
+    "analytics",
 ]
 
 # Schichten oberhalb der Entities: ``models`` darf daraus nichts importieren.

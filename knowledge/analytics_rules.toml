@@ -1,0 +1,66 @@
+# =============================================================================
+# Analytics-Regeln (Sprint 12)
+# =============================================================================
+# Einzige Quelle aller Parameter des Trading Intelligence & Analytics Framework.
+# Im Code gibt es keine hartcodierten Werte.
+#
+# Wichtig: Das Analytics Framework bewertet NIEMALS Trades, veraendert KEINE
+# bestehenden Ergebnisse, trifft KEINE Handelsentscheidung und erzeugt KEINE
+# neuen Empfehlungen. Es analysiert ausschliesslich bereits vorhandene Daten aus
+# Backtesting und Paper Trading und erzeugt daraus objektive, reproduzierbare
+# Statistiken. Keine Machine-Learning-Komponenten.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Parameter der Analysemodelle (Sprint 12)."
+
+# --- Gemeinsame Analyse-Konfiguration ----------------------------------------
+# Diese Werte stehen allen Modellen ueber den Kontext zur Verfuegung.
+[analysis]
+# Notionales Startkapital fuer die Drawdown-/Kapitalkurven-Berechnung. Der
+# Drawdown wird als Prozent des Peaks dieser Kapitalkurve gemessen.
+base_capital = 10000.0
+# Score-Baender (0..100) fuer eine optionale Score-Dimension.
+score_weak_max = 40.0
+score_strong_min = 70.0
+# Haltedauer-Baender (Tage) fuer die Zeitanalyse.
+holding_bands = [1, 3, 7]
+# Metadata-Schluessel fuer erweiterbare Dimensionen (Pattern/Markt). Sind sie in
+# den Trade-Daten vorhanden, werden sie automatisch ausgewertet.
+pattern_label_key = "pattern"
+market_phase_label_key = "market_phase"
+volatility_label_key = "volatility"
+liquidity_label_key = "liquidity"
+
+# --- Modelle (jeweils eigenes Plugin in analytics/) --------------------------
+
+[trade_statistics]
+enabled = true
+
+[performance_analyzer]
+enabled = true
+
+[pattern_analysis]
+enabled = true
+
+[strategy_analysis]
+enabled = true
+
+[recommendation_analysis]
+enabled = true
+
+[risk_analysis]
+enabled = true
+
+[market_analysis]
+enabled = true
+
+[time_analysis]
+enabled = true
+
+[journal_analysis]
+enabled = true
+
+[summary_analysis]
+enabled = true

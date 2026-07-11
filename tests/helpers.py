@@ -727,3 +727,127 @@ def make_paper_trade(
         reasons=["Testgrund"],
         warnings=[],
     )
+
+
+# --------------------------------------------------------------------------- #
+# Analytics-Helfer (Sprint 12)                                                #
+# --------------------------------------------------------------------------- #
+
+
+def make_analytics_trade(
+    trade_id: str = "bt:AAPL:1",
+    source: str = "backtest",
+    direction=None,
+    strength=None,
+    strategy: str = "trend_following",
+    risk_level: str = "low",
+    score: float | None = 73.0,
+    pnl: float = 50.0,
+    pnl_pct: float = 5.0,
+    return_on_risk: float = 2.0,
+    risk_reward: float = 2.0,
+    holding_days: float = 3.0,
+    outcome: str | None = None,
+    entry_time: datetime | None = None,
+    exit_time: datetime | None = None,
+    close_reason: str = "take_profit",
+    labels: dict | None = None,
+    reasons: list[str] | None = None,
+):
+    """Baut einen normalisierten AnalyticsTrade (für Analyse-Tests)."""
+    from datetime import timedelta
+
+    from models.analytics import AnalyticsTrade
+    from models.recommendation import Direction, RecommendationStrength
+
+    direction = direction or Direction.LONG
+    strength = strength or RecommendationStrength.VERY_HIGH
+    if outcome is None:
+        outcome = "win" if pnl > 0 else "loss" if pnl < 0 else "breakeven"
+    entry_time = entry_time or datetime(2023, 1, 2, 9, 0, tzinfo=UTC)
+    exit_time = exit_time or (entry_time + timedelta(days=holding_days))
+    return AnalyticsTrade(
+        source=source,
+        trade_id=trade_id,
+        symbol="AAPL",
+        recommendation_id=f"rec:score:{strategy}:{direction.value}:AAPL:2023-01-02T00:00:00",
+        direction=direction,
+        recommendation_strength=strength,
+        strategy=strategy,
+        risk_level=risk_level,
+        score=score,
+        pnl=pnl,
+        pnl_pct=pnl_pct,
+        return_on_risk=return_on_risk,
+        risk_reward=risk_reward,
+        holding_days=holding_days,
+        outcome=outcome,
+        holding_time=timedelta(days=holding_days),
+        entry_time=entry_time,
+        exit_time=exit_time,
+        close_reason=close_reason,
+        labels=labels or {},
+        reasons=reasons
+        or [f"Score {int(score)}/100" if score else "", f"Risk {risk_level.upper()}"],
+    )
+
+
+def make_analytics_context(trades=None, journal=None, config=None, **kwargs):
+    """Baut einen AnalyticsContext (für Modell-Tests)."""
+    from models.analytics import AnalyticsContext
+
+    cfg = {
+        "base_capital": 10000.0,
+        "score_weak_max": 40.0,
+        "score_strong_min": 70.0,
+        "holding_bands": [1, 3, 7],
+        "pattern_label_key": "pattern",
+        "market_phase_label_key": "market_phase",
+        "volatility_label_key": "volatility",
+        "liquidity_label_key": "liquidity",
+    }
+    cfg.update(config or {})
+    return AnalyticsContext(
+        trades=trades if trades is not None else [make_analytics_trade()],
+        journal=journal or (),
+        config=cfg,
+        **kwargs,
+    )
+
+
+def make_analytics_rules(**overrides):
+    """Baut AnalyticsRules aus der Standard-Konfiguration (für Engine-Tests)."""
+    import copy
+
+    from engines.analytics_engine import load_analytics_rules_from_dict
+
+    data = {
+        "meta": {"version": 1},
+        "analysis": {
+            "base_capital": 10000.0,
+            "score_weak_max": 40.0,
+            "score_strong_min": 70.0,
+            "holding_bands": [1, 3, 7],
+            "pattern_label_key": "pattern",
+            "market_phase_label_key": "market_phase",
+            "volatility_label_key": "volatility",
+            "liquidity_label_key": "liquidity",
+        },
+        "trade_statistics": {"enabled": True},
+        "performance_analyzer": {"enabled": True},
+        "pattern_analysis": {"enabled": True},
+        "strategy_analysis": {"enabled": True},
+        "recommendation_analysis": {"enabled": True},
+        "risk_analysis": {"enabled": True},
+        "market_analysis": {"enabled": True},
+        "time_analysis": {"enabled": True},
+        "journal_analysis": {"enabled": True},
+        "summary_analysis": {"enabled": True},
+    }
+    data = copy.deepcopy(data)
+    for section, values in overrides.items():
+        if isinstance(values, dict):
+            data.setdefault(section, {}).update(values)
+        else:
+            data[section] = values
+    return load_analytics_rules_from_dict(data)

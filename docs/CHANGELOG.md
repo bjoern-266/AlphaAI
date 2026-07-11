@@ -4,6 +4,53 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.12.0] – 2026-07-11 – Sprint 12: Trading Intelligence & Analytics Framework
+
+Neues, **rein auswertendes** Analytics-Framework. Es analysiert **ausschließlich**
+bereits vorhandene Daten aus Backtesting und Paper Trading und erzeugt daraus
+**objektive, reproduzierbare Statistiken**. Es **bewertet keine** Trades, trifft
+**keine** Handelsentscheidung, verändert **keine** bestehenden Ergebnisse,
+erzeugt **keine** neuen Empfehlungen und enthält **keine**
+Machine-Learning-Komponenten. Keine Änderung an einer bestehenden Engine, am
+Backtesting oder am Paper Trading.
+
+### Hinzugefügt
+
+- **Entities:** `models/analytics.py` (alle unveränderlich, `frozen`):
+  `AnalyticsTrade`, `GroupStatistics`, `AnalyticsModelOutput`,
+  `AnalyticsContext`, `AnalyticsResult`, `AnalyticsReport`.
+- **Subsystem `analytics/`:** `aggregation.py` (reine Kennzahl-Bausteine),
+  `labeling.py` (Ableitung Strategie/Risiko-Level/Score aus
+  `recommendation_id`/`reasons`), `normalization.py` (Backtest-/Paper-Trades →
+  `AnalyticsTrade`), zehn unabhängige Analysemodelle (`trade_statistics`,
+  `performance_analyzer`, `pattern_analysis`, `strategy_analysis`,
+  `recommendation_analysis`, `risk_analysis`, `market_analysis`, `time_analysis`,
+  `journal_analysis`, `summary_analysis`) und `base.py` (`BaseAnalyticsModel`).
+- **Engine-Anbindung:** `engines/analytics_engine.py`, `analytics_registry.py`
+  (einzige Erweiterungsstelle – die Engine bleibt für neue Modelle unverändert),
+  `analytics_cache.py` (FIFO), `analytics_result.py` (Re-Export).
+- **Konfiguration:** `knowledge/analytics_rules.toml`; `core/paths.py` um
+  `ANALYTICS_RULES_FILE` ergänzt; neue Fehlerklasse `AnalyticsParameterError`.
+- **AnalyticsResult** enthält u. a.: Analytics-ID, Backtest-ID, PaperTrading-ID,
+  Trade Count, Win/Loss Rate, Profit Factor, Expectancy, Average Winner/Loser,
+  Maximum Drawdown, Average Holding Time, Average Risk Reward, Long/Short/
+  Strategy/Pattern/Recommendation/Risk/Market/Time/Journal Statistics,
+  Performance, Summary, Warnings, Metadata, Timestamp.
+- **Analysen:** LONG/SHORT, Recommendation Strength, Risiko-Level, Strategie,
+  Score, Pattern/Marktphase/Volatilität/Liquidität (label-basiert, erweiterbar)
+  sowie Zeit (Wochentag/Monat/Handelsstunde/Haltedauer).
+- **Validierung:** leere Reports, fehlende Trades, nicht registrierte Modelle,
+  ungültige Parameter/Kennzahlen.
+- **Tests:** 184 neue Tests (1229 gesamt) – Engine, Registry, Cache, Aggregation,
+  Labeling, Normalisierung, alle zehn Analysen und echte End-to-End-Szenarien.
+- **Doku:** neue `docs/ANALYTICS.md`; übrige Doku aktualisiert.
+
+### Unverändert (bewusst)
+
+- Keine Dashboard-Komponenten, keine Broker-API, keine Handelslogik, keine neuen
+  Empfehlungen, keine ML-Komponenten. Alle Kennzahlen liegen fertig berechnet im
+  `AnalyticsResult` vor (Vorbereitung für ein rein visualisierendes Dashboard).
+
 ## [0.11.0] – 2026-07-10 – Sprint 11: Paper Trading Framework
 
 Neues, **rein bewertendes** Paper-Trading-Framework. Es nutzt ausschließlich die
