@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-11
-- **Abgeschlossener Sprint:** Sprint 13 – AlphaAI Command Center (Dashboard)
+- **Abgeschlossener Sprint:** Sprint 14 – Market Intelligence Framework
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,7 +18,7 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 1488 Tests).
+5. Tests ausführen: `pytest` (aktuell 1690 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
 > **Semantik (ab 9.6):** `RecommendationResult.direction` (LONG/SHORT/NEUTRAL)
@@ -26,7 +26,7 @@ dass Wissen nur im Chat existiert.
 > (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) sind getrennt. Die Stärke enthält **kein**
 > BUY/SELL/LONG/SHORT. Ein bärisches Setup ist SHORT mit ggf. hoher Stärke.
 
-## Qualitätsprüfung Sprint 13 (Ergebnis)
+## Qualitätsprüfung Sprint 14 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -39,7 +39,7 @@ Vor dem Commit automatisch geprüft:
 | Pipeline-Konsistenz (`verify_pipeline`) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **1488 bestanden** |
+| pytest | **1690 bestanden** |
 
 ## Vollständige Pipeline – Einstieg
 
@@ -151,6 +151,32 @@ eigene Sprints und ändern bewusst Verhalten.
   4. Eigene Testdatei/Testfälle in `tests/test_dashboard_widgets.py` ergänzen.
 - **Neue Seite** nur über `dashboard/router.py`; **Aussehen** nur über
   `dashboard/theme.py`. Details/Datenfluss: `docs/DASHBOARD.md`.
+
+## Market Intelligence – Kurzüberblick für die Weiterarbeit
+
+- Einstieg: `MarketIntelligenceEngine.from_config()` lädt
+  `knowledge/market_intelligence_rules.toml` und registriert die fünf
+  Bewertungsmodelle.
+- Priorisierung: `engine.analyze(candidates)` → `OpportunityReport`. Jeder
+  `MarketCandidate` bündelt je Aktie Ticker/Metadaten plus die bereits
+  vorhandenen Reports (Recommendation/Analytics/Backtest/Paper Trading, alle
+  optional). Ergebnis: `report.opportunities` (Rang 1 zuerst), `report.statistics`,
+  `report.explanations`, `report.watchlists`.
+- **Rein priorisierend:** bewertet ausschließlich vorhandene Ergebnisse, erzeugt
+  **keine** neue Handelsregel, verändert **nichts**. Der Opportunity Score ist die
+  gewichtete Zusammenfassung (Recommendation/Risk/Analytics/Backtest/Paper Trading);
+  fehlt eine Quelle, wird über die verbleibenden Gewichte normalisiert. Eine Aktie
+  ohne Empfehlung ist „Watch" (Score 0).
+- **Neues Bewertungsmodell hinzufügen** (einziger erlaubter Weg):
+  1. Datei/Klasse `BaseOpportunityModel` in `market_intelligence/opportunity.py`
+     umsetzen (`compute`), nur `context`/`params` nutzen.
+  2. In `engines/market_intelligence_registry.py::build_default_registry`
+     registrieren. Die **Engine bleibt unverändert** (Open/Closed).
+  3. Abschnitt mit `weight` in `knowledge/market_intelligence_rules.toml` ergänzen
+     (die Summe der aktivierten Gewichte muss 1.0 bleiben).
+- Ranking/Filter/Sortierung/Explainer/Statistik liegen in eigenen Modulen; die
+  Dashboard-Seite „Market Intelligence" visualisiert nur den Report. Details:
+  `docs/MARKET_INTELLIGENCE.md`.
 
 ## Recommendation Engine – Kurzüberblick für die Weiterarbeit
 

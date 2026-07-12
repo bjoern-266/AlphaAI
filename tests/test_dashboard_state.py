@@ -24,8 +24,8 @@ def test_default_state():
     assert state.search_query == ""
 
 
-def test_nine_pages_defined():
-    assert len(list(Page)) == 9
+def test_all_pages_defined():
+    assert len(list(Page)) == 10
 
 
 def test_refresh_rates_values():

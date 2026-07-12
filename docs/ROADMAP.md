@@ -193,6 +193,24 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
   (lädt nur Reports). Keine Exceptions im Frontend, keine Handelsparameter.
 - 259 neue Tests (1488 gesamt). Doku: `docs/DASHBOARD.md`.
 
+## Sprint 14 – Market Intelligence Framework ✅ (abgeschlossen)
+
+- Kette `Recommendation/Analytics/Backtest/PaperTrading (je Aktie) →
+  MarketIntelligenceEngine → OpportunityReport → Dashboard`; **rein
+  priorisierend**, bewertet nur bestehende Ergebnisse, keine neue Handelsregel,
+  keine ML, keine Änderung an einer Engine.
+- Subsystem `market_intelligence/` (`base`, `opportunity` mit fünf
+  Bewertungsmodellen + `build_opportunity`, `ranking`, `ranking_engine`,
+  `filter`, `explainer`, `statistics`, `cache`) und Engine-Anbindung
+  (`market_intelligence_engine`, `-registry`, `-cache`, `-result`).
+- `OpportunityReport` mit Opportunity Score (gewichtete Zusammenfassung von
+  Recommendation/Risk/Analytics/Backtest/Paper Trading), Ranking (Top 5/10/20/50),
+  Filter (Long/Short/Watch/Risk/Confidence/Strength/Market/Sector/Exchange),
+  Explainer, Statistik und Watchlists. Regeln aus
+  `knowledge/market_intelligence_rules.toml`.
+- Neue Dashboard-Seite „Market Intelligence" (additiv; Engine unverändert).
+- 201 neue Tests (1690 gesamt). Doku: `docs/MARKET_INTELLIGENCE.md`.
+
 ## Sprint 7 – Persistenz & Lernfähigkeit (geplant)
 
 - Speicherung von Analysen/Empfehlungen in SQLite (`database/`).

@@ -42,6 +42,7 @@ PACKAGES = [
     "backtesting",
     "paper_trading",
     "analytics",
+    "market_intelligence",
     "dashboard",
 ]
 

@@ -19,6 +19,7 @@ from models.analytics import AnalyticsReport, GroupStatistics
 from models.backtest import BacktestReport
 from models.dashboard import StatusItem
 from models.indicator import IndicatorResult
+from models.opportunity import OpportunityReport
 from models.paper_trading import PaperTradingReport
 from models.pattern import PatternReport
 from models.recommendation import RecommendationReport, RecommendationResult
@@ -43,6 +44,7 @@ class ReportBundle:
     strategy: StrategyReport | None = None
     pattern: PatternReport | None = None
     indicator: IndicatorResult | None = None
+    opportunity: OpportunityReport | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -93,6 +95,35 @@ class JournalRow:
     reason: str
     reasons: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class OpportunityRow:
+    """Eine Zeile des Opportunity-Rankings (Werte aus dem OpportunityReport)."""
+
+    rank: int
+    ticker: str
+    company: str
+    market: str
+    sector: str
+    direction: str
+    strength: str
+    confidence: float | None
+    score: float | None
+    risk: float | None
+    summary: str
+
+
+@dataclass(frozen=True, slots=True)
+class ExplanationRow:
+    """Eine Herleitungszeile (Werte aus einer OpportunityExplanation)."""
+
+    ticker: str
+    rank: int
+    headline: str
+    factors: tuple[str, ...]
+    risks: tuple[str, ...]
+    why_not_higher: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -219,6 +250,28 @@ class RecommendationsVM:
 
 
 @dataclass(frozen=True, slots=True)
+class MarketIntelligenceVM:
+    """Priorisierte Chancen der Market-Intelligence-Seite (abgelesen)."""
+
+    rows: tuple[OpportunityRow, ...] = ()
+    explanations: tuple[ExplanationRow, ...] = ()
+    analyzed_count: int | None = None
+    long_count: int | None = None
+    short_count: int | None = None
+    watch_count: int | None = None
+    average_score: float | None = None
+    average_risk: float | None = None
+    average_confidence: float | None = None
+    top_sectors: tuple[tuple[str, int], ...] = ()
+    top_markets: tuple[tuple[str, int], ...] = ()
+    heatmap_labels: tuple[str, ...] = ()
+    heatmap_scores: tuple[float, ...] = ()
+    watchlist_top: tuple[str, ...] = ()
+    watchlist_long: tuple[str, ...] = ()
+    watchlist_short: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class DashboardViewModel:
     """Bündelt alle Seiten-View-Models (unveränderlich)."""
 
@@ -230,6 +283,7 @@ class DashboardViewModel:
     performance: PerformanceVM = field(default_factory=PerformanceVM)
     journal: JournalVM = field(default_factory=JournalVM)
     recommendations: RecommendationsVM = field(default_factory=RecommendationsVM)
+    market_intelligence: MarketIntelligenceVM = field(default_factory=MarketIntelligenceVM)
 
 
 # --------------------------------------------------------------------------- #
@@ -463,6 +517,67 @@ def _recommendations(bundle: ReportBundle) -> RecommendationsVM:
     return RecommendationsVM(symbol=symbol, rows=rows)
 
 
+def _market_intelligence(bundle: ReportBundle) -> MarketIntelligenceVM:
+    """Liest den priorisierten OpportunityReport ab (nur Ablesen)."""
+    report = bundle.opportunity
+    if report is None:
+        return MarketIntelligenceVM()
+    rows = tuple(
+        OpportunityRow(
+            rank=o.opportunity_rank,
+            ticker=o.ticker,
+            company=o.company,
+            market=o.market,
+            sector=o.sector,
+            direction=o.direction.value,
+            strength=o.recommendation_strength.value,
+            confidence=o.confidence,
+            score=o.opportunity_score,
+            risk=o.risk,
+            summary=o.summary,
+        )
+        for o in report.opportunities
+    )
+    explanations = tuple(
+        ExplanationRow(
+            ticker=e.ticker,
+            rank=e.rank,
+            headline=e.headline,
+            factors=tuple(e.factors),
+            risks=tuple(e.risks),
+            why_not_higher=e.why_not_higher,
+        )
+        for e in (report.explanations.get(o.ticker) for o in report.opportunities)
+        if e is not None
+    )
+    stats = report.statistics
+    watchlists = report.watchlists
+    return MarketIntelligenceVM(
+        rows=rows,
+        explanations=explanations,
+        analyzed_count=stats.analyzed_count,
+        long_count=stats.long_count,
+        short_count=stats.short_count,
+        watch_count=stats.watch_count,
+        average_score=stats.average_score,
+        average_risk=stats.average_risk,
+        average_confidence=stats.average_confidence,
+        top_sectors=tuple(stats.top_sectors),
+        top_markets=tuple(stats.top_markets),
+        heatmap_labels=tuple(o.ticker for o in report.opportunities),
+        heatmap_scores=tuple(o.opportunity_score for o in report.opportunities),
+        watchlist_top=_watchlist_tickers(watchlists, "top"),
+        watchlist_long=_watchlist_tickers(watchlists, "long"),
+        watchlist_short=_watchlist_tickers(watchlists, "short"),
+    )
+
+
+def _watchlist_tickers(watchlists: dict, name: str) -> tuple[str, ...]:
+    """Liest die Ticker einer Watchlist (leer, falls nicht vorhanden)."""
+    watchlist = watchlists.get(name)
+    return tuple(watchlist.tickers) if watchlist is not None else ()
+
+
 def build_view_model(bundle: ReportBundle) -> DashboardViewModel:
     """Baut das gesamte :class:`DashboardViewModel` aus dem Report-Bundle."""
     return DashboardViewModel(
@@ -474,6 +589,7 @@ def build_view_model(bundle: ReportBundle) -> DashboardViewModel:
         performance=_performance(bundle),
         journal=_journal(bundle),
         recommendations=_recommendations(bundle),
+        market_intelligence=_market_intelligence(bundle),
     )
 
 
@@ -499,10 +615,13 @@ __all__ = [
     "PerformanceVM",
     "JournalVM",
     "RecommendationsVM",
+    "MarketIntelligenceVM",
     "LiveRow",
     "RecommendationRow",
     "JournalRow",
     "TradeRow",
+    "OpportunityRow",
+    "ExplanationRow",
     "build_view_model",
     "SystemStatus",
 ]

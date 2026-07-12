@@ -4,6 +4,52 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.14.0] – 2026-07-12 – Sprint 14: Market Intelligence Framework
+
+Neues, **rein priorisierendes** Framework. Es **bewertet ausschließlich bereits
+vorhandene Ergebnisse** (Empfehlung, Risiko, Analytics, Backtesting, Paper
+Trading) und ordnet daraus die objektiv besten Chancen. Es **berechnet keine**
+neue Handelsregel, verändert **keine** bestehenden Ergebnisse
+(Recommendation/Risk/Score/Strategy/Pattern/Indicator/Analytics), trifft
+**keine** Handelsentscheidung, hat **keinen** Broker und enthält **keine**
+Machine-Learning-Komponenten.
+
+### Hinzugefügt
+
+- **Entities:** `models/opportunity.py` (alle unveränderlich, `frozen`):
+  `MarketCandidate`, `OpportunityModelOutput`, `Opportunity`,
+  `OpportunityStatistics`, `OpportunityExplanation`, `Watchlist`,
+  `OpportunityReport`, `MarketIntelligenceContext`.
+- **Subsystem `market_intelligence/`:** `base.py` (`BaseOpportunityModel`),
+  `opportunity.py` (fünf Bewertungsmodelle + `build_opportunity`), `ranking.py`,
+  `ranking_engine.py` (Ranking + Watchlists), `filter.py`, `explainer.py`,
+  `statistics.py`, `cache.py` (`OpportunityCache`).
+- **Engine-Anbindung:** `engines/market_intelligence_engine.py`,
+  `market_intelligence_registry.py` (einzige Erweiterungsstelle – die Engine
+  bleibt für neue Modelle unverändert), `market_intelligence_cache.py` und
+  `market_intelligence_result.py` (Re-Exporte).
+- **Konfiguration:** `knowledge/market_intelligence_rules.toml` (Gewichte +
+  Ranking-/Watchlist-/Statistik-Parameter, Gewichte ergeben 1.0); `core/paths.py`
+  um `MARKET_INTELLIGENCE_RULES_FILE` ergänzt; neue Fehlerklasse
+  `MarketIntelligenceParameterError`.
+- **Opportunity Score:** gewichtete Zusammenfassung von Recommendation, Risk,
+  Analytics, Backtesting und Paper Trading – **kein neues Bewertungssystem**.
+  Fehlt eine Quelle, wird über die verbleibenden Gewichte normalisiert.
+- **Ranking/Filter/Sortierung/Explainer/Statistik/Watchlists** wie spezifiziert
+  (Top 5/10/20/50; Long/Short/Watch; transparente Herleitung „warum Platz N").
+- **Dashboard:** neue Seite **Market Intelligence** (additiv über Router/Registry;
+  `DashboardEngine` unverändert) mit Top Opportunities, Ranking (Suche/Filter),
+  Heatmap, Erklärung und Kennzahlen – visualisiert ausschließlich den
+  `OpportunityReport`, **keine** Berechnung im Frontend.
+- **Tests:** 201 neue Tests (1690 gesamt).
+- **Doku:** neue `docs/MARKET_INTELLIGENCE.md`; übrige Doku aktualisiert.
+
+### Unverändert (bewusst)
+
+- Keine neue Handelsregel, keine Broker-API, keine Echtgeldorders, keine ML. Keine
+  Änderung an einer bestehenden Engine, am Backtesting, Paper Trading, Analytics
+  oder an der Dashboard-Engine.
+
 ## [0.13.0] – 2026-07-11 – Sprint 13: AlphaAI Command Center
 
 Neues, **rein darstellendes** Dashboard („AlphaAI Command Center"). Es ist

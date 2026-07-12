@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-11
-- **Aktueller Sprint:** Sprint 13 – AlphaAI Command Center (Dashboard)
+- **Aktueller Sprint:** Sprint 14 – Market Intelligence Framework
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -226,6 +226,29 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   Reports). Keine Exceptions im Frontend.
 - **Tests:** 1488 gesamt (259 neue).
 
+### Market Intelligence Framework (Sprint 14)
+
+- **Rein priorisierend:** bewertet **ausschließlich** bereits vorhandene
+  Ergebnisse (Empfehlung, Risiko, Analytics, Backtesting, Paper Trading) und
+  ordnet daraus die objektiv besten Chancen. **Keine** neue Handelsregel,
+  **keine** Veränderung bestehender Ergebnisse, **kein** Broker, **kein** ML.
+- **Entities:** `models/opportunity.py` (`MarketCandidate`, `Opportunity`,
+  `OpportunityReport`, `OpportunityStatistics`, `OpportunityExplanation`,
+  `Watchlist`, `OpportunityModelOutput`, `MarketIntelligenceContext`; alle `frozen`).
+- **Subsystem `market_intelligence/`:** `base`, `opportunity` (fünf
+  Bewertungsmodelle + `build_opportunity`), `ranking`, `ranking_engine`,
+  `filter`, `explainer`, `statistics`, `cache`.
+- **Engine-Anbindung:** `MarketIntelligenceEngine` (Input vier Reports je Aktie →
+  `OpportunityReport`), `MarketIntelligenceRegistry` (einzige Erweiterungsstelle),
+  `OpportunityCache` (FIFO), Re-Export `market_intelligence_result`.
+- **Opportunity Score:** gewichtete Zusammenfassung (Recommendation 0.40, Risk
+  0.20, Analytics 0.15, Backtest 0.15, Paper Trading 0.10) – kein neues
+  Bewertungssystem; Gewichte aus `knowledge/market_intelligence_rules.toml`.
+- **Ranking/Filter/Sortierung/Explainer/Statistik/Watchlists** vollständig;
+  neue Dashboard-Seite „Market Intelligence" (additiv, Engine unverändert).
+- **Validierung:** leere/ungültige Reports, doppelte Ticker, ungültige Gewichte/
+  Scores. **Tests:** 1690 gesamt (201 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Dashboard-**Berechnung** (das Dashboard zeigt nur an), keine Broker-API,
@@ -236,11 +259,11 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 13)
+## Qualitätsnachweis (Sprint 14)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 1488 Tests bestanden |
+| pytest | 1690 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |

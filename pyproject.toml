@@ -53,6 +53,7 @@ packages = [
     "backtesting",
     "paper_trading",
     "analytics",
+    "market_intelligence",
     "dashboard",
     "dashboard.widgets",
     "database",

@@ -25,6 +25,7 @@ class Page(Enum):
     PERFORMANCE = "performance"
     TRADE_JOURNAL = "trade_journal"
     RECOMMENDATIONS = "recommendations"
+    MARKET_INTELLIGENCE = "market_intelligence"
     SETTINGS = "settings"
 
 

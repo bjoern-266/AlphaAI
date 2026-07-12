@@ -1,0 +1,68 @@
+# =============================================================================
+# Market-Intelligence-Regeln (Sprint 14)
+# =============================================================================
+# Einzige Quelle aller Parameter des Market Intelligence Framework. Im Code gibt
+# es keine hartcodierten Werte.
+#
+# Wichtig: Das Framework berechnet KEINE neue Handelsregel und veraendert KEINE
+# bestehenden Ergebnisse (Recommendation/Risk/Score/Strategy/Pattern/Indicator/
+# Analytics). Der Opportunity Score ist ausschliesslich die gewichtete
+# Zusammenfassung bereits vorhandener Signale. Keine Machine-Learning-Komponenten.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Gewichte und Parameter der Chancen-Priorisierung (Sprint 14)."
+
+# --- Score-Grenzen (Wertebereich des Opportunity Scores) ---------------------
+[scoring]
+score_min = 0.0
+score_max = 100.0
+
+# --- Ranking ------------------------------------------------------------------
+[ranking]
+# Standard-Sortierkriterium: opportunity_score | confidence | risk |
+# recommendation | alphabetical.
+default_sort = "opportunity_score"
+# Unterstuetzte Top-N-Groessen (nur Anzeige/Auswahl).
+top_sizes = [5, 10, 20, 50]
+
+# --- Watchlist ----------------------------------------------------------------
+[watchlist]
+watchlist_top_size = 10
+watchlist_long_size = 10
+watchlist_short_size = 10
+
+# --- Statistik ----------------------------------------------------------------
+[statistics]
+stat_top_sectors = 5
+stat_top_markets = 5
+
+# --- Bewertungsmodelle (Gewichte ergeben zusammen 1.0) -----------------------
+# Jedes Modell leitet seinen Beitrag ausschliesslich aus einer BEREITS
+# vorhandenen Kennzahl ab. Kein neues Bewertungssystem.
+
+# Overall Rating der Empfehlung (0..100).
+[recommendation]
+enabled = true
+weight = 0.40
+
+# Risiko-Faktor der Empfehlung (0..100; hoeher = geringeres Risiko).
+[risk]
+enabled = true
+weight = 0.20
+
+# Win Rate des Analytics-Reports (0..1).
+[analytics]
+enabled = true
+weight = 0.15
+
+# Win Rate des Backtest-Reports (0..1).
+[backtest]
+enabled = true
+weight = 0.15
+
+# Win Rate des Paper-Trading-Reports (0..1).
+[paper_trading]
+enabled = true
+weight = 0.10

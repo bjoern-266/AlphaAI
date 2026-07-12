@@ -81,6 +81,10 @@ class AnalyticsParameterError(ParameterError):
     """Ein Analytics-Parameter fehlt oder ist ungültig."""
 
 
+class MarketIntelligenceParameterError(ParameterError):
+    """Ein Market-Intelligence-Parameter/-Gewicht fehlt oder ist ungültig."""
+
+
 class PaperTradingValidationError(AlphaAIError):
     """Ein ungültiger Zustand im Paper-Portfolio.
 

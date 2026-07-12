@@ -18,9 +18,9 @@ from dashboard.state import Page
 from dashboard.widget_registry import build_default_registry
 
 
-def test_default_router_has_nine_pages():
+def test_default_router_has_all_pages():
     router = build_default_router()
-    assert len(router.pages()) == 9
+    assert len(router.pages()) == 10
     for page in Page:
         assert router.has(page)
 
@@ -68,7 +68,7 @@ def test_widget_ids_ordered_left_center_right():
 def test_nav_items_count():
     router = build_default_router()
     items = router.nav_items()
-    assert len(items) == 9
+    assert len(items) == 10
     assert all(isinstance(item, NavItem) for item in items)
 
 

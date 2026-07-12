@@ -258,17 +258,40 @@ Logik ist Streamlit-frei und testbar. Neues Widget nur über die `WidgetRegistry
 neue Seite nur über den Router, Aussehen nur über `theme.py`. Einstieg:
 `DashboardEngine.from_config()`. Datenfluss/Details: `docs/DASHBOARD.md`.
 
+## Market Intelligence (ab Sprint 14 verfügbar)
+
+**Rein priorisierend**: bewertet **ausschließlich** bereits vorhandene Ergebnisse
+(Empfehlung, Risiko, Analytics, Backtesting, Paper Trading) und ordnet daraus die
+objektiv besten Chancen. **Keine** neue Handelsregel, **keine** Veränderung
+bestehender Ergebnisse, **kein** Broker, **kein** ML. Kette: `MarketCandidate
+(je Aktie mit vorhandenen Reports) → MarketIntelligenceEngine → OpportunityReport`.
+Subsystem `market_intelligence/` (`base`; `opportunity` mit fünf
+Bewertungsmodellen + `build_opportunity`; `ranking`/`ranking_engine`; `filter`;
+`explainer`; `statistics`; `cache`). Der Opportunity Score ist die gewichtete
+Zusammenfassung von Recommendation/Risk/Analytics/Backtest/Paper Trading (Gewichte
+aus `knowledge/market_intelligence_rules.toml`, Summe 1.0); fehlt eine Quelle,
+wird über die verbleibenden Gewichte normalisiert. Richtung/Stärke/Confidence/
+Rating/Risiko kommen unverändert aus der Empfehlung; ohne Empfehlung = „Watch".
+Neue Modelle nur über die `MarketIntelligenceRegistry` – die Engine bleibt
+**unverändert**. Ergebnistypen in `models/opportunity.py` (re-exportiert über
+`engines/market_intelligence_result.py`). Die Dashboard-Seite „Market
+Intelligence" visualisiert nur den Report. Einstieg:
+`MarketIntelligenceEngine.from_config()`. Datenfluss/Details:
+`docs/MARKET_INTELLIGENCE.md`.
+
 ## Aktueller Stand
 
-Sprint 1–13 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–14 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
 Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung,
 Historical Backtesting Framework, Paper Trading Framework, Trading Intelligence &
-Analytics Framework, AlphaAI Command Center / Dashboard). Das Dashboard ist **rein
-darstellend** und **berechnet nichts**. Es gibt bewusst weiterhin **keine**
-Broker-API, **keine** automatische Orderausführung und **keine echten Orders**
-(Backtesting und Paper Trading simulieren ausschließlich; Analytics wertet nur aus,
-das Dashboard zeigt nur an). Offene fachliche Kalibrierung (Schwellen an realen
+Analytics Framework, AlphaAI Command Center / Dashboard, Market Intelligence
+Framework). Das Dashboard ist **rein darstellend** und **berechnet nichts**;
+Market Intelligence **priorisiert nur** bereits vorhandene Ergebnisse. Es gibt
+bewusst weiterhin **keine** Broker-API, **keine** automatische Orderausführung und
+**keine echten Orders** (Backtesting und Paper Trading simulieren ausschließlich;
+Analytics wertet nur aus, Market Intelligence priorisiert nur, das Dashboard zeigt
+nur an). Offene fachliche Kalibrierung (Schwellen an realen
 Daten, Annualisierung der vorbereiteten Backtest-Kennzahlen, Aktivierung des
 vorbereiteten Trailing Stops) ist im Validation Report festgehalten. Immer zuerst
 `PROJECT_STATUS.md` und `HANDOVER.md` lesen.

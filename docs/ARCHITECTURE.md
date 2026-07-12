@@ -665,15 +665,50 @@ DashboardView → render.py / app.py (einzige Streamlit-Schicht)
   Frontend**. **Keine Handelsparameter**, keine Broker-API. Details:
   `docs/DASHBOARD.md`.
 
+## Market Intelligence Framework (umgesetzt in Sprint 14)
+
+Das Market-Intelligence-Subsystem (`market_intelligence/`) **bewertet**
+ausschließlich bereits vorhandene Ergebnisse (Empfehlung, Risiko, Analytics,
+Backtesting, Paper Trading) und priorisiert daraus die objektiv besten Chancen.
+Es **berechnet keine** neue Handelsregel, verändert **keine** bestehenden
+Ergebnisse und trifft **keine** Handelsentscheidung.
+
+```
+je Aktie: RecommendationResult + AnalyticsReport + BacktestReport + PaperTradingReport
+        │  (gebündelt als MarketCandidate)
+MarketIntelligenceEngine (+ Registry/Cache) → fünf Bewertungsmodelle je Kandidat
+        │  build_opportunity (gewichtete Zusammenfassung) → Opportunity
+Ranking + Statistik + Explainer + Watchlists
+        │
+OpportunityReport → Dashboard-Seite „Market Intelligence"
+```
+
+- **Schicht-Einordnung:** `market_intelligence/` ist ein Subsystem (wie
+  `analytics/`), in `quality_check.py` nur der Zyklenprüfung unterworfen;
+  `models/opportunity.py` gehört zur Entities-Schicht und importiert nur andere
+  Modelle. `engines/` bindet die Engine, Registry, Cache- und Ergebnis-Re-Exporte an.
+- **Open/Closed:** die fünf Bewertungsmodelle sind **Registry-Plugins** und
+  **unabhängig** voneinander. Neue Modelle nur über
+  `engines/market_intelligence_registry.py`; die Engine bleibt **unverändert**.
+- **Kein neues Bewertungssystem:** der Opportunity Score ist die gewichtete
+  Zusammenfassung bestehender Signale; Gewichte ausschließlich aus
+  `knowledge/market_intelligence_rules.toml` (Summe 1.0). Fehlt eine Quelle, wird
+  über die verbleibenden Gewichte normalisiert.
+- **Immutabilität:** alle Ergebnistypen (`models/opportunity.py`) sind `frozen`.
+- **Transparenz/Validierung:** jede Chance trägt ihre Komponenten und eine
+  Herleitung (keine Blackbox); leere/ungültige Reports, doppelte Ticker, ungültige
+  Gewichte/Scores werden abgefangen. Details: `docs/MARKET_INTELLIGENCE.md`.
+
 ## Aktueller Stand
 
-Sprint 1–13 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–14 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
 Integration & Validierung, Historical Backtesting Framework, Paper Trading
 Framework, Trading Intelligence & Analytics Framework, AlphaAI Command Center /
-Dashboard). Das Dashboard ist **rein darstellend** und **berechnet nichts**. Es
-gibt bewusst weiterhin **keine Broker-API, keine automatische Orderausführung und
-keine echten Orders** (Backtesting und Paper Trading simulieren ausschließlich;
-Analytics wertet nur aus, das Dashboard zeigt nur an). Offene fachliche
-Kalibrierung ist im `docs/VALIDATION_REPORT.md` dokumentiert.
+Dashboard, Market Intelligence Framework). Das Dashboard ist **rein darstellend**;
+Market Intelligence **priorisiert nur** vorhandene Ergebnisse. Es gibt bewusst
+weiterhin **keine Broker-API, keine automatische Orderausführung und keine echten
+Orders** (Backtesting und Paper Trading simulieren ausschließlich; Analytics
+wertet nur aus, Market Intelligence priorisiert nur, das Dashboard zeigt nur an).
+Offene fachliche Kalibrierung ist im `docs/VALIDATION_REPORT.md` dokumentiert.

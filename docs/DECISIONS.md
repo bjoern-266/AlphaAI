@@ -618,3 +618,43 @@ das Projekt so aufgebaut ist, wie es ist.
   keine ML-Komponenten im Dashboard. `dashboard/` liest die bestehenden
   `models.*`-Reports und die Ergebnistypen; es entsteht kein Import-Zyklus, und
   keine bestehende Engine wird verändert.
+
+### ADR-035 – Market Intelligence als priorisierendes Subsystem (kein neues Bewertungssystem)
+
+- **Datum:** 2026-07-12 (Sprint 14)
+- **Kontext:** AlphaAI sollte erstmals den gesamten Markt betrachten und die
+  objektiv besten Chancen priorisieren – **ohne** eine neue Handelsregel oder ein
+  neues Bewertungssystem einzuführen und **ohne** bestehende Ergebnisse zu ändern.
+- **Entscheidung:**
+  - Das Market-Intelligence-Framework **liest** je Aktie die bereits vorhandenen
+    Reports (Empfehlung, Risiko, Analytics, Backtesting, Paper Trading), gebündelt
+    als `MarketCandidate`, und schreibt nichts zurück. Es trifft keine
+    Handelsentscheidung.
+  - **Kein neues Bewertungssystem:** der `opportunity_score` ist die **gewichtete
+    Zusammenfassung** von fünf **bestehenden** Kennzahlen (Overall Rating,
+    Risiko-Faktor, drei Win Rates). Jede Komponente ist ein **Registry-Plugin**
+    (`BaseOpportunityModel`); neue kommen ausschließlich über
+    `market_intelligence_registry.py` hinzu – die Engine wird dafür **nie** geändert
+    (Open/Closed). Die Modelle sind **unabhängig** voneinander.
+  - **Regeln nur aus TOML:** alle Gewichte und Parameter stehen in
+    `knowledge/market_intelligence_rules.toml`; die aktivierten Gewichte müssen 1.0
+    ergeben (sonst Regel-Ladefehler). Fehlt eine Quelle, wird ihr Beitrag
+    ausgelassen und über die verbleibenden Gewichte normalisiert – es wird nichts
+    erfunden. Richtung/Stärke/Confidence/Rating/Risiko kommen unverändert aus der
+    Empfehlung; ohne Empfehlung gilt „Watch" (neutral, Score 0).
+  - **Transparenz:** jede Chance trägt ihre Komponenten-Scores und eine
+    Herleitung (Faktoren, Risiken, „warum nicht höher") – keine Blackbox.
+  - `market_intelligence/` ist ein **Subsystem** (wie `analytics/`), in
+    `quality_check.py` nur der Zyklenprüfung unterworfen. `models/opportunity.py`
+    (Entities) importiert nur andere Modelle. Alle Ergebnistypen sind `frozen`.
+  - **Dashboard:** die neue Seite „Market Intelligence" wird **additiv** über
+    Router/Registry angebunden; die `DashboardEngine` bleibt unverändert und
+    **visualisiert ausschließlich** den `OpportunityReport` (keine Berechnung).
+- **Begründung:** Die Priorisierung entsteht vollständig aus bereits geprüften,
+  reproduzierbaren Signalen; die klare Trennung „Reports → Bewertungsmodell →
+  Opportunity → Ranking" hält das Framework prüfbar, transparent und erweiterbar,
+  ohne die bestehende Fachlogik zu berühren.
+- **Konsequenzen:** Keine neue Handelsregel, keine Broker-API, keine Echtgeldorders,
+  keine ML-Komponenten. `engines/` importiert über `market_intelligence_engine.py`
+  das `market_intelligence`-Subsystem und liest die bestehenden `models.*`-Reports
+  (kein Zyklus); keine bestehende Engine wird verändert.

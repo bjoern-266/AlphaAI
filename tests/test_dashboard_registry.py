@@ -37,6 +37,11 @@ _EXPECTED = {
     "performance_returns",
     "journal_table",
     "recommendations_table",
+    "mi_top_opportunities",
+    "mi_ranking",
+    "mi_heatmap",
+    "mi_explanation",
+    "mi_statistics",
     "settings_panel",
 }
 
@@ -47,7 +52,7 @@ def test_default_registry_has_all_widgets():
 
 
 def test_default_registry_count():
-    assert len(build_default_registry()) == 26
+    assert len(build_default_registry()) == 31
 
 
 def test_registry_contains():
