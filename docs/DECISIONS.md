@@ -658,3 +658,48 @@ das Projekt so aufgebaut ist, wie es ist.
   keine ML-Komponenten. `engines/` importiert über `market_intelligence_engine.py`
   das `market_intelligence`-Subsystem und liest die bestehenden `models.*`-Reports
   (kein Zyklus); keine bestehende Engine wird verändert.
+
+### ADR-036 – Market Discovery als durchsuchendes Subsystem (Pipeline injiziert)
+
+- **Datum:** 2026-07-12 (Sprint 15)
+- **Kontext:** AlphaAI sollte **nicht mehr auf Watchlists angewiesen** sein: das
+  System sollte den gesamten konfigurierten Markt selbstständig durchsuchen,
+  ungeeignete Werte vorab filtern und die besten Chancen priorisieren – **ohne**
+  neue Scores/Strategien/Pattern/Risk-Regeln und **ohne** eine bestehende Engine
+  zu verändern.
+- **Entscheidung:**
+  - Das Discovery-Framework lädt das Universum, filtert Kandidaten und
+    priorisiert über den **bestehenden** Market-Intelligence-Schritt. Es
+    **berechnet niemals** Indikatoren/Muster/Strategien/Scores/Risiken/
+    Empfehlungen.
+  - **Injektion statt Import:** die Werte je Markt (`symbol_source`), die bereits
+    vorhandenen Ergebnisse je Wert (`analysis_provider`) und der
+    Market-Intelligence-Schritt werden dem Subsystem **injiziert** (Duck-Typing).
+    Dadurch importiert `market_discovery/` ausschließlich `models`/`core` – kein
+    Import aus `engines`, kein Import-Zyklus, saubere Schichtung.
+  - **Vorfilter vor der Analyse:** ungeeignete Werte (Liquidität, Volumen,
+    Historie, gültige Kurse, Handelbarkeit, Delisting, Penny Stocks) werden **vor**
+    der vollständigen Bewertung entfernt (Performance; keine unnötigen
+    Berechnungen). Grenzwerte ausschließlich aus
+    `knowledge/market_discovery_rules.toml`; jeder verworfene Wert wird mit Grund
+    festgehalten.
+  - **Branchen-Ausgleich** verhindert einseitige Ergebnislisten – vollständig
+    konfigurierbar, **keine festen Branchenlimits**; ohne Aktivierung bleibt die
+    Score-Reihenfolge erhalten.
+  - **Open/Closed:** unterstützte Märkte sind `MarketDefinition`-Registry-Einträge;
+    neue Märkte kommen ausschließlich über `market_discovery_registry.py` hinzu –
+    die Engine bleibt unverändert. Alle Ergebnistypen sind `frozen`.
+  - Die Architektur ist auf spätere **Parallelisierung** vorbereitet (zustandslose,
+    getrennte Schritte), ohne dass jetzt bereits parallelisiert wird.
+  - **Dashboard:** die neue Seite „Market Discovery" wird additiv über
+    Router/Registry angebunden; die `DashboardEngine` bleibt unverändert und
+    **visualisiert ausschließlich** den `DiscoveryReport`.
+- **Begründung:** Die Injektion von Pipeline und Intelligence hält das Subsystem
+  vollständig entkoppelt und prüfbar; der Vorfilter vor der Analyse macht große
+  Universen effizient verarbeitbar; die klare Schritt-Trennung ermöglicht spätere
+  Parallelisierung, ohne die bestehende Fachlogik zu berühren.
+- **Konsequenzen:** Keine neuen Scores/Strategien/Pattern/Risk-Regeln, keine
+  Broker-API, keine Echtgeldorders. `engines/` verdrahtet über
+  `market_discovery_engine.py` das `market_discovery`-Subsystem mit der
+  `MarketIntelligenceEngine`; keine bestehende Engine wird verändert. Nach der
+  Discovery trifft der Benutzer die Handelsentscheidung selbst.

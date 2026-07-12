@@ -279,19 +279,43 @@ Intelligence" visualisiert nur den Report. Einstieg:
 `MarketIntelligenceEngine.from_config()`. Datenfluss/Details:
 `docs/MARKET_INTELLIGENCE.md`.
 
+## Market Discovery (ab Sprint 15 verfügbar)
+
+Macht AlphaAI **von Watchlists unabhängig**: durchsucht den gesamten
+konfigurierten Markt selbstständig, filtert ungeeignete Werte **vor** der
+vollständigen Analyse und priorisiert die besten Chancen. **Berechnet niemals**
+Indikatoren/Muster/Strategien/Scores/Risiken/Empfehlungen. Kette: `Market Universe
+→ Discovery Engine → Candidate Filter → (bestehende Pipeline, injiziert) → Market
+Intelligence → Branchen-Ausgleich → DiscoveryReport`. Subsystem
+`market_discovery/` (`universe_loader`, `market_universe`, `candidate_filter`,
+`candidate`, `sector_balancer`, `market_statistics`, `discovery_engine`,
+`discovery_cache`) – importiert nur `models`/`core`; die Pipeline-Ergebnisse je
+Wert (`analysis_provider`) und der Market-Intelligence-Schritt werden **injiziert**
+(kein Import aus `engines`, kein Zyklus). 10 Märkte über die
+`MarketDiscoveryRegistry` (erweiterbar, Engine unverändert). Grenzwerte des
+Vorfilters und der Branchen-Ausgleich ausschließlich aus
+`knowledge/market_discovery_rules.toml`. Ergebnistypen in
+`models/market_discovery.py` (re-exportiert über
+`engines/market_discovery_result.py`). Die Dashboard-Seite „Market Discovery"
+visualisiert nur den Report. Einstieg:
+`MarketDiscoveryEngine.from_config().discover(...)`. Datenfluss/Details:
+`docs/MARKET_DISCOVERY.md`.
+
 ## Aktueller Stand
 
-Sprint 1–14 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–15 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
 Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung,
 Historical Backtesting Framework, Paper Trading Framework, Trading Intelligence &
 Analytics Framework, AlphaAI Command Center / Dashboard, Market Intelligence
-Framework). Das Dashboard ist **rein darstellend** und **berechnet nichts**;
-Market Intelligence **priorisiert nur** bereits vorhandene Ergebnisse. Es gibt
-bewusst weiterhin **keine** Broker-API, **keine** automatische Orderausführung und
-**keine echten Orders** (Backtesting und Paper Trading simulieren ausschließlich;
-Analytics wertet nur aus, Market Intelligence priorisiert nur, das Dashboard zeigt
-nur an). Offene fachliche Kalibrierung (Schwellen an realen
+Framework, Market Discovery Framework). Das Dashboard ist **rein darstellend**;
+Market Intelligence **priorisiert nur** und Market Discovery **durchsucht/filtert
+nur** – alle nutzen ausschließlich vorhandene Ergebnisse. Es gibt bewusst weiterhin
+**keine** Broker-API, **keine** automatische Orderausführung und **keine echten
+Orders** (Backtesting und Paper Trading simulieren ausschließlich; Analytics wertet
+nur aus, Market Intelligence priorisiert nur, Market Discovery durchsucht nur, das
+Dashboard zeigt nur an). Nach der Discovery trifft der Benutzer die
+Handelsentscheidung selbst. Offene fachliche Kalibrierung (Schwellen an realen
 Daten, Annualisierung der vorbereiteten Backtest-Kennzahlen, Aktivierung des
 vorbereiteten Trailing Stops) ist im Validation Report festgehalten. Immer zuerst
 `PROJECT_STATUS.md` und `HANDOVER.md` lesen.

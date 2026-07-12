@@ -42,6 +42,11 @@ _EXPECTED = {
     "mi_heatmap",
     "mi_explanation",
     "mi_statistics",
+    "md_top_opportunities",
+    "md_ranking",
+    "md_market_overview",
+    "md_sector_overview",
+    "md_market_breakdown",
     "settings_panel",
 }
 
@@ -52,7 +57,7 @@ def test_default_registry_has_all_widgets():
 
 
 def test_default_registry_count():
-    assert len(build_default_registry()) == 31
+    assert len(build_default_registry()) == 36
 
 
 def test_registry_contains():

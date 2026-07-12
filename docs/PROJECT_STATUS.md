@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-11
-- **Aktueller Sprint:** Sprint 14 – Market Intelligence Framework
+- **Aktueller Sprint:** Sprint 15 – Market Discovery Framework
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -249,6 +249,29 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 - **Validierung:** leere/ungültige Reports, doppelte Ticker, ungültige Gewichte/
   Scores. **Tests:** 1690 gesamt (201 neue).
 
+### Market Discovery Framework (Sprint 15)
+
+- **Von Watchlists unabhängig:** durchsucht den gesamten konfigurierten Markt
+  selbstständig, filtert ungeeignete Werte **vor** der vollständigen Analyse und
+  priorisiert die besten Chancen. Der Benutzer gibt keine Aktien mehr vor.
+  **Berechnet niemals** Indikatoren/Muster/Strategien/Scores/Risiken/Empfehlungen.
+- **Entities:** `models/market_discovery.py` (`MarketDefinition`, `MarketSymbol`,
+  `MarketUniverse`, `CandidateAnalysis`, `RejectedCandidate`,
+  `DiscoveryOpportunity`, `DiscoveryStatistics`, `DiscoveryReport`; alle `frozen`).
+- **Subsystem `market_discovery/`:** `universe_loader`, `market_universe`,
+  `candidate_filter`, `candidate`, `sector_balancer`, `market_statistics`,
+  `discovery_engine`, `discovery_cache`. Importiert nur `models`/`core`; Pipeline-
+  Ergebnisse und Market-Intelligence werden **injiziert**.
+- **Engine-Anbindung:** `MarketDiscoveryEngine` (lädt Universum → Vorfilter →
+  Intelligence → Ausgleich → Report), `MarketDiscoveryRegistry` (10 Märkte,
+  einzige Erweiterungsstelle), `DiscoveryCache` (FIFO), Re-Export
+  `market_discovery_result`.
+- **Vorfilter** (Grenzwerte aus `market_discovery_rules.toml`), **Branchen-
+  Ausgleich** (konfigurierbar, keine festen Limits), neue Dashboard-Seite
+  „Market Discovery" (additiv; Engine unverändert).
+- **Validierung:** leeres Universum, unbekannte Märkte, ungültige/doppelte
+  Kandidaten. **Tests:** 1836 gesamt (145 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Dashboard-**Berechnung** (das Dashboard zeigt nur an), keine Broker-API,
@@ -259,11 +282,11 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 14)
+## Qualitätsnachweis (Sprint 15)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 1690 Tests bestanden |
+| pytest | 1836 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |

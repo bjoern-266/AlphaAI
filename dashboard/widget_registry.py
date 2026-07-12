@@ -28,6 +28,13 @@ from dashboard.widgets.backtest import (
 from dashboard.widgets.base import BaseWidget
 from dashboard.widgets.journal import JournalTableWidget
 from dashboard.widgets.live import ReasonsWidget, WatchlistWidget
+from dashboard.widgets.market_discovery import (
+    DiscoveryRankingWidget,
+    MarketBreakdownWidget,
+    MarketOverviewWidget,
+    SectorOverviewWidget,
+    TopDiscoveryWidget,
+)
 from dashboard.widgets.market_intelligence import (
     MarketIntelligenceStatsWidget,
     OpportunityExplanationWidget,
@@ -95,6 +102,11 @@ _DEFAULT_WIDGETS: tuple[BaseWidget, ...] = (
     OpportunityHeatmapWidget(),
     OpportunityExplanationWidget(),
     MarketIntelligenceStatsWidget(),
+    TopDiscoveryWidget(),
+    DiscoveryRankingWidget(),
+    MarketOverviewWidget(),
+    SectorOverviewWidget(),
+    MarketBreakdownWidget(),
     SettingsWidget(),
 )
 

@@ -25,7 +25,7 @@ def test_default_state():
 
 
 def test_all_pages_defined():
-    assert len(list(Page)) == 10
+    assert len(list(Page)) == 11
 
 
 def test_refresh_rates_values():

@@ -1,0 +1,50 @@
+# =============================================================================
+# Market-Discovery-Regeln (Sprint 15)
+# =============================================================================
+# Einzige Quelle aller Parameter des Market Discovery Framework. Im Code gibt es
+# keine hartcodierten Grenzwerte.
+#
+# Wichtig: Die Discovery Engine berechnet NIEMALS Indikatoren, Muster,
+# Strategien, Scores, Risiken oder Empfehlungen. Sie durchsucht den Markt, filtert
+# ungeeignete Kandidaten und nutzt fuer die Bewertung ausschliesslich bereits
+# vorhandene Ergebnisse (ueber den bestehenden Market-Intelligence-Schritt).
+# =============================================================================
+
+[meta]
+version = 1
+description = "Universum, Vorfilter, Branchen-Ausgleich und Statistik (Sprint 15)."
+
+# --- Universum ---------------------------------------------------------------
+[universe]
+# Automatisch durchsuchte Maerkte (Schluessel aus der Markt-Registry). Der
+# Benutzer muss keine Aktien mehr vorgeben. Weitere Maerkte problemlos ergaenzbar.
+default_markets = ["sp500", "nasdaq100", "dax"]
+
+# --- Vorfilter (vor der vollstaendigen Analyse) ------------------------------
+# Grenzwerte entfernen ungeeignete Werte. Alle Werte sind konfigurierbar.
+[filter]
+min_price = 1.0
+min_volume = 100000.0
+min_dollar_volume = 1000000.0
+min_history_days = 200
+require_tradable = true
+exclude_delisted = true
+exclude_penny = true
+penny_price = 1.0
+
+# --- Branchen-Ausgleich ------------------------------------------------------
+# Verhindert eine einseitige Ergebnisliste. Keine festen Branchenlimits.
+[balancing]
+enabled = true
+# Hoechstzahl direkt aufeinanderfolgender Werte derselben Branche.
+max_streak = 2
+
+# --- Statistik ---------------------------------------------------------------
+[statistics]
+top_sectors = 5
+top_markets = 5
+
+# --- Anzeige -----------------------------------------------------------------
+[discovery]
+# Anzahl der im Dashboard hervorgehobenen Top-Chancen.
+top_opportunities = 10

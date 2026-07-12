@@ -34,6 +34,7 @@ BACKTEST_RULES_FILE: Path = KNOWLEDGE_DIR / "backtest_rules.toml"
 PAPER_TRADING_RULES_FILE: Path = KNOWLEDGE_DIR / "paper_trading_rules.toml"
 ANALYTICS_RULES_FILE: Path = KNOWLEDGE_DIR / "analytics_rules.toml"
 MARKET_INTELLIGENCE_RULES_FILE: Path = KNOWLEDGE_DIR / "market_intelligence_rules.toml"
+MARKET_DISCOVERY_RULES_FILE: Path = KNOWLEDGE_DIR / "market_discovery_rules.toml"
 LOG_FILE: Path = LOGS_DIR / "alpha_ai.log"
 
 

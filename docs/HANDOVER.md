@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-11
-- **Abgeschlossener Sprint:** Sprint 14 – Market Intelligence Framework
+- **Abgeschlossener Sprint:** Sprint 15 – Market Discovery Framework
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,7 +18,7 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 1690 Tests).
+5. Tests ausführen: `pytest` (aktuell 1836 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
 > **Semantik (ab 9.6):** `RecommendationResult.direction` (LONG/SHORT/NEUTRAL)
@@ -26,7 +26,7 @@ dass Wissen nur im Chat existiert.
 > (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) sind getrennt. Die Stärke enthält **kein**
 > BUY/SELL/LONG/SHORT. Ein bärisches Setup ist SHORT mit ggf. hoher Stärke.
 
-## Qualitätsprüfung Sprint 14 (Ergebnis)
+## Qualitätsprüfung Sprint 15 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -39,7 +39,7 @@ Vor dem Commit automatisch geprüft:
 | Pipeline-Konsistenz (`verify_pipeline`) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **1690 bestanden** |
+| pytest | **1836 bestanden** |
 
 ## Vollständige Pipeline – Einstieg
 
@@ -177,6 +177,26 @@ eigene Sprints und ändern bewusst Verhalten.
 - Ranking/Filter/Sortierung/Explainer/Statistik liegen in eigenen Modulen; die
   Dashboard-Seite „Market Intelligence" visualisiert nur den Report. Details:
   `docs/MARKET_INTELLIGENCE.md`.
+
+## Market Discovery – Kurzüberblick für die Weiterarbeit
+
+- Einstieg: `MarketDiscoveryEngine.from_config()` lädt
+  `knowledge/market_discovery_rules.toml`, die Markt-Registry (10 Märkte) und den
+  bestehenden Market-Intelligence-Schritt.
+- Durchsuchen: `engine.discover(markets=None, symbol_source=…, analysis_provider=…)`
+  → `DiscoveryReport`. `markets` ist optional (Standard: `default_markets`).
+  **`symbol_source`** liefert je Markt die Werte (Stammdaten), **`analysis_provider`**
+  je Wert die **bereits vorhandenen** Ergebnisse (Recommendation/Analytics/Backtest/
+  Paper) aus der bestehenden Pipeline. Beide werden **injiziert** – die Engine
+  berechnet nichts selbst und importiert nichts aus der Pipeline.
+- Ablauf: Universum laden → Vorfilter (`candidate_filter`) → Kandidaten
+  (`candidate`) → Market Intelligence (unverändert) → Branchen-Ausgleich
+  (`sector_balancer`) → Statistik → Report. Verworfene Werte stehen mit Grund in
+  `report.rejected`.
+- **Neuer Markt:** `MarketDefinition` in
+  `engines/market_discovery_registry.py::_DEFAULT_MARKETS` ergänzen – die Engine
+  bleibt unverändert. **Grenzwerte/Ausgleich:** nur über die Regeldatei. Details:
+  `docs/MARKET_DISCOVERY.md`.
 
 ## Recommendation Engine – Kurzüberblick für die Weiterarbeit
 

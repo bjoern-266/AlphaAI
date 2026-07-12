@@ -150,6 +150,7 @@ _DEFAULT_ICONS: dict[str, str] = {
     "trade_journal": "target",
     "recommendations": "signal",
     "market_intelligence": "radar",
+    "market_discovery": "database",
     "settings": "shield",
     "risk": "shield",
     "radar": "radar",

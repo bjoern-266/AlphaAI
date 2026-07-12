@@ -4,6 +4,54 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.15.0] – 2026-07-12 – Sprint 15: Market Discovery Framework
+
+Neues Framework, das AlphaAI **von Watchlists unabhängig** macht: das System
+durchsucht den gesamten konfigurierten Markt selbstständig, filtert ungeeignete
+Werte **vor** der vollständigen Analyse und priorisiert daraus die objektiv besten
+Chancen. Der Benutzer gibt keine Aktien mehr vor. Die Discovery Engine
+**berechnet niemals** Indikatoren, Muster, Strategien, Scores, Risiken oder
+Empfehlungen – sie nutzt ausschließlich bereits vorhandene Ergebnisse (per
+Injektion) und den **unveränderten** Market-Intelligence-Schritt.
+
+### Hinzugefügt
+
+- **Entities:** `models/market_discovery.py` (alle unveränderlich, `frozen`):
+  `MarketDefinition`, `MarketSymbol`, `MarketUniverse`, `CandidateAnalysis`,
+  `RejectedCandidate`, `DiscoveryOpportunity`, `DiscoveryStatistics`,
+  `DiscoveryReport`.
+- **Subsystem `market_discovery/`:** `universe_loader.py`, `market_universe.py`,
+  `candidate_filter.py`, `candidate.py`, `sector_balancer.py`,
+  `market_statistics.py`, `discovery_engine.py`, `discovery_cache.py`. Das
+  Subsystem importiert ausschließlich `models`/`core`; die vorhandenen Ergebnisse
+  je Wert und der Market-Intelligence-Schritt werden **injiziert**.
+- **Engine-Anbindung:** `engines/market_discovery_engine.py`,
+  `market_discovery_registry.py` (Registry der Märkte – einzige
+  Erweiterungsstelle), `market_discovery_cache.py` und
+  `market_discovery_result.py` (Re-Exporte).
+- **Konfiguration:** `knowledge/market_discovery_rules.toml` (Universum,
+  Vorfilter-Grenzwerte, Branchen-Ausgleich, Statistik, Anzeige); `core/paths.py`
+  um `MARKET_DISCOVERY_RULES_FILE` ergänzt.
+- **Märkte:** NYSE, NASDAQ, S&P 500, NASDAQ 100, Russell 2000, DAX, MDAX, SDAX,
+  TecDAX, Euro Stoxx 50 (weitere problemlos ergänzbar).
+- **Vorfilter:** Mindestkurs/-volumen/-liquidität/-historie, gültige Kurse,
+  Handelbarkeit, keine Delistings, keine Penny Stocks (konfigurierbar); jeder
+  verworfene Wert wird mit Grund festgehalten.
+- **Branchen-Ausgleich:** konfigurierbar, keine festen Branchenlimits.
+- **Dashboard:** neue Seite **Market Discovery** (additiv über Router/Registry;
+  `DashboardEngine` unverändert) mit Top Opportunities, Gesamtmarkt-,
+  Branchen- und Marktübersicht sowie Ranking (Suche/Filter) – visualisiert
+  ausschließlich den DiscoveryReport.
+- **Tests:** 145 neue Tests (1836 gesamt).
+- **Doku:** neue `docs/MARKET_DISCOVERY.md`; übrige Doku aktualisiert.
+
+### Unverändert (bewusst)
+
+- Keine neuen Scores/Strategien/Pattern/Risk-Regeln, keine Broker-API, keine
+  Echtgeldorders. Keine Änderung an einer bestehenden Engine, am Backtesting,
+  Paper Trading, Analytics, am Market-Intelligence-Framework oder an der
+  Dashboard-Engine.
+
 ## [0.14.0] – 2026-07-12 – Sprint 14: Market Intelligence Framework
 
 Neues, **rein priorisierendes** Framework. Es **bewertet ausschließlich bereits

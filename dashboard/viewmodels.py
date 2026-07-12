@@ -19,6 +19,7 @@ from models.analytics import AnalyticsReport, GroupStatistics
 from models.backtest import BacktestReport
 from models.dashboard import StatusItem
 from models.indicator import IndicatorResult
+from models.market_discovery import DiscoveryReport
 from models.opportunity import OpportunityReport
 from models.paper_trading import PaperTradingReport
 from models.pattern import PatternReport
@@ -45,6 +46,7 @@ class ReportBundle:
     pattern: PatternReport | None = None
     indicator: IndicatorResult | None = None
     opportunity: OpportunityReport | None = None
+    discovery: DiscoveryReport | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -124,6 +126,24 @@ class ExplanationRow:
     factors: tuple[str, ...]
     risks: tuple[str, ...]
     why_not_higher: str
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryRow:
+    """Eine Zeile der Market-Discovery-Ergebnisliste (aus dem DiscoveryReport)."""
+
+    rank: int
+    ticker: str
+    company: str
+    sector: str
+    country: str
+    market: str
+    direction: str
+    strength: str
+    confidence: float | None
+    score: float | None
+    risk: float | None
+    summary: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -272,6 +292,24 @@ class MarketIntelligenceVM:
 
 
 @dataclass(frozen=True, slots=True)
+class MarketDiscoveryVM:
+    """Ergebnisse der Market-Discovery-Seite (abgelesen)."""
+
+    rows: tuple[DiscoveryRow, ...] = ()
+    universe_count: int | None = None
+    rejected_count: int | None = None
+    analyzed_count: int | None = None
+    long_count: int | None = None
+    short_count: int | None = None
+    watch_count: int | None = None
+    average_score: float | None = None
+    average_risk: float | None = None
+    average_confidence: float | None = None
+    top_sectors: tuple[tuple[str, int], ...] = ()
+    top_markets: tuple[tuple[str, int], ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class DashboardViewModel:
     """Bündelt alle Seiten-View-Models (unveränderlich)."""
 
@@ -284,6 +322,7 @@ class DashboardViewModel:
     journal: JournalVM = field(default_factory=JournalVM)
     recommendations: RecommendationsVM = field(default_factory=RecommendationsVM)
     market_intelligence: MarketIntelligenceVM = field(default_factory=MarketIntelligenceVM)
+    market_discovery: MarketDiscoveryVM = field(default_factory=MarketDiscoveryVM)
 
 
 # --------------------------------------------------------------------------- #
@@ -578,6 +617,45 @@ def _watchlist_tickers(watchlists: dict, name: str) -> tuple[str, ...]:
     return tuple(watchlist.tickers) if watchlist is not None else ()
 
 
+def _market_discovery(bundle: ReportBundle) -> MarketDiscoveryVM:
+    """Liest den DiscoveryReport ab (nur Ablesen)."""
+    report = bundle.discovery
+    if report is None:
+        return MarketDiscoveryVM()
+    rows = tuple(
+        DiscoveryRow(
+            rank=o.rank,
+            ticker=o.ticker,
+            company=o.company,
+            sector=o.sector,
+            country=o.country,
+            market=o.market,
+            direction=o.direction.value,
+            strength=o.recommendation_strength.value,
+            confidence=o.confidence,
+            score=o.opportunity_score,
+            risk=o.risk,
+            summary=o.summary,
+        )
+        for o in report.opportunities
+    )
+    stats = report.statistics
+    return MarketDiscoveryVM(
+        rows=rows,
+        universe_count=stats.universe_count,
+        rejected_count=stats.rejected_count,
+        analyzed_count=stats.analyzed_count,
+        long_count=stats.long_count,
+        short_count=stats.short_count,
+        watch_count=stats.watch_count,
+        average_score=stats.average_score,
+        average_risk=stats.average_risk,
+        average_confidence=stats.average_confidence,
+        top_sectors=tuple(stats.top_sectors),
+        top_markets=tuple(stats.top_markets),
+    )
+
+
 def build_view_model(bundle: ReportBundle) -> DashboardViewModel:
     """Baut das gesamte :class:`DashboardViewModel` aus dem Report-Bundle."""
     return DashboardViewModel(
@@ -590,6 +668,7 @@ def build_view_model(bundle: ReportBundle) -> DashboardViewModel:
         journal=_journal(bundle),
         recommendations=_recommendations(bundle),
         market_intelligence=_market_intelligence(bundle),
+        market_discovery=_market_discovery(bundle),
     )
 
 
@@ -616,12 +695,14 @@ __all__ = [
     "JournalVM",
     "RecommendationsVM",
     "MarketIntelligenceVM",
+    "MarketDiscoveryVM",
     "LiveRow",
     "RecommendationRow",
     "JournalRow",
     "TradeRow",
     "OpportunityRow",
     "ExplanationRow",
+    "DiscoveryRow",
     "build_view_model",
     "SystemStatus",
 ]

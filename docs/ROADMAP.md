@@ -211,6 +211,23 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
 - Neue Dashboard-Seite „Market Intelligence" (additiv; Engine unverändert).
 - 201 neue Tests (1690 gesamt). Doku: `docs/MARKET_INTELLIGENCE.md`.
 
+## Sprint 15 – Market Discovery Framework ✅ (abgeschlossen)
+
+- Kette `Market Universe → Discovery Engine → Candidate Filter → (bestehende
+  Pipeline, injiziert) → Market Intelligence → Branchen-Ausgleich → Discovery
+  Report → Dashboard`. AlphaAI ist von Watchlists unabhängig; der Benutzer gibt
+  keine Aktien mehr vor. Die Discovery Engine berechnet nichts selbst.
+- Subsystem `market_discovery/` (`universe_loader`, `market_universe`,
+  `candidate_filter`, `candidate`, `sector_balancer`, `market_statistics`,
+  `discovery_engine`, `discovery_cache`) + Engine-Anbindung
+  (`market_discovery_engine`, `-registry`, `-cache`, `-result`).
+- 10 unterstützte Märkte (NYSE/NASDAQ/S&P500/NASDAQ100/Russell2000/DAX/MDAX/SDAX/
+  TecDAX/EuroStoxx50, erweiterbar). Vorfilter (Liquidität/Volumen/Historie/…) und
+  Branchen-Ausgleich vollständig konfigurierbar aus
+  `knowledge/market_discovery_rules.toml`.
+- Neue Dashboard-Seite „Market Discovery" (additiv; Engine unverändert).
+- 145 neue Tests (1836 gesamt). Doku: `docs/MARKET_DISCOVERY.md`.
+
 ## Sprint 7 – Persistenz & Lernfähigkeit (geplant)
 
 - Speicherung von Analysen/Empfehlungen in SQLite (`database/`).

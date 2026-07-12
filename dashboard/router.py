@@ -95,6 +95,7 @@ _TITLES: dict[Page, str] = {
     Page.TRADE_JOURNAL: "Trade Journal",
     Page.RECOMMENDATIONS: "Recommendations",
     Page.MARKET_INTELLIGENCE: "Market Intelligence",
+    Page.MARKET_DISCOVERY: "Market Discovery",
     Page.SETTINGS: "Settings",
 }
 
@@ -154,6 +155,10 @@ _LAYOUTS: dict[Page, dict[str, tuple[str, ...]]] = {
         "center": ("mi_top_opportunities", "mi_ranking", "mi_heatmap"),
         "right": ("mi_statistics", "mi_explanation"),
     },
+    Page.MARKET_DISCOVERY: {
+        "center": ("md_top_opportunities", "md_ranking", "md_sector_overview"),
+        "right": ("md_market_overview", "md_market_breakdown"),
+    },
     Page.SETTINGS: {
         "center": ("settings_panel",),
     },
@@ -168,6 +173,7 @@ KEYBOARD_SHORTCUTS: dict[str, str] = {
     "Ctrl+4": Page.BACKTESTING.value,
     "Ctrl+5": Page.TRADE_JOURNAL.value,
     "Ctrl+6": Page.MARKET_INTELLIGENCE.value,
+    "Ctrl+7": Page.MARKET_DISCOVERY.value,
 }
 
 

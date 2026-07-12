@@ -631,6 +631,39 @@ AnalyticsReport (AnalyticsResult, dashboard-fertig)
   label-basiert (Trade-Metadata) und ohne Engine-Änderung erweiterbar.
   Details: `docs/ANALYTICS.md`.
 
+## Market Discovery Framework (umgesetzt in Sprint 15)
+
+Das Market-Discovery-Subsystem (`market_discovery/`) macht AlphaAI **von
+Watchlists unabhängig**: es durchsucht das konfigurierte Universum selbstständig,
+filtert ungeeignete Werte **vor** der vollständigen Analyse und priorisiert die
+besten Chancen. Es **berechnet niemals** Indikatoren/Muster/Strategien/Scores/
+Risiken/Empfehlungen und verändert keine bestehende Engine.
+
+```
+Market Universe (geladen)
+        │  Vorfilter (Liquidität/Volumen/Historie/…)
+je Wert: bereits vorhandene Ergebnisse (INJIZIERT) → MarketCandidate
+        │  Market Intelligence (bestehend, unverändert, INJIZIERT)
+Branchen-Ausgleich → Statistik
+        │
+DiscoveryReport → Dashboard-Seite „Market Discovery"
+```
+
+- **Schicht-Einordnung / keine Zyklen:** `market_discovery/` importiert
+  ausschließlich `models`/`core`. Der Market-Intelligence-Schritt und die
+  Analyse-Ergebnisse je Wert werden **injiziert** (Duck-Typing), **nicht**
+  importiert – so bleibt das Subsystem frei von `engines` und es entsteht kein
+  Import-Zyklus. `models/market_discovery.py` gehört zur Entities-Schicht.
+- **Open/Closed:** unterstützte Märkte sind `MarketDefinition`-**Registry-
+  Einträge**; neue Märkte werden nur über
+  `engines/market_discovery_registry.py` ergänzt – die Engine bleibt unverändert.
+- **Performance:** der Vorfilter läuft vor der vollständigen Analyse (keine
+  unnötigen Berechnungen); die zustandslosen Schritte sind auf spätere
+  Parallelisierung vorbereitet (jetzt bewusst noch nicht parallelisiert).
+- **Immutabilität/Validierung:** alle Ergebnistypen sind `frozen`; leeres
+  Universum, unbekannte Märkte, ungültige/doppelte Kandidaten werden abgefangen.
+  Details: `docs/MARKET_DISCOVERY.md`.
+
 ## AlphaAI Command Center / Dashboard (umgesetzt in Sprint 13)
 
 Das Dashboard-Subsystem (`dashboard/`) ist **ausschließlich** die Presentation
@@ -701,14 +734,16 @@ OpportunityReport → Dashboard-Seite „Market Intelligence"
 
 ## Aktueller Stand
 
-Sprint 1–14 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–15 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
 Integration & Validierung, Historical Backtesting Framework, Paper Trading
 Framework, Trading Intelligence & Analytics Framework, AlphaAI Command Center /
-Dashboard, Market Intelligence Framework). Das Dashboard ist **rein darstellend**;
-Market Intelligence **priorisiert nur** vorhandene Ergebnisse. Es gibt bewusst
+Dashboard, Market Intelligence Framework, Market Discovery Framework). Das
+Dashboard ist **rein darstellend**; Market Intelligence **priorisiert nur** und
+Market Discovery **durchsucht/filtert nur** vorhandene Ergebnisse. Es gibt bewusst
 weiterhin **keine Broker-API, keine automatische Orderausführung und keine echten
 Orders** (Backtesting und Paper Trading simulieren ausschließlich; Analytics
-wertet nur aus, Market Intelligence priorisiert nur, das Dashboard zeigt nur an).
+wertet nur aus, Market Intelligence priorisiert nur, Market Discovery durchsucht
+nur, das Dashboard zeigt nur an; die Handelsentscheidung trifft der Benutzer).
 Offene fachliche Kalibrierung ist im `docs/VALIDATION_REPORT.md` dokumentiert.

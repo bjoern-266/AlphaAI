@@ -43,6 +43,7 @@ PACKAGES = [
     "paper_trading",
     "analytics",
     "market_intelligence",
+    "market_discovery",
     "dashboard",
 ]
 
