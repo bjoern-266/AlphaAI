@@ -6,8 +6,10 @@ dass Wissen nur im Chat existiert.
 
 ## Stand der Übergabe
 
-- **Datum:** 2026-07-11
-- **Abgeschlossener Sprint:** Sprint 16 – Live Market Operations Platform
+- **Datum:** 2026-07-12
+- **Abgeschlossener Sprint:** Sprint 17 – Production Backend & Mobile API Platform
+  (endgültiges Backend; Sprint 18 = ausschließlich Android-App, keine
+  Engine-Änderungen nötig)
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,7 +20,7 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 2040 Tests).
+5. Tests ausführen: `pytest` (aktuell 2294 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
 > **Semantik (ab 9.6):** `RecommendationResult.direction` (LONG/SHORT/NEUTRAL)
@@ -26,7 +28,20 @@ dass Wissen nur im Chat existiert.
 > (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) sind getrennt. Die Stärke enthält **kein**
 > BUY/SELL/LONG/SHORT. Ein bärisches Setup ist SHORT mit ggf. hoher Stärke.
 
-## Qualitätsprüfung Sprint 16 (Ergebnis)
+## Backend-Betrieb (ab Sprint 17)
+
+- AlphaAI läuft als **produktiver Backend-Dienst**. Composition Root:
+  `engines/application_engine.py` (`ApplicationEngine.from_config(...)`).
+- Persistenz: SQLite (`database/alpha_ai_reports.db`), neustartfest; immer der
+  letzte erfolgreiche Scan. Parameter in `knowledge/application_rules.toml`.
+- REST-API (`/api/v1`, JSON): framework-unabhängiger Kern
+  (`application/api/`) + optionaler FastAPI-Adapter (`engine.create_fastapi_app()`).
+  Zugriff vorerst nur lokal.
+- Grundsatz: API/Backend **liefern** nur vorhandene Reports – keine Berechnung,
+  keine Order, keine Handelsentscheidung. Details: `docs/API.md`,
+  `docs/BACKEND.md`, `docs/PRODUCTION.md`.
+
+## Qualitätsprüfung Sprint 17 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 

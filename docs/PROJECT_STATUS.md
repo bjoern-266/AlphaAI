@@ -2,9 +2,9 @@
 
 _Wird nach jedem Sprint automatisch aktualisiert._
 
-- **Datum:** 2026-07-11
-- **Aktueller Sprint:** Sprint 16 – Live Market Operations Platform
-- **Status:** ✅ Abgeschlossen
+- **Datum:** 2026-07-12
+- **Aktueller Sprint:** Sprint 17 – Production Backend & Mobile API Platform
+- **Status:** ✅ Abgeschlossen (endgültiges Backend; Sprint 18 = nur Android-App)
 
 ## Was ist vorhanden
 
@@ -293,6 +293,33 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 - **Validierung:** ungültige Marktzeiten/Zeitzonen, doppelte Jobs, Job-Absturz,
   Queue-Exklusivität. **Tests:** 2040 gesamt (203 neue).
 
+### Production Backend & Mobile API Platform (Sprint 17)
+
+- **Produktiver Backend-Dienst:** AlphaAI läuft als Dienst; alle Reports werden
+  automatisch erzeugt und **dauerhaft gespeichert** (SQLite). Eine
+  produktionsreife **REST-API** liefert sämtliche Informationen als JSON. Die
+  API/das Backend **berechnen nichts**, erzeugen **keine** Scores/Empfehlungen und
+  treffen **keine** Handelsentscheidung – reine Auslieferung vorhandener Reports.
+- **Entities:** `models/application.py` (`ApiVersion`, `ServiceInfo`,
+  `ComponentHealth`, `HealthReport`, `StoredReport`, `ApiError`, `ApiEnvelope`,
+  `EndpointInfo`; alle `frozen`; Enums `HealthStatus`, `ReportKind`).
+- **Schicht `application/`:** `exceptions`, `serialization` (generischer
+  JSON-Serialisierer), `repositories` (`ReportStore`/SQLite), `responses`
+  (Envelope), `services` (`ReportService`, `SystemService`, `BackgroundService`),
+  `health` (`HealthMonitor`), `authentication` (`LocalOnlyPolicy`), `api`
+  (framework-unabhängiger Router + FastAPI-Adapter). Importiert nur
+  `models`/`core`; Pipeline injiziert.
+- **Engine-Anbindung:** `ApplicationEngine` (Composition Root),
+  `ApplicationRegistry` (Report-Arten), `ApplicationCache`, `application_result`.
+  Regeln aus `knowledge/application_rules.toml`.
+- **REST-API (`/api/v1`, JSON):** System/Märkte/Empfehlungen/Analytics/Dashboard
+  (17 Endpunkte). Einheitliches Envelope, Versionierung, revisionsgebundener
+  Cache, GZip, Zugriff vorerst nur lokal.
+- **Robustheit:** automatische Recovery (Fehler stoppen den Dienst nie dauerhaft);
+  Neustart verliert keine Daten; immer der letzte erfolgreiche Scan.
+- **Validierung:** ungültige Requests/Parameter, leere/fehlende Reports,
+  Scheduler-/Persistenz-/API-Fehler. **Tests:** 2294 gesamt (254 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Dashboard-**Berechnung** (das Dashboard zeigt nur an), keine Broker-API,
@@ -303,11 +330,11 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 16)
+## Qualitätsnachweis (Sprint 17)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 2040 Tests bestanden |
+| pytest | 2294 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |

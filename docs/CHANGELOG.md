@@ -4,6 +4,74 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.17.0] – 2026-07-12 – Sprint 17: Production Backend & Mobile API Platform
+
+Sprint 17 **beendet die Backend-Entwicklung**: AlphaAI läuft ab hier als
+**produktiver Backend-Dienst**. Alle Reports werden automatisch erzeugt und
+**dauerhaft gespeichert**; eine produktionsreife **REST-API** stellt sämtliche
+Informationen als JSON bereit. Desktop-Dashboard und Android-App (Sprint 18)
+nutzen **dieselbe API** – keine doppelte Geschäftslogik. Die API/das Backend
+**berechnen nichts**, erzeugen **keine** Scores/Risiken/Empfehlungen und treffen
+**keine** Handelsentscheidung; keine bestehende Engine wurde verändert. **Alle
+Kauf-/Verkaufsentscheidungen trifft der Benutzer.**
+
+### Hinzugefügt
+
+- **Entities:** `models/application.py` (alle `frozen`): `ApiVersion`,
+  `ServiceInfo`, `ComponentHealth`, `HealthReport`, `StoredReport`, `ApiError`,
+  `ApiEnvelope`, `EndpointInfo` (+ Enums `HealthStatus`, `ReportKind`).
+- **Application Service Layer `application/`** (importiert nur `models`/`core`;
+  Pipeline wird injiziert – kein Import-Zyklus):
+  - `exceptions/` – `ApplicationError` + `InvalidRequestError`,
+    `ReportNotFoundError`, `ServiceUnavailableError`, `PersistenceError`,
+    `AuthenticationError` (je mit stabilem `code`/`status`).
+  - `serialization/` – generischer, verlustfreier JSON-Serialisierer für alle
+    (frozen) Report-Modelle (Dataclass/Enum/datetime/Tupel/Mapping → JSON).
+  - `repositories/` – `ReportStore` (SQLite): dauerhaft, neustartfest, mit
+    Retention je Art und monotoner Revision (für Cache-Invalidierung).
+  - `responses/` – einheitliche Antwort-Hüllen (`ApiEnvelope`) für Erfolg/Fehler.
+  - `services/` – `ReportService` (liest/filtert Reports), `SystemService`
+    (Version/Status), `BackgroundService` (Takt + Persistenz + Recovery).
+  - `health/` – `HealthMonitor` (aggregiert API/Scheduler/Markt/Queue/Cache/
+    System/Persistenz; Gesamtzustand = schlechtester Komponentenzustand).
+  - `authentication/` – `AuthPolicy`-Vertrag, `LocalOnlyPolicy` (nur lokaler
+    Host), `OpenPolicy` (Tests/Dev). Keine Cloud/Benutzer/Registrierung.
+  - `api/` – **framework-unabhängige** REST-API: `Router`/`ApiRequest`/
+    `ApiResponse`, `routes.py` (alle Endpunkte), `ApplicationApi` (Zugriff +
+    revisionsgebundener Cache), `service.py` (dünner FastAPI-/GZip-Adapter,
+    lazy import).
+- **Engine-Anbindung:** `engines/application_engine.py` (Composition Root:
+  verdrahtet Persistenz, Dienste, Health, API, Hintergrunddienst; Regel-Laden),
+  `application_registry.py` (Registry der bekannten Report-Arten – einzige
+  Erweiterungsstelle), `application_cache.py`, `application_result.py`.
+- **REST-API-Endpunkte (JSON, `/api/v1`):** System (`/health`, `/status`,
+  `/version`, `/scheduler`, `/operations`), Märkte (`/markets`, `/market-status`,
+  `/opportunities`, `/opportunities/top`, `/opportunities/{ticker}`,
+  `/discovery`), Empfehlungen (`/recommendations`, `/recommendations/{ticker}`),
+  Analytics (`/analytics`, `/backtesting`, `/paper-trading`), Dashboard
+  (`/dashboard`).
+- **Konfiguration:** `knowledge/application_rules.toml` (Service, Persistenz,
+  API, Auth-Richtlinie) – alle Betriebsparameter ausschließlich aus TOML.
+- **Persistenz:** produktionsgeeignete SQLite-Datenbank
+  (`database/alpha_ai_reports.db`); keine temporären Dateien, keine In-Memory-
+  Lösung; Dashboard und API liefern immer den letzten erfolgreichen Scan.
+- **Tests:** 254 neue Tests (Serialisierung, Persistenz, Services, Health,
+  Authentifizierung, Router, API, Hintergrunddienst/Recovery, Engine,
+  End-to-End) – Gesamt **2294**.
+- **Dokumentation:** neu `docs/API.md`, `docs/BACKEND.md`, `docs/PRODUCTION.md`.
+
+### Geändert
+
+- `pyproject.toml` und `scripts/quality_check.py`: neues Paket `application`
+  (inkl. Unterpakete) registriert.
+- Doku aktualisiert: `ARCHITECTURE.md`, `PROJECT_STATUS.md`, `ROADMAP.md`,
+  `HANDOVER.md`, `AI_CONTEXT.md`, `DECISIONS.md` (ADR-038).
+
+### Unverändert (bewusst)
+
+- Keine Änderungen an bestehenden Engines/Algorithmen; keine neuen Strategien/
+  Pattern/Scores; keine Handelslogik; **kein Broker, keine Orderausführung**.
+
 ## [0.16.0] – 2026-07-12 – Sprint 16: Live Market Operations Platform
 
 Neue Plattform, die AlphaAI zu einem **produktiven täglichen Analyse-System**

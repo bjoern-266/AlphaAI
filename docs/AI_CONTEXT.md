@@ -321,14 +321,42 @@ re-exportiert über `engines/operations_result.py`) ist **UI-unabhängig**
 Einstieg: `OperationsEngine.from_config(jobs=…)`; periodisch `engine.tick()`.
 Datenfluss/Details: `docs/LIVE_OPERATIONS.md`.
 
+## Production Backend & REST-API (ab Sprint 17 verfügbar)
+
+Macht AlphaAI zum **produktiven Backend-Dienst** und ist das **endgültige
+Backend** (Sprint 18 = nur Android-App, keine Engine-Änderungen). Kette:
+`Live Operations → Persistenz (SQLite) → Application Service Layer → REST API →
+Frontends`. Die API/das Backend **liefern** nur vorhandene Reports – **keine**
+Berechnung, keine Scores/Empfehlungen, keine Handelsentscheidung, keine Order.
+Neue Schicht `application/` (`exceptions`, `serialization` – generischer
+JSON-Serialisierer; `repositories` – `ReportStore`/SQLite, neustartfest;
+`responses` – `ApiEnvelope`; `services` – `ReportService`/`SystemService`/
+`BackgroundService` mit Recovery; `health` – `HealthMonitor`; `authentication` –
+`LocalOnlyPolicy`; `api` – framework-unabhängiger Router + dünner FastAPI-/GZip-
+Adapter). Sie importiert nur `models`/`core`; der Operations-Taktgeber und
+Fach-Report-Quellen werden **injiziert**. Composition Root:
+`engines/application_engine.py` (`ApplicationEngine.from_config(operations=…,
+report_sources=…)`, dann `engine.start()`; `engine.create_fastapi_app()` für
+HTTP). Report-Arten über die `ApplicationRegistry` (erweiterbar, Engine/API
+unverändert); alle Betriebsparameter ausschließlich aus
+`knowledge/application_rules.toml`. Endpunkte (`/api/v1`, JSON, Envelope,
+versioniert): System (`/health`, `/status`, `/version`, `/scheduler`,
+`/operations`), Märkte (`/markets`, `/market-status`, `/opportunities`,
+`/opportunities/top`, `/opportunities/{ticker}`, `/discovery`), Empfehlungen
+(`/recommendations`, `/recommendations/{ticker}`), Analytics (`/analytics`,
+`/backtesting`, `/paper-trading`), Dashboard (`/dashboard`). Zugriff vorerst nur
+lokal; revisionsgebundener Cache; immer der letzte erfolgreiche Scan.
+Datenfluss/Details: `docs/API.md`, `docs/BACKEND.md`, `docs/PRODUCTION.md`.
+
 ## Aktueller Stand
 
-Sprint 1–16 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–17 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
 Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung,
 Historical Backtesting Framework, Paper Trading Framework, Trading Intelligence &
 Analytics Framework, AlphaAI Command Center / Dashboard, Market Intelligence
-Framework, Market Discovery Framework, Live Market Operations Platform). Das
+Framework, Market Discovery Framework, Live Market Operations Platform, Production
+Backend & Mobile API Platform). Das
 Dashboard ist **rein darstellend**; Market Intelligence **priorisiert nur**, Market
 Discovery **durchsucht/filtert nur** und die Operations Platform **orchestriert
 nur** – alle nutzen ausschließlich vorhandene Ergebnisse. AlphaAI arbeitet nun

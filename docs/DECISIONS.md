@@ -748,3 +748,56 @@ das Projekt so aufgebaut ist, wie es ist.
   `operations_engine.py` das `operations`-Subsystem; die realen Jobs werden beim
   Start injiziert. Der Benutzer erhält ohne Eingaben eine belastbare
   Entscheidungsgrundlage und trifft die Handelsentscheidung selbst.
+
+### ADR-038 – Production Backend & REST-API als reine Auslieferungsschicht (Reports injiziert/gespeichert)
+
+- **Datum:** 2026-07-12 (Sprint 17)
+- **Kontext:** AlphaAI sollte als **produktiver Backend-Dienst** laufen und alle
+  Frontends (Desktop-Dashboard, spätere Android-App) über **eine** Schnittstelle
+  bedienen – ohne doppelte Geschäftslogik, ohne Änderung bestehender Engines und
+  weiterhin **niemals** mit Orderausführung.
+- **Entscheidung:**
+  - **Neue Schicht `application/`** (Service Layer) mit klar getrennten Bausteinen
+    (`exceptions`, `serialization`, `repositories`, `responses`, `services`,
+    `health`, `authentication`, `api`). Sie **liest** ausschließlich vorhandene
+    Reports, berechnet nichts und trifft keine Handelsentscheidung.
+  - **Injektion statt Import:** `application/` importiert nur `models`/`core`; der
+    Operations-Taktgeber und zusätzliche Fach-Report-Quellen werden dem
+    `BackgroundService`/der `ApplicationEngine` injiziert (Duck-Typing). Die
+    `ApplicationEngine` (in `engines/`) ist der einzige Composition Root, der
+    Engines und `application` kennt – so entstehen **keine Import-Zyklen** und
+    keine bestehende Engine wird verändert.
+  - **Produktionsgeeignete Persistenz:** `ReportStore` auf **SQLite** (eingebettet,
+    transaktional, dauerhaft auf Platte). Keine temporären Dateien, keine reine
+    In-Memory-Lösung; Retention je Report-Art; der neueste Eintrag je Art ist der
+    „letzte erfolgreiche Scan", der Neustarts übersteht.
+  - **Verlustfreie, generische Serialisierung:** ein einziger rekursiver
+    Serialisierer wandelt beliebige (frozen) Reports in JSON – kein Fachwissen über
+    einzelne Felder, damit stabil bei neuen Report-Feldern.
+  - **Framework-unabhängige REST-API:** Routing/Request/Response/Cache sind ohne
+    Web-Framework umgesetzt und vollständig testbar; ein **dünner FastAPI-Adapter**
+    (lazy import, GZip) bindet HTTP an – dieselbe Trennung wie beim streamlit-freien
+    Dashboard. Alle Antworten sind JSON in einer einheitlichen `ApiEnvelope`,
+    versioniert unter `/api/v1`.
+  - **Caching mit Auto-Invalidierung:** Antworten werden pro
+    `(Methode, Pfad, Query)` **an die Speicher-Revision gebunden** zwischen-
+    gespeichert; ein neuer Report ändert die Revision und liefert automatisch den
+    frischen Stand – nie ein veralteter Scan.
+  - **Vorbereitete Zugriffskontrolle:** `AuthPolicy`-Vertrag; Standard
+    `LocalOnlyPolicy` (nur lokaler Host). Keine Cloud, keine Benutzerverwaltung,
+    keine Registrierung – aber erweiterbar (Open/Closed).
+  - **Robustheit/Recovery:** Hintergrunddienst kapselt jeden Schritt; Fehler werden
+    gezählt und protokolliert, der Takt läuft weiter, der letzte gute Scan bleibt
+    erhalten. Fehler stoppen den Dienst nie dauerhaft.
+  - **Open/Closed:** neue Report-Arten kommen ausschließlich über
+    `application_registry.py` hinzu; die Engine/API bleiben unverändert.
+- **Begründung:** Eine dünne, lesende Auslieferungsschicht über einer dauerhaften
+  Persistenz macht AlphaAI produktiv betreibbar und für Sprint 18 (Android, nur
+  HTTP) vollständig vorbereitet, ohne die bestehende Fachlogik zu berühren. Die
+  Framework-Unabhängigkeit hält die gesamte Logik testbar (FastAPI optional).
+- **Konsequenzen:** Keine neuen Strategien/Pattern/Scores/Risk-Regeln, keine
+  Broker-API, keine automatische Orderausführung. `engines/` verdrahtet über
+  `application_engine.py` die `application`-Schicht; Operations-Taktgeber und
+  Report-Quellen werden beim Start injiziert. Sprint 17 bildet das **endgültige
+  Backend**; Sprint 18 entwickelt ausschließlich die Android-App und benötigt
+  keine Engine-Änderungen. Die Handelsentscheidung trifft weiterhin der Benutzer.

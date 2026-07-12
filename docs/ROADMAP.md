@@ -245,6 +245,33 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
   UI-unabhängig (Desktop/REST/Mobile vorbereitet).
 - 203 neue Tests (2040 gesamt). Doku: `docs/LIVE_OPERATIONS.md`.
 
+## Sprint 17 – Production Backend & Mobile API Platform ✅ (abgeschlossen)
+
+- **Endgültiges Backend:** AlphaAI läuft als produktiver Backend-Dienst. Kette
+  `Live Operations → Persistenz (SQLite) → Application Service Layer → REST API →
+  Frontends (Desktop-Dashboard, Android Sprint 18)`. Niemals Orders; Entscheidung
+  beim Benutzer.
+- Neue Schicht `application/` (`exceptions`, `serialization`, `repositories`,
+  `responses`, `services`, `health`, `authentication`, `api`) + Composition Root
+  `engines/application_engine.py` (+ `-registry`, `-cache`, `-result`). Importiert
+  nur `models`/`core`; Pipeline injiziert (keine Zyklen, keine Engine-Änderung).
+- Produktionsreife **REST-API** (`/api/v1`, JSON, Envelope, versioniert):
+  System/Märkte/Empfehlungen/Analytics/Dashboard (17 Endpunkte). Framework-
+  unabhängiger Kern + dünner FastAPI-/GZip-Adapter. Revisionsgebundener Cache,
+  Zugriff vorerst nur lokal.
+- **Dauerhafte Persistenz** (SQLite): neustartfest, keine temporären/In-Memory-
+  Lösungen, immer der letzte erfolgreiche Scan. Automatische Recovery – Fehler
+  stoppen den Dienst nie dauerhaft. Alle Parameter aus
+  `knowledge/application_rules.toml`.
+- 254 neue Tests (2294 gesamt). Doku: `docs/API.md`, `docs/BACKEND.md`,
+  `docs/PRODUCTION.md`.
+
+## Sprint 18 – Android App (geplant)
+
+- Native Android-App, die **ausschließlich** über die REST-API zugreift (nur
+  HTTP, keine Python-Logik, niemals direkte Engine-Nutzung). Keine Änderungen an
+  den bestehenden Engines nötig.
+
 ## Sprint 7 – Persistenz & Lernfähigkeit (geplant)
 
 - Speicherung von Analysen/Empfehlungen in SQLite (`database/`).

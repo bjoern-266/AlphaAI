@@ -1,0 +1,33 @@
+# Regeln des Application-/Backend-Dienstes (Sprint 17).
+#
+# Diese Datei ist die EINZIGE Quelle der Betriebsparameter des Backend-Dienstes
+# und der REST-API. Es gibt keine hartcodierten Werte im Code. Die Datei ändert
+# ausschließlich das BETRIEBSVERHALTEN (Version, Persistenz, Cache, Zugriff) –
+# niemals Handels-, Analyse- oder Bewertungslogik.
+
+[service]
+# Anzeigename, Version und Betriebsumgebung des Dienstes.
+name = "AlphaAI Backend"
+version = "1.0.0"
+api_version = "v1"
+environment = "local"
+description = "Produktiver Backend-Dienst: stellt vorhandene AlphaAI-Reports als JSON bereit."
+
+[persistence]
+# Dateiname der SQLite-Datenbank (relativ zum Verzeichnis 'database/').
+# Dauerhaft auf Platte, neustartfest, keine temporäre/In-Memory-Lösung.
+database_file = "alpha_ai_reports.db"
+# Maximale Anzahl gespeicherter Schnappschüsse JE Report-Art (0 = unbegrenzt).
+retention = 200
+
+[api]
+# Kapazität des Antwort-Caches (Anzahl zwischengespeicherter Antworten).
+cache_capacity = 256
+# Standardanzahl der Top-Chancen, falls kein 'limit' übergeben wird.
+default_top_limit = 10
+# Zugriffsrichtlinie: "local_only" (nur lokaler Host) oder "open" (nur Tests/Dev).
+auth_policy = "local_only"
+
+[meta]
+# Versionsnummer dieser Regeldatei (erscheint in den Report-Metadaten).
+version = 1

@@ -697,6 +697,50 @@ OperationReport → Dashboard „Live Operations" · spätere REST-API · Mobile
   (keine doppelte Geschäftslogik). Parallelisierung und REST sind vorbereitet,
   aber bewusst noch nicht implementiert. Details: `docs/LIVE_OPERATIONS.md`.
 
+## Production Backend & REST-API (umgesetzt in Sprint 17)
+
+Die Application-Schicht (`application/`) macht AlphaAI zu einem **produktiven
+Backend-Dienst** und bildet das **endgültige Backend**. Sie **liest**
+ausschließlich vorhandene Reports, speichert sie dauerhaft und liefert sie über
+eine produktionsreife REST-API. Sie führt **niemals** Orders aus, berechnet
+nichts und trifft keine Handelsentscheidung.
+
+```
+Live Operations (OperationReport) + Fach-Report-Quellen (INJIZIERT)
+        │  BackgroundService.tick()  (Persistenz + Recovery)
+ReportStore (SQLite, dauerhaft, neustartfest)
+        │  ReportService / SystemService / HealthMonitor  (nur Lesen)
+ApplicationApi (Router + Auth + revisionsgebundener Cache)
+        │  ApiEnvelope (JSON, /api/v1)  · optionaler FastAPI-/GZip-Adapter
+Frontends: Desktop-Dashboard · Android-App (Sprint 18)
+```
+
+- **Schicht-Einordnung / keine Zyklen:** `application/` importiert ausschließlich
+  `models`/`core`. Der Operations-Taktgeber und die Fach-Report-Quellen werden
+  **injiziert**, nicht importiert. Einziger Composition Root ist
+  `engines/application_engine.py` (`ApplicationEngine`), der als einzige Stelle
+  sowohl `application` als auch die Engines kennt – so entsteht kein Import-Zyklus
+  und keine bestehende Engine wird verändert. `models/application.py` gehört zur
+  Entities-Schicht.
+- **Persistenz:** `ReportStore` auf SQLite – dauerhaft auf Platte, transaktional,
+  threadsicher, mit Retention je Report-Art und monotoner Revision (für die
+  automatische Cache-Invalidierung). Keine temporären Dateien, keine reine
+  In-Memory-Lösung; immer der letzte erfolgreiche Scan.
+- **Framework-unabhängige API:** Routing/Request/Response/Cache ohne Web-Framework
+  (vollständig testbar); ein dünner FastAPI-/GZip-Adapter (lazy import) bindet
+  HTTP an – dieselbe Trennung wie beim streamlit-freien Dashboard. Alle Antworten
+  sind JSON in einer einheitlichen `ApiEnvelope`, versioniert unter `/api/v1`.
+- **Open/Closed:** Report-Arten sind `ReportKindDescriptor`-Registry-Einträge;
+  neue Arten kommen nur über `engines/application_registry.py` hinzu – Engine und
+  API bleiben unverändert. Alle Betriebsparameter stehen ausschließlich in
+  `knowledge/application_rules.toml`.
+- **Robustheit/Recovery:** der Hintergrunddienst kapselt jeden Schritt; Fehler
+  werden gezählt und protokolliert, der Takt läuft weiter, der letzte gute Scan
+  bleibt erhalten – Fehler stoppen den Dienst nie dauerhaft.
+- **Zugriff:** vorerst nur lokal (`LocalOnlyPolicy`); vorbereitet für weitere
+  Verfahren (Open/Closed). Details: `docs/API.md`, `docs/BACKEND.md`,
+  `docs/PRODUCTION.md`.
+
 ## AlphaAI Command Center / Dashboard (umgesetzt in Sprint 13)
 
 Das Dashboard-Subsystem (`dashboard/`) ist **ausschließlich** die Presentation
@@ -767,16 +811,19 @@ OpportunityReport → Dashboard-Seite „Market Intelligence"
 
 ## Aktueller Stand
 
-Sprint 1–15 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–17 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
 Integration & Validierung, Historical Backtesting Framework, Paper Trading
 Framework, Trading Intelligence & Analytics Framework, AlphaAI Command Center /
 Dashboard, Market Intelligence Framework, Market Discovery Framework, Live Market
-Operations Platform). Das Dashboard ist **rein darstellend**; Market Intelligence
-**priorisiert nur**, Market Discovery **durchsucht/filtert nur** und die Operations
-Platform **orchestriert nur** vorhandene Ergebnisse. AlphaAI arbeitet nun
-automatisch (Marktuhr + Scheduler). Es gibt bewusst weiterhin **keine Broker-API,
+Operations Platform, Production Backend & Mobile API Platform). Das Dashboard ist
+**rein darstellend**; Market Intelligence **priorisiert nur**, Market Discovery
+**durchsucht/filtert nur**, die Operations Platform **orchestriert nur** und die
+Application-/API-Schicht **liefert nur** vorhandene Reports (dauerhaft
+gespeichert). AlphaAI läuft als produktiver Backend-Dienst mit REST-API; Sprint 17
+ist das **endgültige Backend** (Sprint 18 = nur Android-App). Es gibt bewusst
+weiterhin **keine Broker-API,
 keine automatische Orderausführung und keine echten Orders** (Backtesting und Paper
 Trading simulieren ausschließlich; Analytics wertet nur aus, Market Intelligence
 priorisiert nur, Market Discovery durchsucht nur, die Operations Platform
