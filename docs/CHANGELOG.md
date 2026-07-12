@@ -4,6 +4,54 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.16.0] – 2026-07-12 – Sprint 16: Live Market Operations Platform
+
+Neue Plattform, die AlphaAI zu einem **produktiven täglichen Analyse-System**
+macht: der Benutzer startet AlphaAI, danach übernimmt das System sämtliche
+Marktanalysen automatisch (keine manuellen Discovery-/Scanner-Läufe mehr). Die
+Plattform führt **niemals** Orders aus, trifft **keine** Handelsentscheidung und
+**berechnet keine** Indikatoren/Muster/Strategien/Scores/Risiken/Empfehlungen –
+sie **orchestriert** ausschließlich die bestehende Pipeline (über injizierte
+Jobs). **Alle Kauf-/Verkaufsentscheidungen trifft der Benutzer.**
+
+### Hinzugefügt
+
+- **Entities:** `models/operations.py` (alle unveränderlich, `frozen`):
+  `MarketState`, `MarketClock`, `JobRun`, `ScheduledJob`, `JobDefinition`,
+  `Heartbeat`, `SystemState`, `OperationReport` (+ Enums `JobStatus`,
+  `SystemHealth`). Alle Reports sind **UI-unabhängig**.
+- **Subsystem `operations/`:** `market_sessions`, `market_clock` (Marktzeiten/
+  Countdown, Sommer-/Winterzeit über IANA-Zeitzonen), `scheduler`, `job_queue`
+  (ein Discovery gleichzeitig, keine parallelen Vollanalysen, Duplikatschutz),
+  `job_runner` (Fehlerisolation), `job_history`, `heartbeat`, `health`,
+  `system_state`, `operations_cache`. Importiert nur `models`/`core`; die Jobs
+  und die Uhr werden **injiziert** (kein Import aus der Pipeline, kein Zyklus).
+- **Engine-Anbindung:** `engines/operations_engine.py` (Taktgeber `tick()`/
+  `build_report()` + Regel-Laden), `operations_registry.py` (bekannte Job-Arten –
+  einzige Erweiterungsstelle), `operations_cache.py` und `operations_result.py`
+  (Re-Exporte).
+- **Konfiguration:** `knowledge/operations_rules.toml` (Marktphasen je Markt,
+  Zeitplan der Jobs, Heartbeat, Health, Historie); `core/paths.py`-Nähe über
+  `OPERATIONS_RULES_FILE`. Alle Zeiten/Schwellen ausschließlich aus TOML.
+- **Marktzeiten:** Europa (Vorbörse/Öffnung/Nachmittag/Schluss) und USA
+  (Pre-Market/Opening-Bell/erste Handelsstunde/Nachmittag/Schluss); Sommer-/
+  Winterzeit und Zeitzonen automatisch. **Market Clock** zeigt offene/geschlossene
+  Börsen, die nächste Öffnung und Countdowns.
+- **Dashboard:** neue Seite **Live Operations** (additiv über Router/Registry;
+  `DashboardEngine` unverändert) mit Marktstatus, Systemstatus/Heartbeat/Queue,
+  laufendem/nächstem Job, letztem Scan, Top Opportunities, neuen Chancen/Risiken
+  und Job-Historie – visualisiert ausschließlich den OperationReport.
+- **Tests:** 203 neue Tests (2040 gesamt).
+- **Doku:** neue `docs/LIVE_OPERATIONS.md`; übrige Doku aktualisiert.
+
+### Unverändert (bewusst)
+
+- Keine neuen Strategien/Pattern/Scores/Risk-Regeln, keine Broker-API, keine
+  automatische Orderausführung. Keine Änderung an einer bestehenden Engine oder
+  an einem der bestehenden Frameworks (bis einschließlich Market Discovery) oder
+  an der Dashboard-Engine. Parallelisierung und REST-API sind **vorbereitet**,
+  aber bewusst noch nicht implementiert.
+
 ## [0.15.0] – 2026-07-12 – Sprint 15: Market Discovery Framework
 
 Neues Framework, das AlphaAI **von Watchlists unabhängig** macht: das System

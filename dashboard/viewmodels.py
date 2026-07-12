@@ -12,6 +12,7 @@ Alle View-Model-Typen sind unveränderlich (`frozen`).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from dashboard.state import SystemStatus
 from dashboard.status import module_status, status_item
@@ -20,6 +21,7 @@ from models.backtest import BacktestReport
 from models.dashboard import StatusItem
 from models.indicator import IndicatorResult
 from models.market_discovery import DiscoveryReport
+from models.operations import OperationReport
 from models.opportunity import OpportunityReport
 from models.paper_trading import PaperTradingReport
 from models.pattern import PatternReport
@@ -47,6 +49,7 @@ class ReportBundle:
     indicator: IndicatorResult | None = None
     opportunity: OpportunityReport | None = None
     discovery: DiscoveryReport | None = None
+    operations: OperationReport | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -292,6 +295,58 @@ class MarketIntelligenceVM:
 
 
 @dataclass(frozen=True, slots=True)
+class OperationsMarketRow:
+    """Zustand eines Marktes für die Live-Operations-Seite (abgelesen)."""
+
+    key: str
+    title: str
+    phase: str
+    is_open: bool
+    next_phase: str
+    seconds_to_next: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class OperationsJobRow:
+    """Eine Zeile der Job-Historie (aus dem OperationReport)."""
+
+    name: str
+    job_type: str
+    status: str
+    duration_seconds: float | None
+    error: str
+    summary: str
+
+
+@dataclass(frozen=True, slots=True)
+class LiveOperationsVM:
+    """Zustand der Live-Operations-Seite (abgelesen aus dem OperationReport)."""
+
+    as_of: datetime | None = None
+    current_session: str = ""
+    markets: tuple[OperationsMarketRow, ...] = ()
+    open_markets: tuple[str, ...] = ()
+    next_open_market: str = ""
+    next_open_at: datetime | None = None
+    health: str | None = None
+    heartbeat_alive: bool | None = None
+    heartbeat_age_seconds: int | None = None
+    running_job: str | None = None
+    queue_size: int | None = None
+    scan_count: int | None = None
+    error_count: int | None = None
+    uptime_seconds: int | None = None
+    average_runtime: float | None = None
+    last_scan_at: datetime | None = None
+    next_scan_at: datetime | None = None
+    next_scan_job: str = ""
+    top_rows: tuple[DiscoveryRow, ...] = ()
+    new_opportunities: tuple[str, ...] = ()
+    new_risks: tuple[str, ...] = ()
+    jobs: tuple[OperationsJobRow, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class MarketDiscoveryVM:
     """Ergebnisse der Market-Discovery-Seite (abgelesen)."""
 
@@ -323,6 +378,7 @@ class DashboardViewModel:
     recommendations: RecommendationsVM = field(default_factory=RecommendationsVM)
     market_intelligence: MarketIntelligenceVM = field(default_factory=MarketIntelligenceVM)
     market_discovery: MarketDiscoveryVM = field(default_factory=MarketDiscoveryVM)
+    live_operations: LiveOperationsVM = field(default_factory=LiveOperationsVM)
 
 
 # --------------------------------------------------------------------------- #
@@ -656,6 +712,80 @@ def _market_discovery(bundle: ReportBundle) -> MarketDiscoveryVM:
     )
 
 
+def _live_operations(bundle: ReportBundle) -> LiveOperationsVM:
+    """Liest den OperationReport ab (nur Ablesen; keine Berechnung)."""
+    report = bundle.operations
+    if report is None:
+        return LiveOperationsVM()
+    markets = tuple(
+        OperationsMarketRow(
+            key=market.key,
+            title=market.title,
+            phase=market.phase,
+            is_open=market.is_open,
+            next_phase=market.next_phase,
+            seconds_to_next=market.seconds_to_next,
+        )
+        for market in report.market_clock.markets
+    )
+    top_rows = ()
+    if report.discovery is not None:
+        top_rows = tuple(
+            DiscoveryRow(
+                rank=o.rank,
+                ticker=o.ticker,
+                company=o.company,
+                sector=o.sector,
+                country=o.country,
+                market=o.market,
+                direction=o.direction.value,
+                strength=o.recommendation_strength.value,
+                confidence=o.confidence,
+                score=o.opportunity_score,
+                risk=o.risk,
+                summary=o.summary,
+            )
+            for o in report.discovery.opportunities[:10]
+        )
+    jobs = tuple(
+        OperationsJobRow(
+            name=run.name,
+            job_type=run.job_type,
+            status=run.status.value,
+            duration_seconds=run.duration_seconds,
+            error=run.error,
+            summary=run.summary,
+        )
+        for run in report.job_history
+    )
+    state = report.system_state
+    heartbeat = state.heartbeat
+    return LiveOperationsVM(
+        as_of=report.as_of,
+        current_session=report.current_session,
+        markets=markets,
+        open_markets=report.market_clock.open_markets,
+        next_open_market=report.market_clock.next_open_market,
+        next_open_at=report.market_clock.next_open_at,
+        health=state.health.value,
+        heartbeat_alive=heartbeat.alive if heartbeat is not None else None,
+        heartbeat_age_seconds=heartbeat.age_seconds if heartbeat is not None else None,
+        running_job=report.running_job,
+        queue_size=state.queue_size,
+        scan_count=report.scan_count,
+        error_count=report.error_count,
+        uptime_seconds=state.uptime_seconds,
+        average_runtime=report.average_runtime,
+        last_scan_at=report.last_successful_scan_at,
+        next_scan_at=report.next_scan_at,
+        next_scan_job=report.next_scan_job,
+        top_rows=top_rows,
+        new_opportunities=tuple(report.new_opportunities),
+        new_risks=tuple(report.new_risks),
+        jobs=jobs,
+    )
+
+
 def build_view_model(bundle: ReportBundle) -> DashboardViewModel:
     """Baut das gesamte :class:`DashboardViewModel` aus dem Report-Bundle."""
     return DashboardViewModel(
@@ -669,6 +799,7 @@ def build_view_model(bundle: ReportBundle) -> DashboardViewModel:
         recommendations=_recommendations(bundle),
         market_intelligence=_market_intelligence(bundle),
         market_discovery=_market_discovery(bundle),
+        live_operations=_live_operations(bundle),
     )
 
 
@@ -696,6 +827,9 @@ __all__ = [
     "RecommendationsVM",
     "MarketIntelligenceVM",
     "MarketDiscoveryVM",
+    "LiveOperationsVM",
+    "OperationsMarketRow",
+    "OperationsJobRow",
     "LiveRow",
     "RecommendationRow",
     "JournalRow",

@@ -703,3 +703,48 @@ das Projekt so aufgebaut ist, wie es ist.
   `market_discovery_engine.py` das `market_discovery`-Subsystem mit der
   `MarketIntelligenceEngine`; keine bestehende Engine wird verändert. Nach der
   Discovery trifft der Benutzer die Handelsentscheidung selbst.
+
+### ADR-037 – Live Operations als orchestrierendes Subsystem (Jobs/Uhr injiziert)
+
+- **Datum:** 2026-07-12 (Sprint 16)
+- **Kontext:** AlphaAI sollte als **produktives tägliches Analyse-System**
+  arbeiten: der Benutzer startet es, danach laufen alle Marktanalysen automatisch
+  (keine manuellen Discovery-/Scanner-Läufe). Ziel war **praktische Nutzbarkeit**,
+  keine neue Architektur – und weiterhin **niemals** Orders.
+- **Entscheidung:**
+  - Die Operations Platform erkennt automatisch die Marktzeiten (Marktuhr), plant
+    die Jobs (Scheduler) und startet fällige Jobs selbst. Sie **berechnet nichts**
+    und trifft **keine** Handelsentscheidung – sie **orchestriert** die bestehende
+    Pipeline.
+  - **Injektion statt Import:** die eigentlichen Jobs
+    (`jobs={job_type: callable}`) und die Uhr (`clock`) werden dem
+    `OperationsEngine` injiziert (Duck-Typing). Dadurch importiert `operations/`
+    ausschließlich `models`/`core` – kein Import aus `engines`, kein Zyklus, saubere
+    Schichtung; keine bestehende Engine wird verändert.
+  - **Marktzeiten & DST:** Marktphasen je Markt sind in der Zeitzone des Marktes
+    konfiguriert; Sommer-/Winterzeit wird automatisch über die IANA-Zeitzonen
+    (`zoneinfo`) berücksichtigt. Alle Zeiten/Zeitpläne/Schwellen stehen
+    ausschließlich in `knowledge/operations_rules.toml`.
+  - **Robustheit:** die Job-Queue lässt nur **ein** Discovery gleichzeitig zu und
+    verhindert parallele Vollanalysen; der Job-Runner isoliert Fehler, sodass ein
+    Absturz den Scheduler nie blockiert (automatische Wiederaufnahme im nächsten
+    Takt). Alle Report-Typen sind `frozen`.
+  - **UI-Unabhängigkeit / API-Vorbereitung:** der `OperationReport` enthält nur
+    Daten; Desktop-Dashboard, spätere REST-API und mobile Apps nutzen denselben
+    Report (keine doppelte Geschäftslogik). Die Dashboard-Seite „Live Operations"
+    wird **additiv** über Router/Registry angebunden; die `DashboardEngine` bleibt
+    unverändert und visualisiert nur den Report.
+  - **Open/Closed:** Job-Arten sind `JobDefinition`-Registry-Einträge; neue Arten
+    kommen ausschließlich über `operations_registry.py` hinzu – die Engine bleibt
+    unverändert. Parallelisierung und REST sind vorbereitet, aber bewusst noch
+    nicht implementiert (Ziel: höchster praktischer Nutzen, keine theoretischen
+    Frameworks).
+- **Begründung:** Die Injektion von Jobs und Uhr hält das Subsystem entkoppelt und
+  vollständig testbar (feste Uhr, Fake-Jobs); die konfigurierten Marktzeiten mit
+  automatischer DST-Behandlung und die robuste Job-Queue machen AlphaAI unmittelbar
+  im Börsenalltag einsetzbar, ohne die bestehende Fachlogik zu berühren.
+- **Konsequenzen:** Keine neuen Strategien/Pattern/Scores/Risk-Regeln, keine
+  Broker-API, keine automatische Orderausführung. `engines/` verdrahtet über
+  `operations_engine.py` das `operations`-Subsystem; die realen Jobs werden beim
+  Start injiziert. Der Benutzer erhält ohne Eingaben eine belastbare
+  Entscheidungsgrundlage und trifft die Handelsentscheidung selbst.

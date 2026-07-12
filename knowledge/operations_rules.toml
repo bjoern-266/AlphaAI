@@ -1,0 +1,128 @@
+# =============================================================================
+# Operations-Regeln (Sprint 16) – Live Market Operations Platform
+# =============================================================================
+# Einzige Quelle aller Parameter der Live Operations Platform. Im Code gibt es
+# keine hartcodierten Marktzeiten, Zeitplaene oder Schwellenwerte.
+#
+# Wichtig: Die Operations Platform fuehrt NIEMALS Orders aus, trifft KEINE
+# Handelsentscheidung und berechnet KEINE Indikatoren/Muster/Strategien/Scores/
+# Risiken/Empfehlungen. Sie orchestriert ausschliesslich die bestehende Pipeline.
+# Sommer-/Winterzeit wird automatisch ueber die IANA-Zeitzonen beruecksichtigt.
+# =============================================================================
+
+[meta]
+version = 1
+description = "Marktzeiten, Zeitplan, Heartbeat und Health (Sprint 16)."
+
+# --- Maerkte / Marktphasen ---------------------------------------------------
+# Jede Phase = [name, "HH:MM" (lokale Marktzeit), ist_geoeffnet].
+# Die Zeitzone bestimmt automatisch Sommer-/Winterzeit.
+[markets.europe]
+title = "Europa"
+timezone = "Europe/Berlin"
+phases = [
+    ["pre_market", "07:30", false],
+    ["open", "09:00", true],
+    ["afternoon", "12:00", true],
+    ["close", "17:30", false],
+]
+
+[markets.us]
+title = "USA"
+timezone = "America/New_York"
+phases = [
+    ["pre_market", "04:00", false],
+    ["opening_bell", "09:30", true],
+    ["first_hour", "10:30", true],
+    ["afternoon", "13:00", true],
+    ["close", "16:00", false],
+]
+
+# --- Zeitplan der automatischen Jobs -----------------------------------------
+# Alle Zeiten sind in der jeweils angegebenen Zeitzone konfigurierbar. Der
+# job_type muss in der Operations-Registry bekannt sein.
+[[schedule]]
+name = "europe_pre_market"
+job_type = "discovery"
+time = "07:30"
+timezone = "Europe/Berlin"
+description = "Europa Vorboerse"
+
+[[schedule]]
+name = "europe_open"
+job_type = "discovery"
+time = "09:00"
+timezone = "Europe/Berlin"
+description = "Europa Marktoeffnung"
+
+[[schedule]]
+name = "europe_midday"
+job_type = "analytics"
+time = "12:00"
+timezone = "Europe/Berlin"
+description = "Europa Zwischenanalyse"
+
+[[schedule]]
+name = "europe_close"
+job_type = "analytics"
+time = "17:30"
+timezone = "Europe/Berlin"
+description = "Europa Handelsschluss"
+
+[[schedule]]
+name = "us_pre_market"
+job_type = "discovery"
+time = "09:00"
+timezone = "America/New_York"
+description = "US Pre Market Vorbereitung"
+
+[[schedule]]
+name = "us_opening_bell"
+job_type = "discovery"
+time = "09:30"
+timezone = "America/New_York"
+description = "US Opening Bell Vollanalyse"
+
+[[schedule]]
+name = "us_first_hour"
+job_type = "market_intelligence"
+time = "10:30"
+timezone = "America/New_York"
+description = "US erste Handelsstunde"
+
+[[schedule]]
+name = "us_midday"
+job_type = "analytics"
+time = "12:00"
+timezone = "America/New_York"
+description = "US Zwischenanalyse"
+
+[[schedule]]
+name = "us_late"
+job_type = "market_intelligence"
+time = "14:00"
+timezone = "America/New_York"
+description = "US letzte Handelsphase"
+
+[[schedule]]
+name = "us_close"
+job_type = "analytics"
+time = "16:10"
+timezone = "America/New_York"
+description = "US Tagesabschluss"
+
+# --- Heartbeat ---------------------------------------------------------------
+[heartbeat]
+# Erwartetes Herzschlag-Intervall in Sekunden. Das System gilt als lebendig,
+# solange der letzte Herzschlag nicht aelter als das doppelte Intervall ist.
+interval_seconds = 60
+
+# --- Health ------------------------------------------------------------------
+[health]
+# Fehleranteil (0..1), ab dem der Systemzustand als "degraded" gilt.
+degraded_ratio = 0.3
+
+# --- Historie ----------------------------------------------------------------
+[history]
+# Maximale Anzahl gespeicherter Job-Laeufe.
+limit = 100

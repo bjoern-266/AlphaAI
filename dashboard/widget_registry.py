@@ -28,6 +28,18 @@ from dashboard.widgets.backtest import (
 from dashboard.widgets.base import BaseWidget
 from dashboard.widgets.journal import JournalTableWidget
 from dashboard.widgets.live import ReasonsWidget, WatchlistWidget
+from dashboard.widgets.live_operations import (
+    JobHistoryWidget,
+    MarketStatusWidget,
+    NewSignalsWidget,
+    ScanScheduleWidget,
+)
+from dashboard.widgets.live_operations import (
+    SystemStatusWidget as OperationsSystemStatusWidget,
+)
+from dashboard.widgets.live_operations import (
+    TopOpportunitiesWidget as OperationsTopOpportunitiesWidget,
+)
 from dashboard.widgets.market_discovery import (
     DiscoveryRankingWidget,
     MarketBreakdownWidget,
@@ -107,6 +119,12 @@ _DEFAULT_WIDGETS: tuple[BaseWidget, ...] = (
     MarketOverviewWidget(),
     SectorOverviewWidget(),
     MarketBreakdownWidget(),
+    MarketStatusWidget(),
+    OperationsSystemStatusWidget(),
+    ScanScheduleWidget(),
+    OperationsTopOpportunitiesWidget(),
+    NewSignalsWidget(),
+    JobHistoryWidget(),
     SettingsWidget(),
 )
 

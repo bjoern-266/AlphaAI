@@ -44,6 +44,7 @@ PACKAGES = [
     "analytics",
     "market_intelligence",
     "market_discovery",
+    "operations",
     "dashboard",
 ]
 

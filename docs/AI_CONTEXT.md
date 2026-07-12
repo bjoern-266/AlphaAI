@@ -301,21 +301,43 @@ visualisiert nur den Report. Einstieg:
 `MarketDiscoveryEngine.from_config().discover(...)`. Datenfluss/Details:
 `docs/MARKET_DISCOVERY.md`.
 
+## Live Operations (ab Sprint 16 verfügbar)
+
+Macht AlphaAI zu einem **produktiven Tagessystem**: der Benutzer startet AlphaAI,
+danach laufen alle Analysen automatisch (keine manuellen Läufe). **Niemals**
+Orders; **keine** Handelsentscheidung; **keine** Berechnung – nur Orchestrierung.
+Kette: `Marktuhr + Zeitplan → OperationsEngine.tick() → bestehende Pipeline
+(injiziert) → OperationReport → Dashboard`. Subsystem `operations/`
+(`market_sessions`, `market_clock` – Sommer-/Winterzeit über IANA-Zeitzonen;
+`scheduler`; `job_queue` – ein Discovery gleichzeitig, keine parallelen
+Vollanalysen; `job_runner` – Fehlerisolation; `job_history`; `heartbeat`;
+`health`; `system_state`). Es importiert nur `models`/`core`; die Jobs
+(`jobs={job_type: callable}`) und die Uhr werden **injiziert** (kein Import aus
+`engines`, kein Zyklus). Job-Arten über die `OperationsRegistry` (erweiterbar,
+Engine unverändert); alle Marktzeiten/Zeitpläne/Schwellen ausschließlich aus
+`knowledge/operations_rules.toml`. Der `OperationReport` (in `models/operations.py`,
+re-exportiert über `engines/operations_result.py`) ist **UI-unabhängig**
+(Desktop/REST/Mobile). Die Dashboard-Seite „Live Operations" liest nur den Report.
+Einstieg: `OperationsEngine.from_config(jobs=…)`; periodisch `engine.tick()`.
+Datenfluss/Details: `docs/LIVE_OPERATIONS.md`.
+
 ## Aktueller Stand
 
-Sprint 1–15 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–16 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation,
 Risk Engine, Recommendation Engine, End-to-End-Integration & Validierung,
 Historical Backtesting Framework, Paper Trading Framework, Trading Intelligence &
 Analytics Framework, AlphaAI Command Center / Dashboard, Market Intelligence
-Framework, Market Discovery Framework). Das Dashboard ist **rein darstellend**;
-Market Intelligence **priorisiert nur** und Market Discovery **durchsucht/filtert
-nur** – alle nutzen ausschließlich vorhandene Ergebnisse. Es gibt bewusst weiterhin
-**keine** Broker-API, **keine** automatische Orderausführung und **keine echten
-Orders** (Backtesting und Paper Trading simulieren ausschließlich; Analytics wertet
-nur aus, Market Intelligence priorisiert nur, Market Discovery durchsucht nur, das
-Dashboard zeigt nur an). Nach der Discovery trifft der Benutzer die
-Handelsentscheidung selbst. Offene fachliche Kalibrierung (Schwellen an realen
+Framework, Market Discovery Framework, Live Market Operations Platform). Das
+Dashboard ist **rein darstellend**; Market Intelligence **priorisiert nur**, Market
+Discovery **durchsucht/filtert nur** und die Operations Platform **orchestriert
+nur** – alle nutzen ausschließlich vorhandene Ergebnisse. AlphaAI arbeitet nun
+automatisch (Marktuhr + Scheduler); der Benutzer muss keine Läufe mehr starten. Es
+gibt bewusst weiterhin **keine** Broker-API, **keine** automatische Orderausführung
+und **keine echten Orders** (Backtesting und Paper Trading simulieren ausschließlich;
+Analytics wertet nur aus, Market Intelligence priorisiert nur, Market Discovery
+durchsucht nur, die Operations Platform orchestriert nur, das Dashboard zeigt nur
+an). Die Handelsentscheidung trifft ausschließlich der Benutzer. Offene fachliche Kalibrierung (Schwellen an realen
 Daten, Annualisierung der vorbereiteten Backtest-Kennzahlen, Aktivierung des
 vorbereiteten Trailing Stops) ist im Validation Report festgehalten. Immer zuerst
 `PROJECT_STATUS.md` und `HANDOVER.md` lesen.

@@ -3,7 +3,7 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-11
-- **Aktueller Sprint:** Sprint 15 – Market Discovery Framework
+- **Aktueller Sprint:** Sprint 16 – Live Market Operations Platform
 - **Status:** ✅ Abgeschlossen
 
 ## Was ist vorhanden
@@ -272,6 +272,27 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 - **Validierung:** leeres Universum, unbekannte Märkte, ungültige/doppelte
   Kandidaten. **Tests:** 1836 gesamt (145 neue).
 
+### Live Market Operations Platform (Sprint 16)
+
+- **Produktives Tagessystem:** der Benutzer startet AlphaAI, danach laufen alle
+  Marktanalysen automatisch (keine manuellen Discovery-/Scanner-Läufe). **Niemals**
+  Orders; **keine** Handelsentscheidung; **keine** Berechnung von
+  Indikatoren/Mustern/Strategien/Scores/Risiken/Empfehlungen – nur Orchestrierung.
+- **Entities:** `models/operations.py` (`MarketState`, `MarketClock`, `JobRun`,
+  `ScheduledJob`, `JobDefinition`, `Heartbeat`, `SystemState`, `OperationReport`;
+  alle `frozen`, UI-unabhängig).
+- **Subsystem `operations/`:** `market_sessions`, `market_clock` (Sommer-/
+  Winterzeit über IANA-Zeitzonen), `scheduler`, `job_queue` (ein Discovery
+  gleichzeitig), `job_runner` (Fehlerisolation), `job_history`, `heartbeat`,
+  `health`, `system_state`. Importiert nur `models`/`core`; Jobs + Uhr injiziert.
+- **Engine-Anbindung:** `OperationsEngine` (`tick()`/`build_report()`),
+  `OperationsRegistry` (7 Job-Arten), `OperationsCache`, Re-Export
+  `operations_result`. Regeln aus `knowledge/operations_rules.toml`.
+- **Market Clock** (offene/geschlossene Börsen, nächste Öffnung, Countdown),
+  automatische Jobs/Scan-Strategie, neue Dashboard-Seite „Live Operations".
+- **Validierung:** ungültige Marktzeiten/Zeitzonen, doppelte Jobs, Job-Absturz,
+  Queue-Exklusivität. **Tests:** 2040 gesamt (203 neue).
+
 ## Was ist bewusst NICHT vorhanden
 
 - Keine Dashboard-**Berechnung** (das Dashboard zeigt nur an), keine Broker-API,
@@ -282,11 +303,11 @@ Verhaltenserhaltender Umbau (kein neues Feature):
 
 Diese Teile folgen in späteren Sprints (siehe `ROADMAP.md`).
 
-## Qualitätsnachweis (Sprint 15)
+## Qualitätsnachweis (Sprint 16)
 
 | Prüfung | Ergebnis |
 |---|---|
-| pytest | 1836 Tests bestanden |
+| pytest | 2040 Tests bestanden |
 | Ruff / Black | konform |
 | Import-Zyklen | 0 |
 | Entities-Schicht `models/` | 0 Verstöße |

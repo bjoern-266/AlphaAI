@@ -7,7 +7,7 @@ dass Wissen nur im Chat existiert.
 ## Stand der Übergabe
 
 - **Datum:** 2026-07-11
-- **Abgeschlossener Sprint:** Sprint 15 – Market Discovery Framework
+- **Abgeschlossener Sprint:** Sprint 16 – Live Market Operations Platform
 - **Projektwurzel:** `AlphaAI/` (im Repository `AlphaAI` ist dies die Wurzel)
 - **Branch:** `claude/alphaai-project-bootstrap-c51pse`
 - **Tag:** `v0.1.0-foundation` (stabiler Fundament-Stand nach Sprint 7.5)
@@ -18,7 +18,7 @@ dass Wissen nur im Chat existiert.
 2. Umgebung einrichten: `python3.12 -m venv .venv && source .venv/bin/activate`.
 3. Installieren: `pip install -e ".[dev]"`.
 4. Fundament prüfen: `python -m scripts.check_setup`.
-5. Tests ausführen: `pytest` (aktuell 1836 Tests).
+5. Tests ausführen: `pytest` (aktuell 2040 Tests).
 6. Architektur prüfen: `python scripts/quality_check.py` (muss BESTANDEN melden).
 
 > **Semantik (ab 9.6):** `RecommendationResult.direction` (LONG/SHORT/NEUTRAL)
@@ -26,7 +26,7 @@ dass Wissen nur im Chat existiert.
 > (VERY_HIGH/HIGH/MEDIUM/LOW/REJECT) sind getrennt. Die Stärke enthält **kein**
 > BUY/SELL/LONG/SHORT. Ein bärisches Setup ist SHORT mit ggf. hoher Stärke.
 
-## Qualitätsprüfung Sprint 15 (Ergebnis)
+## Qualitätsprüfung Sprint 16 (Ergebnis)
 
 Vor dem Commit automatisch geprüft:
 
@@ -39,7 +39,7 @@ Vor dem Commit automatisch geprüft:
 | Pipeline-Konsistenz (`verify_pipeline`) | **0 Verstöße** |
 | Ergebnisobjekte unveränderlich (`frozen`) | **vollständig** |
 | Ruff / Black | **konform** |
-| pytest | **1836 bestanden** |
+| pytest | **2040 bestanden** |
 
 ## Vollständige Pipeline – Einstieg
 
@@ -197,6 +197,27 @@ eigene Sprints und ändern bewusst Verhalten.
   `engines/market_discovery_registry.py::_DEFAULT_MARKETS` ergänzen – die Engine
   bleibt unverändert. **Grenzwerte/Ausgleich:** nur über die Regeldatei. Details:
   `docs/MARKET_DISCOVERY.md`.
+
+## Live Operations – Kurzüberblick für die Weiterarbeit
+
+- Einstieg: `OperationsEngine.from_config(jobs=…)` lädt
+  `knowledge/operations_rules.toml` (Marktphasen, Zeitplan, Heartbeat/Health) und
+  die Job-Registry. Die eigentlichen Jobs werden als `jobs={job_type: callable}`
+  **injiziert** (z. B. `{"discovery": lambda: discovery_engine.discover(...)}`);
+  die Uhr über `clock=` (UTC). Die Engine importiert **nichts** aus der Pipeline.
+- Betrieb: periodisch `engine.tick()` aufrufen (z. B. jede Minute); es setzt den
+  Heartbeat, startet fällige Jobs (seriell, ein Discovery gleichzeitig, Fehler
+  isoliert) und liefert einen `OperationReport`. `engine.build_report()` liefert
+  den Report ohne Jobs zu starten (für reine Anzeige).
+- Der `OperationReport` ist **UI-unabhängig**: Marktstatus/Countdown,
+  laufender/nächster Job, letzter Scan, Systemzustand (Health/Heartbeat/Queue),
+  Zähler/Laufzeiten, letzter Discovery-Report (Top Opportunities) sowie neue
+  Chancen/Risiken. Dashboard/REST/Mobile nutzen denselben Report.
+- **Niemals Orders**; das System orchestriert nur. **Neue Job-Art:**
+  `JobDefinition` in `engines/operations_registry.py` ergänzen, im Zeitplan
+  verwenden und die Funktion injizieren – die Engine bleibt unverändert.
+  **Marktzeiten/Zeitplan:** nur über die Regeldatei. Details:
+  `docs/LIVE_OPERATIONS.md`.
 
 ## Recommendation Engine – Kurzüberblick für die Weiterarbeit
 

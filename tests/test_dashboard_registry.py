@@ -47,6 +47,12 @@ _EXPECTED = {
     "md_market_overview",
     "md_sector_overview",
     "md_market_breakdown",
+    "lo_market_status",
+    "lo_system_status",
+    "lo_schedule",
+    "lo_top_opportunities",
+    "lo_new_signals",
+    "lo_job_history",
     "settings_panel",
 }
 
@@ -57,7 +63,7 @@ def test_default_registry_has_all_widgets():
 
 
 def test_default_registry_count():
-    assert len(build_default_registry()) == 36
+    assert len(build_default_registry()) == 42
 
 
 def test_registry_contains():

@@ -55,6 +55,7 @@ packages = [
     "analytics",
     "market_intelligence",
     "market_discovery",
+    "operations",
     "dashboard",
     "dashboard.widgets",
     "database",

@@ -228,6 +228,23 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
 - Neue Dashboard-Seite „Market Discovery" (additiv; Engine unverändert).
 - 145 neue Tests (1836 gesamt). Doku: `docs/MARKET_DISCOVERY.md`.
 
+## Sprint 16 – Live Market Operations Platform ✅ (abgeschlossen)
+
+- AlphaAI arbeitet als produktives Tagessystem: der Benutzer startet AlphaAI,
+  danach laufen alle Analysen automatisch (keine manuellen Läufe). Kette
+  `Marktuhr + Zeitplan → OperationsEngine (tick) → bestehende Pipeline (injiziert)
+  → OperationReport → Dashboard`. Niemals Orders; Entscheidung beim Benutzer.
+- Subsystem `operations/` (`market_sessions`, `market_clock`, `scheduler`,
+  `job_queue`, `job_runner`, `job_history`, `heartbeat`, `health`, `system_state`)
+  + Engine-Anbindung (`operations_engine`, `-registry`, `-cache`, `-result`).
+- Marktzeiten Europa/USA mit Sommer-/Winterzeit (IANA-Zeitzonen), Market Clock
+  mit Countdown, automatische Jobs/Scan-Strategie, Job-Queue (ein Discovery
+  gleichzeitig, Fehler blockieren nie, automatische Wiederaufnahme). Alle Zeiten
+  aus `knowledge/operations_rules.toml`.
+- Neue Dashboard-Seite „Live Operations" (additiv; Engine unverändert). Reports
+  UI-unabhängig (Desktop/REST/Mobile vorbereitet).
+- 203 neue Tests (2040 gesamt). Doku: `docs/LIVE_OPERATIONS.md`.
+
 ## Sprint 7 – Persistenz & Lernfähigkeit (geplant)
 
 - Speicherung von Analysen/Empfehlungen in SQLite (`database/`).

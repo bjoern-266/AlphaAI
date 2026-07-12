@@ -664,6 +664,39 @@ DiscoveryReport → Dashboard-Seite „Market Discovery"
   Universum, unbekannte Märkte, ungültige/doppelte Kandidaten werden abgefangen.
   Details: `docs/MARKET_DISCOVERY.md`.
 
+## Live Market Operations Platform (umgesetzt in Sprint 16)
+
+Das Operations-Subsystem (`operations/`) macht AlphaAI zu einem produktiven
+Tagessystem: es erkennt automatisch die Marktzeiten, plant und startet die
+Analyse-Jobs selbst und stellt jederzeit einen **UI-unabhängigen**
+:class:`~models.operations.OperationReport` bereit. Es führt **niemals** Orders
+aus und **orchestriert** nur die bestehende Pipeline.
+
+```
+Marktuhr (Zeit/Zeitzonen/DST) + Zeitplan
+        │  OperationsEngine.tick()  (Heartbeat, fällige Jobs)
+Job-Queue (ein Discovery zugleich) → Job-Runner (INJIZIERTE Jobs, Fehler isoliert)
+        │  bestehende Pipeline (Discovery/Analytics/Market Intelligence)
+OperationReport → Dashboard „Live Operations" · spätere REST-API · Mobile-Apps
+```
+
+- **Schicht-Einordnung / keine Zyklen:** `operations/` importiert ausschließlich
+  `models`/`core`. Die Jobs (`jobs={job_type: callable}`) und die Uhr werden dem
+  `OperationsEngine` **injiziert**, **nicht** importiert – so bleibt das Subsystem
+  frei von `engines`, es entsteht kein Import-Zyklus und keine bestehende Engine
+  wird verändert. `models/operations.py` gehört zur Entities-Schicht.
+- **Open/Closed:** Job-Arten sind `JobDefinition`-Registry-Einträge; neue Arten
+  kommen nur über `engines/operations_registry.py` hinzu – die Engine bleibt
+  unverändert. Alle Marktzeiten/Zeitpläne/Schwellen stehen ausschließlich in
+  `knowledge/operations_rules.toml`.
+- **Robustheit:** Sommer-/Winterzeit über IANA-Zeitzonen; ein Job-Absturz
+  blockiert den Scheduler nie (isoliert gezählt, automatische Wiederaufnahme);
+  nur ein Discovery gleichzeitig, keine parallelen Vollanalysen.
+- **UI-Unabhängigkeit / API-Vorbereitung:** der Report enthält nur Daten;
+  Desktop-Dashboard, spätere REST-API und mobile Apps nutzen denselben Report
+  (keine doppelte Geschäftslogik). Parallelisierung und REST sind vorbereitet,
+  aber bewusst noch nicht implementiert. Details: `docs/LIVE_OPERATIONS.md`.
+
 ## AlphaAI Command Center / Dashboard (umgesetzt in Sprint 13)
 
 Das Dashboard-Subsystem (`dashboard/`) ist **ausschließlich** die Presentation
@@ -739,11 +772,14 @@ Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidatio
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
 Integration & Validierung, Historical Backtesting Framework, Paper Trading
 Framework, Trading Intelligence & Analytics Framework, AlphaAI Command Center /
-Dashboard, Market Intelligence Framework, Market Discovery Framework). Das
-Dashboard ist **rein darstellend**; Market Intelligence **priorisiert nur** und
-Market Discovery **durchsucht/filtert nur** vorhandene Ergebnisse. Es gibt bewusst
-weiterhin **keine Broker-API, keine automatische Orderausführung und keine echten
-Orders** (Backtesting und Paper Trading simulieren ausschließlich; Analytics
-wertet nur aus, Market Intelligence priorisiert nur, Market Discovery durchsucht
-nur, das Dashboard zeigt nur an; die Handelsentscheidung trifft der Benutzer).
-Offene fachliche Kalibrierung ist im `docs/VALIDATION_REPORT.md` dokumentiert.
+Dashboard, Market Intelligence Framework, Market Discovery Framework, Live Market
+Operations Platform). Das Dashboard ist **rein darstellend**; Market Intelligence
+**priorisiert nur**, Market Discovery **durchsucht/filtert nur** und die Operations
+Platform **orchestriert nur** vorhandene Ergebnisse. AlphaAI arbeitet nun
+automatisch (Marktuhr + Scheduler). Es gibt bewusst weiterhin **keine Broker-API,
+keine automatische Orderausführung und keine echten Orders** (Backtesting und Paper
+Trading simulieren ausschließlich; Analytics wertet nur aus, Market Intelligence
+priorisiert nur, Market Discovery durchsucht nur, die Operations Platform
+orchestriert nur, das Dashboard zeigt nur an; die Handelsentscheidung trifft der
+Benutzer). Offene fachliche Kalibrierung ist im `docs/VALIDATION_REPORT.md`
+dokumentiert.

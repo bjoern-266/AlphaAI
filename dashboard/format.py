@@ -86,3 +86,25 @@ def signed_percent(value: float | int | None, decimals: int = 2) -> str:
 def profit_factor(value: float | int | None, decimals: int = 2) -> str:
     """Formatiert den Profit Factor (``∞`` ohne Verluste)."""
     return number(value, decimals)
+
+
+def duration(seconds: float | int | None) -> str:
+    """Formatiert eine Dauer/Countdown in Sekunden als ``H:MM:SS`` (Anzeige)."""
+    if na(seconds):
+        return PLACEHOLDER
+    total = int(seconds)
+    sign = "-" if total < 0 else ""
+    total = abs(total)
+    hours, remainder = divmod(total, 3600)
+    minutes, secs = divmod(remainder, 60)
+    return f"{sign}{hours}:{minutes:02d}:{secs:02d}"
+
+
+def clock_time(value: object) -> str:
+    """Formatiert einen Zeitstempel als ``HH:MM`` (Platzhalter bei ``None``)."""
+    if na(value):
+        return PLACEHOLDER
+    try:
+        return value.strftime("%H:%M")  # type: ignore[attr-defined]
+    except AttributeError:
+        return str(value)
