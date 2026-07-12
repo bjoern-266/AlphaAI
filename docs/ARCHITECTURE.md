@@ -741,6 +741,33 @@ Frontends: Desktop-Dashboard · Android-App (Sprint 18)
   Verfahren (Open/Closed). Details: `docs/API.md`, `docs/BACKEND.md`,
   `docs/PRODUCTION.md`.
 
+## AlphaAI Android Application (umgesetzt in Sprint 18)
+
+Die native Android-App (`android/`, Kotlin/Jetpack Compose) ist die **primäre
+Benutzeroberfläche** und ein **reiner REST-Client** des Backends. Sie enthält
+**keine** Geschäftslogik, berechnet nichts und bietet keine Trading-Funktionen
+(Read-only, keine Broker/Orders).
+
+```
+ui/ (Compose Screens + ViewModels, StateFlow)
+        │  Repositories + Domänenmodelle
+data/repository/  →  data/remote (Retrofit REST)  +  data/local (Room-Cache)  +  data/mapper
+        │
+domain/model/ (framework-freie Anzeige-Modelle)
+```
+
+- **Schichtung/Architecture Check:** `ui` greift nie direkt auf `data.remote`/
+  `data.local` zu; `domain` ist frei von Android/Retrofit/Room. Diese Regeln
+  prüft `ArchitectureTest` statisch (analog zum Backend-`quality_check`).
+- **MVVM + Repository + StateFlow;** manuelle DI über `AppContainer` (kein
+  Framework). Netzwerk über Retrofit/OkHttp/kotlinx.serialization; die
+  Backend-Adresse ist zur Laufzeit konfigurierbar (`HostSelectionInterceptor`).
+- **Offline:** Room-Cache liefert den letzten erfolgreichen Scan; der Zeitpunkt
+  wird deutlich ausgewiesen. Es findet **keine** Berechnung auf dem Gerät statt.
+- Die App konsumiert dieselbe REST-API wie das Desktop-Dashboard – keine
+  doppelte Geschäftslogik. Details: `docs/ANDROID.md`, `docs/USER_GUIDE.md`,
+  `docs/INSTALLATION_ANDROID.md`.
+
 ## AlphaAI Command Center / Dashboard (umgesetzt in Sprint 13)
 
 Das Dashboard-Subsystem (`dashboard/`) ist **ausschließlich** die Presentation
@@ -811,18 +838,20 @@ OpportunityReport → Dashboard-Seite „Market Intelligence"
 
 ## Aktueller Stand
 
-Sprint 1–17 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
+Sprint 1–18 sind abgeschlossen (Fundament, Data Layer, Scanner Core, Indicator
 Engine, Pattern Engine, Strategy Engine, Score Engine, Architecture Consolidation
 mit Tag `v0.1.0-foundation`, Risk Engine, Recommendation Engine, End-to-End-
 Integration & Validierung, Historical Backtesting Framework, Paper Trading
 Framework, Trading Intelligence & Analytics Framework, AlphaAI Command Center /
 Dashboard, Market Intelligence Framework, Market Discovery Framework, Live Market
-Operations Platform, Production Backend & Mobile API Platform). Das Dashboard ist
+Operations Platform, Production Backend & Mobile API Platform, AlphaAI Android
+Application). Das Dashboard ist
 **rein darstellend**; Market Intelligence **priorisiert nur**, Market Discovery
 **durchsucht/filtert nur**, die Operations Platform **orchestriert nur** und die
 Application-/API-Schicht **liefert nur** vorhandene Reports (dauerhaft
-gespeichert). AlphaAI läuft als produktiver Backend-Dienst mit REST-API; Sprint 17
-ist das **endgültige Backend** (Sprint 18 = nur Android-App). Es gibt bewusst
+gespeichert). AlphaAI läuft als produktiver Backend-Dienst mit REST-API; die
+native Android-App ist die primäre, read-only Benutzeroberfläche. Mit Sprint 18
+ist die **Kernentwicklung abgeschlossen**. Es gibt bewusst
 weiterhin **keine Broker-API,
 keine automatische Orderausführung und keine echten Orders** (Backtesting und Paper
 Trading simulieren ausschließlich; Analytics wertet nur aus, Market Intelligence

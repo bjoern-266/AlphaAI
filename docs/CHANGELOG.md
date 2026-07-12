@@ -4,6 +4,48 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.18.0] – 2026-07-12 – Sprint 18: AlphaAI Android Application (Release Candidate)
+
+Abschluss der Kernentwicklung: die **native Android-App** wird die primäre
+Benutzeroberfläche von AlphaAI. Sie **konsumiert ausschließlich die REST-API**
+(`/api/v1`) und enthält **keine** Geschäftslogik, **keine** Berechnung, **keine**
+Scores/Recommendation-Logik und **keine** Trading-Funktionen (Read-only, keine
+Broker/Orders). **Keine Änderungen** an bestehenden Engines oder am
+Application-Backend. **Alle Kauf-/Verkaufsentscheidungen trifft der Benutzer.**
+
+### Hinzugefügt
+
+- **Android-Projekt `android/`** (Kotlin, Jetpack Compose, Material 3, MVVM,
+  Repository Pattern, StateFlow/Coroutines):
+  - **Netzwerk:** Retrofit + OkHttp + kotlinx.serialization; `AlphaAiApi`
+    (alle REST-Endpunkte), einheitliche `EnvelopeDto`-Hülle, zur Laufzeit
+    konfigurierbare Backend-Adresse (`HostSelectionInterceptor`).
+  - **Offline-Cache:** Room (`OpportunityEntity`/`SnapshotEntity`/
+    `ScanHistoryEntity` + DAOs) – zeigt ohne Verbindung den letzten
+    erfolgreichen Scan samt Zeitpunkt.
+  - **Repositories:** `OpportunityRepository`, `MarketRepository`,
+    `SystemRepository`, `HistoryRepository` (API + Cache + Offline-Fallback).
+  - **Bildschirme:** Home (Marktstatus/Top-Chancen/Signale), Opportunities
+    (Suche/Filter/Sortierung), Detailseite (vollständige Analyse), Markets,
+    History, Settings – plus Bottom-Navigation und Detail-Route.
+  - **Design:** dunkles „Carbon"-Theme mit gelber Akzentfarbe, große Karten,
+    Material 3, einhandbedienbar.
+  - **DI:** manueller `AppContainer` (kein Framework); ViewModels über
+    `viewModelFactory`.
+- **Tests (JVM/Compose):** Envelope-Serialisierung, Mapper, alle Repositories
+  (inkl. Offline/Cache), alle ViewModels, State-Management, UI-Tests
+  (Chancen-Karte, Bottom-Navigation) und ein **Architecture Check**
+  (`ArchitectureTest`: Schichtung + Verbot von Handels-Aktionen).
+- **Qualität:** ktlint- und detekt-Konfiguration (`android/.editorconfig`,
+  `android/config/detekt/detekt.yml`), zentraler Versionskatalog.
+- **Dokumentation:** neu `docs/ANDROID.md`, `docs/USER_GUIDE.md`,
+  `docs/INSTALLATION_ANDROID.md`, `android/README.md`.
+
+### Unverändert (bewusst)
+
+- Keine Änderungen an Engines/Algorithmen/Backend; keine neuen Strategien/
+  Pattern/Scores; **kein Broker, keine Orderausführung, keine Trading-Funktionen**.
+
 ## [0.17.0] – 2026-07-12 – Sprint 17: Production Backend & Mobile API Platform
 
 Sprint 17 **beendet die Backend-Entwicklung**: AlphaAI läuft ab hier als

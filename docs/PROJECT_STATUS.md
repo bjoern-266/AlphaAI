@@ -3,8 +3,9 @@
 _Wird nach jedem Sprint automatisch aktualisiert._
 
 - **Datum:** 2026-07-12
-- **Aktueller Sprint:** Sprint 17 – Production Backend & Mobile API Platform
-- **Status:** ✅ Abgeschlossen (endgültiges Backend; Sprint 18 = nur Android-App)
+- **Aktueller Sprint:** Sprint 18 – AlphaAI Android Application (Release Candidate)
+- **Status:** ✅ Abgeschlossen (Abschluss der Kernentwicklung; Android ist die
+  primäre Benutzeroberfläche)
 
 ## Was ist vorhanden
 
@@ -319,6 +320,26 @@ Verhaltenserhaltender Umbau (kein neues Feature):
   Neustart verliert keine Daten; immer der letzte erfolgreiche Scan.
 - **Validierung:** ungültige Requests/Parameter, leere/fehlende Reports,
   Scheduler-/Persistenz-/API-Fehler. **Tests:** 2294 gesamt (254 neue).
+
+### AlphaAI Android Application (Sprint 18)
+
+- **Primäre Benutzeroberfläche:** native Android-App (Kotlin, Jetpack Compose,
+  Material 3, MVVM, Repository, StateFlow, Retrofit, Room, Coil, Navigation
+  Compose) im Verzeichnis `android/`. **Reiner REST-Client** – keine
+  Geschäftslogik, keine Berechnung, keine Trading-Funktionen (Read-only).
+- **Schichten:** `ui` (Compose Screens + ViewModels) → `data/repository` →
+  `data/remote` (Retrofit) + `data/local` (Room-Offline-Cache) + `data/mapper`;
+  `domain/model` ist framework-frei. `AppContainer` (manuelle DI).
+- **Bildschirme:** Home, Opportunities (Suche/Filter/Sortierung), Detailseite,
+  Markets, History, Settings; Dark-Carbon-Theme mit gelbem Akzent; Bottom-
+  Navigation. Offline zeigt den letzten erfolgreichen Scan mit Zeitpunkt.
+- **Backend-Adresse** zur Laufzeit konfigurierbar; Auto-Refresh beim Start/Resume
+  und per Pull-to-Refresh.
+- **Tests/Qualität:** Unit-Tests (Serialisierung, Mapper, Repositories inkl.
+  Offline/Cache, alle ViewModels, State), Compose-UI-Tests, `ArchitectureTest`
+  (Schichtung + Verbot von Handels-Aktionen); ktlint/detekt konfiguriert.
+- **Keine Änderungen** an Engines oder Backend. Damit ist die **Kernentwicklung
+  abgeschlossen** und AlphaAI vollständig über Android nutzbar.
 
 ## Was ist bewusst NICHT vorhanden
 

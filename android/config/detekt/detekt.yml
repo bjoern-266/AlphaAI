@@ -1,0 +1,36 @@
+# detekt-Konfiguration der AlphaAI Android App (Sprint 18).
+# Baut auf der Standardkonfiguration auf; hier nur bewusste Anpassungen.
+
+build:
+  maxIssues: 0
+
+complexity:
+  LongMethod:
+    threshold: 80
+  LongParameterList:
+    functionThreshold: 8
+    constructorThreshold: 10
+  TooManyFunctions:
+    active: false
+
+style:
+  MagicNumber:
+    active: false
+  UnusedPrivateMember:
+    active: true
+  ForbiddenComment:
+    active: false
+  FunctionOnlyReturningConstant:
+    active: false
+  MaxLineLength:
+    maxLineLength: 120
+
+naming:
+  FunctionNaming:
+    # Composable-Funktionen beginnen bewusst mit Großbuchstaben.
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    active: false
+
+comments:
+  active: false

@@ -266,11 +266,22 @@ Verhaltenserhaltender Umbau vor den nächsten Fachschichten (kein neues Feature)
 - 254 neue Tests (2294 gesamt). Doku: `docs/API.md`, `docs/BACKEND.md`,
   `docs/PRODUCTION.md`.
 
-## Sprint 18 – Android App (geplant)
+## Sprint 18 – AlphaAI Android Application ✅ (abgeschlossen)
 
-- Native Android-App, die **ausschließlich** über die REST-API zugreift (nur
-  HTTP, keine Python-Logik, niemals direkte Engine-Nutzung). Keine Änderungen an
-  den bestehenden Engines nötig.
+- Native Android-App (Kotlin, Jetpack Compose, Material 3, MVVM, Repository,
+  StateFlow, Retrofit, Room, Coil, Navigation Compose), die **ausschließlich**
+  über die REST-API zugreift (nur HTTP, keine Python-Logik, niemals direkte
+  Engine-Nutzung). Keine Änderungen an Engines oder Backend.
+- Bildschirme: Home, Opportunities (Suche/Filter/Sortierung), Detailseite,
+  Markets, History, Settings; Dark-Carbon-Theme mit gelbem Akzent; Offline-Cache
+  (Room) zeigt den letzten erfolgreichen Scan.
+- Read-only: keine Broker, keine Orders, keine Trading-Funktionen – die
+  Handelsentscheidung trifft der Benutzer.
+- Tests (ViewModels/Repositories/API/Offline/Cache/UI/State) + Architecture Check;
+  ktlint/detekt. Doku: `docs/ANDROID.md`, `docs/USER_GUIDE.md`,
+  `docs/INSTALLATION_ANDROID.md`.
+- **Abschluss der Kernentwicklung.** Ab Sprint 19 keine neuen Großarchitekturen
+  mehr – neue Funktionen entstehen auf Basis realer Nutzung und echter Marktdaten.
 
 ## Sprint 7 – Persistenz & Lernfähigkeit (geplant)
 
