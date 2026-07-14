@@ -4,6 +4,30 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.18.1] – 2026-07-14 – Lauffähigkeit: Server-Start & App-Build
+
+Nachrüstung, damit AlphaAI ohne weitere Handgriffe **betrieben** werden kann.
+Keine fachlichen Änderungen an Engines/Analyse.
+
+### Hinzugefügt
+
+- **`scripts/serve.py`** – Start-Skript des Backend-Dienstes: baut die
+  `ApplicationEngine`, lädt optional Demo-Reports (`--demo`) und stellt die
+  REST-API per uvicorn bereit (`python -m scripts.serve --demo`).
+- **`RUN.md`** – Schnellstart (Backend starten + App bauen/verbinden).
+- **Android build-ready:** Gradle-Wrapper (`gradlew`, `gradlew.bat`,
+  `gradle/wrapper/gradle-wrapper.jar`) und adaptives Launcher-Icon
+  (`mipmap-anydpi-v26/ic_launcher*`, `ic_launcher_foreground`,
+  `ic_launcher_background`) ergänzt, damit der Build durchläuft.
+
+### Behoben
+
+- **FastAPI-Adapter** (`application/api/service.py`): Routen werden nun auf
+  Starlette-Ebene (`add_route`) gemountet. Zuvor deutete FastAPI den
+  `Request`-Parameter als Query-Feld (HTTP 422). Der Adapter war in Sprint 17
+  ohne installiertes FastAPI nie ausgeführt worden; jetzt live gegen echte
+  HTTP-Requests verifiziert (alle Endpunkte, GZip, Swagger `/docs`).
+
 ## [0.18.0] – 2026-07-12 – Sprint 18: AlphaAI Android Application (Release Candidate)
 
 Abschluss der Kernentwicklung: die **native Android-App** wird die primäre

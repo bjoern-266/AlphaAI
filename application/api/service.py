@@ -68,13 +68,16 @@ def create_fastapi_app(api: ApplicationApi, *, api_prefix: str = "/api/v1") -> A
             media_type="application/json",
         )
 
+    # Die Routen werden auf Starlette-Ebene (``add_route``) gemountet: der Handler
+    # erhält den rohen Request und liefert eine fertige Response. Damit umgeht der
+    # Adapter die Parameter-Validierung von FastAPI – Pfad und Query werden bereits
+    # in ``ApiRequest`` selbst ausgewertet (keine doppelte Geschäftslogik).
     for route in api.router.routes():
-        app.add_api_route(
+        app.add_route(
             f"{api_prefix}{route.template}",
             endpoint,
             methods=[route.method],
             name=route.info.name,
-            summary=route.info.description,
         )
     return app
 
