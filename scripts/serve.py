@@ -154,20 +154,43 @@ def _demo_opportunity(
     }
 
 
+def _resolve_symbols(symbols: list[str] | None, universe: str | None) -> list[str] | None:
+    """Bestimmt die zu analysierenden Symbole (Symbole > Universum > Konfig)."""
+    if symbols:
+        return [s.strip().upper() for s in symbols]
+    if universe:
+        from data.universe import get_universe
+
+        return list(get_universe(universe).symbols)
+    return None
+
+
 def main() -> None:
-    """CLI-Einstieg: Engine bauen, optional Demo laden, HTTP-Server starten."""
+    """CLI-Einstieg: Engine bauen, Daten laden (Demo oder Live), HTTP-Server starten."""
     parser = argparse.ArgumentParser(description="AlphaAI Backend – REST-API-Server")
     parser.add_argument("--host", default="127.0.0.1", help="Bind-Adresse (Standard: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8000, help="Port (Standard: 8000)")
     parser.add_argument(
         "--demo", action="store_true", help="Demo-Reports laden (ohne echte Marktdaten)"
     )
+    parser.add_argument(
+        "--live", action="store_true", help="Echte Marktdaten analysieren (Yahoo-Provider)"
+    )
+    parser.add_argument(
+        "--symbols", nargs="+", metavar="TICKER", help="Zu analysierende Symbole (Live-Modus)"
+    )
+    parser.add_argument(
+        "--universe", metavar="KEY", help="Universum analysieren, z. B. 'dax' (Live-Modus)"
+    )
     args = parser.parse_args()
 
-    engine = ApplicationEngine.from_config()
-    if args.demo:
-        seed_demo(engine.store)
-        print("Demo-Reports geladen.")
+    if args.live:
+        engine = _build_live_engine(args.symbols, args.universe)
+    else:
+        engine = ApplicationEngine.from_config()
+        if args.demo:
+            seed_demo(engine.store)
+            print("Demo-Reports geladen.")
 
     app = engine.create_fastapi_app()
     base = f"http://{args.host}:{args.port}/api/v1"
@@ -177,6 +200,31 @@ def main() -> None:
     import uvicorn
 
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+
+
+def _build_live_engine(symbols: list[str] | None, universe: str | None) -> ApplicationEngine:
+    """Baut die Engine im Live-Modus (echte Marktdaten) und führt den ersten Takt aus."""
+    from engines.operations_engine import OperationsEngine
+    from scripts.live_backend import LiveBackend
+
+    live = LiveBackend.from_config()
+    chosen = _resolve_symbols(symbols, universe)
+
+    # Der Operations-Taktgeber liefert die Marktuhr (ohne echte Jobs auszuführen);
+    # die eigentliche Analyse kommt aus der injizierten Report-Quelle.
+    operations = OperationsEngine.from_config(jobs={})
+    engine = ApplicationEngine.from_config(
+        operations=operations,
+        report_sources={"opportunities": lambda: live.opportunity_report(chosen)},
+    )
+
+    print("Lade echte Marktdaten und analysiere … (kann je nach Anzahl dauern)")
+    result = engine.start()
+    if result.ok:
+        print(f"Analyse abgeschlossen. Gespeichert: {', '.join(result.stored_kinds)}")
+    else:
+        print(f"Analyse mit Fehlern (Dienst läuft weiter): {result.errors}")
+    return engine
 
 
 if __name__ == "__main__":

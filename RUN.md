@@ -19,8 +19,23 @@ python -m scripts.serve --demo
 Das war’s. Der Dienst läuft dann auf `http://127.0.0.1:8000`.
 
 - `--demo` lädt Beispiel‑Chancen, damit sofort etwas sichtbar ist (ohne echte
-  Marktdaten). Für den echten Betrieb ohne `--demo` starten – dann liefert die
-  API Daten, sobald echte Reports vorliegen.
+  Marktdaten).
+
+### Echte Marktdaten (Live‑Modus)
+
+```bash
+pip install yfinance          # Datenquelle (einmalig)
+python -m scripts.serve --live                 # nutzt [markets].symbols aus der Konfiguration
+python -m scripts.serve --live --symbols AAPL MSFT NVDA
+python -m scripts.serve --live --universe dax  # ganzen Index analysieren
+```
+
+Im Live‑Modus lädt der Dienst echte Kurse (Yahoo), lässt die **unveränderte**
+Analyse‑Pipeline laufen (Indikatoren → Muster → Strategien → Scores → Risiko →
+Empfehlung) und priorisiert daraus die Chancen (Market Intelligence). Ergebnis
+liegt unter `/api/v1/opportunities`. Voraussetzung: Internetzugang zu Yahoo und
+`yfinance` installiert. Ein Fehler beim Laden stoppt den Dienst nicht – er
+läuft weiter und liefert, sobald Daten da sind.
 - Im Browser ausprobieren:
   - `http://127.0.0.1:8000/docs` – interaktive API‑Übersicht (Swagger)
   - `http://127.0.0.1:8000/api/v1/opportunities/top?limit=5`

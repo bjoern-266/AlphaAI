@@ -4,6 +4,23 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.18.2] – 2026-07-14 – Echte Marktdaten (Live-Verdrahtung)
+
+Schließt die bestehende Analyse-Pipeline an den Backend-Dienst an, ohne
+bestehende Engines zu verändern. Keine neue Handelslogik.
+
+### Hinzugefügt
+
+- **`scripts/live_backend.py`** – Composition Root `LiveBackend`: verbindet
+  Marktdaten (`MarketDataEngine`/Yahoo, Provider injizierbar) → Analyse-Pipeline
+  (`IntegrationRunner`) → Market Intelligence zu einem priorisierten
+  `OpportunityReport`. Reicht nur vorhandene Engine-Ausgaben weiter.
+- **`scripts/serve.py --live`** (+ `--symbols`, `--universe`): startet den Dienst
+  mit echten Marktdaten; der erste Takt lädt Kurse, analysiert und speichert die
+  Chancen. Marktuhr über den Operations-Taktgeber.
+- **Tests:** `tests/test_live_backend.py` (5) – vollständige Pipeline über einen
+  synthetischen Provider (ohne Netzwerk); Gesamt 2299.
+
 ## [0.18.1] – 2026-07-14 – Lauffähigkeit: Server-Start & App-Build
 
 Nachrüstung, damit AlphaAI ohne weitere Handgriffe **betrieben** werden kann.
