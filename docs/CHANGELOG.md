@@ -4,6 +4,24 @@ _Wird nach jedem Sprint automatisch aktualisiert._ Das Format orientiert sich
 an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.18.3] – 2026-07-14 – Hands-off-Betrieb: Auto-Scan, Termux, Docker
+
+Macht AlphaAI ohne laufende Handarbeit nutzbar – „einmal starten, dauerhaft
+Vorschläge". Keine Änderung an Engines/Analyse.
+
+### Hinzugefügt
+
+- **Automatischer Neu-Scan:** `scripts/serve.py --live` scannt jetzt periodisch
+  von allein (`--refresh-minutes N`, Standard 15; `0` = aus). Ein
+  Hintergrund-Thread lädt in festem Takt echte Marktdaten, analysiert und
+  speichert; Fehler eines Laufs stoppen den Takt nicht (Recovery).
+- **`scripts/termux_setup.sh`** – Ein-Klick-Setup für Android/Termux: installiert
+  Python/Abhängigkeiten, holt den Code und startet den Live-Dienst mit Auto-Scan
+  direkt auf dem Handy (App-Backend-Adresse: `http://127.0.0.1:8000/`).
+- **`Dockerfile`** – schlankes Container-Image für den 24/7-Dauerbetrieb auf
+  einem kleinen Server; das Handy braucht dann nur die App.
+- **RUN.md** um beide Wege (Handy/Server) und den Auto-Scan ergänzt.
+
 ## [0.18.2] – 2026-07-14 – Echte Marktdaten (Live-Verdrahtung)
 
 Schließt die bestehende Analyse-Pipeline an den Backend-Dienst an, ohne

@@ -36,6 +36,38 @@ Empfehlung) und priorisiert daraus die Chancen (Market Intelligence). Ergebnis
 liegt unter `/api/v1/opportunities`. Voraussetzung: Internetzugang zu Yahoo und
 `yfinance` installiert. Ein Fehler beim Laden stoppt den Dienst nicht – er
 läuft weiter und liefert, sobald Daten da sind.
+
+**Automatisch immer aktuell:** Standardmäßig scannt der Live‑Modus **alle 15
+Minuten** von allein neu (`--refresh-minutes N`, `0` schaltet es aus). Einmal
+starten – die App zeigt danach laufend die aktuellen Vorschläge, ohne dass du
+etwas tust.
+
+### Nur mit dem Handy (Termux)
+
+Auf dem Handy ist Yahoo erreichbar – der Dienst kann also direkt dort laufen:
+
+1. **Termux** aus F‑Droid installieren (nicht aus dem Play Store).
+2. Das Setup‑Skript ausführen – es installiert alles und startet den Dienst:
+   ```bash
+   bash scripts/termux_setup.sh
+   ```
+3. In der App die Backend‑Adresse `http://127.0.0.1:8000/` eintragen.
+
+Hinweis: Android kann Hintergrund‑Prozesse beenden (Akku); das Skript setzt
+`termux-wake-lock`. Für **dauerhaft an, ohne Handy** siehe unten.
+
+### Dauerbetrieb auf einem kleinen Server (empfohlen)
+
+Für „einmal einrichten, läuft für immer" – das Handy hat nur die App:
+
+```bash
+docker build -t alphaai .
+docker run -d -p 8000:8000 --restart unless-stopped alphaai
+```
+
+Läuft 24/7, scannt automatisch. Für Zugriff vom Handy übers Netz in
+`knowledge/application_rules.toml` unter `[api]` `auth_policy = "open"` setzen
+und den Server per Firewall/VPN absichern.
 - Im Browser ausprobieren:
   - `http://127.0.0.1:8000/docs` – interaktive API‑Übersicht (Swagger)
   - `http://127.0.0.1:8000/api/v1/opportunities/top?limit=5`

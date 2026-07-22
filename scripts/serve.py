@@ -21,6 +21,8 @@ Für ein physisches Gerät im WLAN dort ``auth_policy = "open"`` setzen.
 from __future__ import annotations
 
 import argparse
+import threading
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -182,10 +184,19 @@ def main() -> None:
     parser.add_argument(
         "--universe", metavar="KEY", help="Universum analysieren, z. B. 'dax' (Live-Modus)"
     )
+    parser.add_argument(
+        "--refresh-minutes",
+        type=int,
+        default=15,
+        metavar="N",
+        help="Automatischer Neu-Scan alle N Minuten im Live-Modus (0 = aus). Standard: 15.",
+    )
     args = parser.parse_args()
 
     if args.live:
         engine = _build_live_engine(args.symbols, args.universe)
+        if args.refresh_minutes > 0:
+            _start_refresh_loop(engine, args.refresh_minutes)
     else:
         engine = ApplicationEngine.from_config()
         if args.demo:
@@ -200,6 +211,30 @@ def main() -> None:
     import uvicorn
 
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+
+
+def _start_refresh_loop(engine: ApplicationEngine, minutes: int) -> None:
+    """Startet einen Hintergrund-Thread, der alle ``minutes`` neu scannt.
+
+    So läuft der Dienst „von allein": in festem Takt werden erneut echte
+    Marktdaten geladen, analysiert und gespeichert. Fehler eines Laufs stoppen
+    den Takt nicht – der nächste Lauf versucht es erneut (Recovery).
+    """
+    interval = minutes * 60
+
+    def loop() -> None:
+        while True:
+            time.sleep(interval)
+            try:
+                result = engine.tick()
+                stored = ", ".join(result.stored_kinds) or "—"
+                print(f"[Auto-Scan] Aktualisiert: {stored}")
+            except Exception as error:  # noqa: BLE001 - Takt darf nie hart fehlschlagen
+                print(f"[Auto-Scan] Fehler (Dienst läuft weiter): {error}")
+
+    thread = threading.Thread(target=loop, name="alphaai-refresh", daemon=True)
+    thread.start()
+    print(f"Automatischer Neu-Scan alle {minutes} Minuten aktiv.")
 
 
 def _build_live_engine(symbols: list[str] | None, universe: str | None) -> ApplicationEngine:
